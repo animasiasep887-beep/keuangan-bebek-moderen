@@ -662,7 +662,7 @@ export const StorageService = {
     downloadAnchor.setAttribute('href', jsonString);
     downloadAnchor.setAttribute(
       'download',
-      `BebekJaya_Backup_${new Date().toISOString().slice(0, 10)}.json`
+      `PratamaBisnisGrup_Backup_${new Date().toISOString().slice(0, 10)}.json`
     );
     document.body.appendChild(downloadAnchor);
     downloadAnchor.click();

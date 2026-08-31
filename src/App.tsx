@@ -212,7 +212,7 @@ export function AppContent() {
       {/* Footer */}
       <footer className="hidden lg:block border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 BebekJaya PRO — Sistem Informasi Manajemen Peternakan Bebek Petelur Terpadu.</p>
+          <p>© 2026 PRATAMA BISNIS GRUP — Sistem Informasi Manajemen Peternakan Bebek Petelur Terpadu.</p>
         </div>
       </footer>
 

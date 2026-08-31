@@ -267,7 +267,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
           <div className="text-center border-b border-slate-800 pb-4">
             <h3 className="text-xl font-black text-amber-400 uppercase tracking-wide">
-              PETERNAKAN BEBEK PETELUR "BEBEKJAYA ABADI"
+              PETERNAKAN BEBEK PETELUR "PRATAMA BISNIS GRUP"
             </h3>
             <h4 className="text-lg font-bold text-white mt-1">LAPORAN LABA RUGI (INCOME STATEMENT)</h4>
             <p className="text-xs text-slate-400 mt-1">Periode: {startDate} s/d {endDate}</p>
@@ -350,7 +350,7 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
         <div className="glass-panel p-6 sm:p-8 rounded-2xl border border-slate-800 space-y-6">
           <div className="text-center border-b border-slate-800 pb-4">
             <h3 className="text-xl font-black text-amber-400 uppercase tracking-wide">
-              PETERNAKAN BEBEK PETELUR "BEBEKJAYA ABADI"
+              PETERNAKAN BEBEK PETELUR "PRATAMA BISNIS GRUP"
             </h3>
             <h4 className="text-lg font-bold text-white mt-1">NERACA KEUANGAN (BALANCE SHEET)</h4>
             <p className="text-xs text-slate-400 mt-1">Per Tanggal: {endDate}</p>

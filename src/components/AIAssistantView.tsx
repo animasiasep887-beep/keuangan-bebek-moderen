@@ -29,7 +29,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ metrics }) => 
     {
       id: 'welcome',
       sender: 'ai',
-      text: `Halo Peternak Hebat! 🦆\n\nSaya adalah **Konsultan AI BebekJaya PRO** yang didukung oleh **Google AI Studio (Gemini)**.\n\nSaya telah terhubung langsung dengan data peternakan Anda:\n• **${metrics.totalPopulasiHidup} ekor** populasi bebek\n• **${metrics.hdpHariIni}%** HDP panen hari ini\n• **Rp ${metrics.saldoKas.toLocaleString('id-ID')}** saldo kas operasional\n\nSilakan tanyakan apa saja tentang nutrisi pakan, cara menaikkan produksi telur, diagnosa penyakit bebek, atau analisis keuangan peternakan Anda!`,
+      text: `Halo Peternak Hebat! 🦆\n\nSaya adalah **Konsultan AI PRATAMA BISNIS GRUP** yang didukung oleh **Google AI Studio (Gemini)**.\n\nSaya telah terhubung langsung dengan data peternakan Anda:\n• **${metrics.totalPopulasiHidup} ekor** populasi bebek\n• **${metrics.hdpHariIni}%** HDP panen hari ini\n• **Rp ${metrics.saldoKas.toLocaleString('id-ID')}** saldo kas operasional\n\nSilakan tanyakan apa saja tentang nutrisi pakan, cara menaikkan produksi telur, diagnosa penyakit bebek, atau analisis keuangan peternakan Anda!`,
       timestamp: new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' }),
     },
   ]);

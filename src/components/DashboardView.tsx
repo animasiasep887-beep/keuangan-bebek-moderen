@@ -64,7 +64,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> BEBEKJAYA PRO • MONITORING REALTIME
+                <Sparkles className="w-3.5 h-3.5" /> PRATAMA BISNIS GRUP • MONITORING REALTIME
               </span>
               <span className="text-xs text-slate-400 font-medium hidden sm:inline">
                 {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}

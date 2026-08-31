@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive } from 'lucide-react';
+import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive, Bell } from 'lucide-react';
 import type { Kandang, PopulasiBebek, KodeAkun, StatusPopulasi, TipeAkun, SaldoNormal } from '../types';
 import { StorageService } from '../services/storage';
 
@@ -12,6 +12,7 @@ interface PengaturanViewProps {
   onRefreshData: () => void;
   onResetZero: () => void;
   onResetDemo: () => void;
+  onOpenNotifikasi?: () => void;
 }
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({
@@ -21,6 +22,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
   onRefreshData,
   onResetZero,
   onResetDemo,
+  onOpenNotifikasi,
 }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'kandang' | 'populasi' | 'coa' | 'database'>('database');
@@ -347,6 +349,44 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                 <ExternalLink className="w-3.5 h-3.5" />
                 Buka & Uji Chat Bot Telegram
               </a>
+            </div>
+
+            {/* Mobile App & Daily Notification Card */}
+            <div className="glass-panel p-5 rounded-2xl border border-amber-500/30 space-y-4 sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center">
+                  <Bell className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Pengingat Panen Otomatis di HP</h3>
+                  <p className="text-xs text-slate-400">Jadwal Notifikasi Pukul 07:00 & 08:00 Pagi</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Jadwal Pengingat 1:</span>
+                  <span className="font-bold text-amber-400">🌅 Pukul 07:00 Pagi (Waktu Panen)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Jadwal Pengingat 2:</span>
+                  <span className="font-bold text-rose-400">⏰ Pukul 08:00 Pagi (Follow-up)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Format Aplikasi:</span>
+                  <span className="font-bold text-emerald-400">Progressive Web App (PWA Mobile)</span>
+                </div>
+              </div>
+
+              {onOpenNotifikasi && (
+                <button
+                  onClick={onOpenNotifikasi}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  <Bell className="w-3.5 h-3.5" />
+                  Atur & Uji Coba Notifikasi Sekarang
+                </button>
+              )}
             </div>
           </div>
         </div>

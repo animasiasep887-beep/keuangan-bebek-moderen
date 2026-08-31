@@ -8,6 +8,7 @@ import {
   Settings,
   Bot,
   ShoppingBag,
+  Bell,
 } from 'lucide-react';
 import { StorageService } from './services/storage';
 import type { AppMode } from './services/storage';
@@ -22,6 +23,9 @@ import { AIAssistantView } from './components/AIAssistantView';
 import { ToastProvider } from './components/ToastContainer';
 import { KalkulatorPeternakModal } from './components/KalkulatorPeternakModal';
 import { KasirPanenModal } from './components/KasirPanenModal';
+import { PWAInstallPrompt } from './components/PWAInstallPrompt';
+import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModal';
+import { NotificationService } from './services/notificationService';
 
 export function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -30,6 +34,7 @@ export function AppContent() {
   // Modal tools state
   const [isKalkulatorOpen, setIsKalkulatorOpen] = useState<boolean>(false);
   const [isKasirOpen, setIsKasirOpen] = useState<boolean>(false);
+  const [isNotifModalOpen, setIsNotifModalOpen] = useState<boolean>(false);
 
   // Application Data States
   const [metrics, setMetrics] = useState(StorageService.calculateMetrics());
@@ -75,6 +80,9 @@ export function AppContent() {
       refreshAllData();
     });
 
+    // Initialize automated 07:00 & 08:00 morning notification reminders
+    NotificationService.initScheduler();
+
     // Background sync every 4 seconds to receive updates made via Telegram Bot
     const interval = setInterval(async () => {
       const updated = await StorageService.fetchFromBackend();
@@ -99,7 +107,7 @@ export function AppContent() {
   }, [activeTab]);
 
   return (
-    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950">
+    <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 pb-safe">
       {/* Header Bar */}
       <Header
         activeTab={activeTab}
@@ -109,6 +117,7 @@ export function AppContent() {
         onToggleMode={handleToggleMode}
         onOpenKalkulator={() => setIsKalkulatorOpen(true)}
         onOpenKasir={() => setIsKasirOpen(true)}
+        onOpenNotifikasi={() => setIsNotifModalOpen(true)}
       />
 
       {/* Mode Banner Indicator */}
@@ -192,11 +201,12 @@ export function AppContent() {
             onRefreshData={refreshAllData}
             onResetZero={handleResetZero}
             onResetDemo={handleResetDemo}
+            onOpenNotifikasi={() => setIsNotifModalOpen(true)}
           />
         )}
       </main>
 
-      {/* Modals */}
+      {/* Modals & Tools */}
       <KalkulatorPeternakModal
         isOpen={isKalkulatorOpen}
         onClose={() => setIsKalkulatorOpen(false)}
@@ -209,6 +219,14 @@ export function AppContent() {
         onRefreshData={refreshAllData}
       />
 
+      <NotifikasiPengaturanModal
+        isOpen={isNotifModalOpen}
+        onClose={() => setIsNotifModalOpen(false)}
+      />
+
+      {/* PWA Mobile App Install Prompt Banner */}
+      <PWAInstallPrompt />
+
       {/* Footer */}
       <footer className="hidden lg:block border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
@@ -216,17 +234,18 @@ export function AppContent() {
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation Bar */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-50 glass-panel border-t border-slate-800 px-2 py-1.5 backdrop-blur-xl bg-slate-950/95">
+      {/* Mobile Bottom Navigation Bar (Thumb-friendly & Ergonomic) */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-slate-800/90 px-1.5 py-1.5 backdrop-blur-2xl bg-slate-950/95 shadow-2xl">
         <div className="flex items-center justify-around">
           {[
             { id: 'dashboard', label: 'Home', icon: Layers },
             { id: 'operasional', label: 'Panen', icon: Egg },
             { id: 'kasir_modal', label: 'Kasir', icon: ShoppingBag, isAction: true },
             { id: 'keuangan', label: 'Kas', icon: Wallet },
+            { id: 'notif_modal', label: 'Notif', icon: Bell, isNotifAction: true },
+            { id: 'laporan', label: 'Laporan', icon: TrendingUp },
             { id: 'aset', label: 'Aset', icon: ShieldCheck },
             { id: 'ai', label: 'AI Bot', icon: Bot },
-            { id: 'laporan', label: 'Laporan', icon: TrendingUp },
             { id: 'pengaturan', label: 'Data', icon: Settings },
           ].map((item) => {
             const Icon = item.icon;
@@ -237,13 +256,17 @@ export function AppContent() {
                 onClick={() => {
                   if (item.isAction) {
                     setIsKasirOpen(true);
+                  } else if (item.isNotifAction) {
+                    setIsNotifModalOpen(true);
                   } else {
                     setActiveTab(item.id);
                   }
                 }}
-                className={`flex flex-col items-center gap-0.5 px-1.5 py-1 rounded-xl transition-all ${
+                className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-xl transition-all ${
                   item.isAction
                     ? 'text-amber-400 font-black scale-110'
+                    : item.isNotifAction
+                    ? 'text-amber-300 font-bold'
                     : isActive
                     ? 'text-amber-400 font-extrabold scale-105'
                     : 'text-slate-400 font-medium hover:text-slate-200'

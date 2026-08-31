@@ -12,6 +12,7 @@ interface HeaderProps {
   onToggleMode: (mode: AppMode) => void;
   onOpenKalkulator?: () => void;
   onOpenKasir?: () => void;
+  onOpenNotifikasi?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -22,6 +23,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMode,
   onOpenKalkulator,
   onOpenKasir,
+  onOpenNotifikasi,
 }) => {
   const isReal = appMode === 'REAL';
 
@@ -70,6 +72,19 @@ export const Header: React.FC<HeaderProps> = ({
                 title="Kalkulator Pakan & BEP Telur"
               >
                 <span>🧮 Kalkulator</span>
+              </button>
+            )}
+
+            {/* Quick Notification Settings Button */}
+            {onOpenNotifikasi && (
+              <button
+                onClick={onOpenNotifikasi}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 text-xs font-bold transition-all active:scale-95 relative"
+                title="Pengingat Panen Jam 07:00 & 08:00 Pagi"
+              >
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute -top-0.5 -right-0.5" />
+                <span className="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5" />
+                <span>🔔 Pengingat</span>
               </button>
             )}
 

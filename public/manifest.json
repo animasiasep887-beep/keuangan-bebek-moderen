@@ -1,0 +1,26 @@
+{
+  "name": "PRATAMA BISNIS GRUP - Peternakan Bebek",
+  "short_name": "Pratama Farm",
+  "description": "Sistem Informasi Manajemen & Akuntansi Peternakan Bebek Petelur Terpadu",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#080c14",
+  "theme_color": "#080c14",
+  "icons": [
+    {
+      "src": "./favicon.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "./icons.svg",
+      "sizes": "192x192 512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["business", "finance", "productivity"]
+}

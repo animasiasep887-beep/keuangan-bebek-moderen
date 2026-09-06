@@ -212,14 +212,25 @@ class Database {
     const targetUserId = payload.userId || userId || 'usr-default-01';
     const current = this.getUserStore(targetUserId, mode);
 
-    if (payload.kandang) current.kandang = payload.kandang;
-    if (payload.populasi) current.populasi = payload.populasi;
-    if (payload.pakan) current.pakan = payload.pakan;
-    if (payload.pencatatan_harian) current.pencatatan_harian = payload.pencatatan_harian;
-    if (payload.transaksi_keuangan) current.transaksi_keuangan = payload.transaksi_keuangan;
-    if (payload.aset_tetap) current.aset_tetap = payload.aset_tetap;
-    if (payload.hutang_piutang) current.hutang_piutang = payload.hutang_piutang;
-    if (payload.kode_akun) current.kode_akun = payload.kode_akun;
+    if (Array.isArray(payload.kandang)) current.kandang = payload.kandang;
+    if (Array.isArray(payload.populasi)) current.populasi = payload.populasi;
+    if (Array.isArray(payload.pakan)) current.pakan = payload.pakan;
+    if (Array.isArray(payload.pencatatan_harian)) current.pencatatan_harian = payload.pencatatan_harian;
+    if (Array.isArray(payload.transaksi_keuangan)) current.transaksi_keuangan = payload.transaksi_keuangan;
+    if (Array.isArray(payload.aset_tetap)) current.aset_tetap = payload.aset_tetap;
+    if (Array.isArray(payload.hutang_piutang)) current.hutang_piutang = payload.hutang_piutang;
+    if (Array.isArray(payload.kode_akun)) current.kode_akun = payload.kode_akun;
+
+    if (this.data.REAL && (targetUserId === 'usr-default-01' || mode === 'REAL')) {
+      if (Array.isArray(payload.kandang)) this.data.REAL.kandang = payload.kandang;
+      if (Array.isArray(payload.populasi)) this.data.REAL.populasi = payload.populasi;
+      if (Array.isArray(payload.pakan)) this.data.REAL.pakan = payload.pakan;
+      if (Array.isArray(payload.pencatatan_harian)) this.data.REAL.pencatatan_harian = payload.pencatatan_harian;
+      if (Array.isArray(payload.transaksi_keuangan)) this.data.REAL.transaksi_keuangan = payload.transaksi_keuangan;
+      if (Array.isArray(payload.aset_tetap)) this.data.REAL.aset_tetap = payload.aset_tetap;
+      if (Array.isArray(payload.hutang_piutang)) this.data.REAL.hutang_piutang = payload.hutang_piutang;
+      if (Array.isArray(payload.kode_akun)) this.data.REAL.kode_akun = payload.kode_akun;
+    }
 
     this.saveToDisk();
     return this.getAllData(mode, targetUserId);

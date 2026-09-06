@@ -101,31 +101,10 @@ function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
 
     const item = localStorage.getItem(fullKey);
     if (item !== null) {
-      const parsed = JSON.parse(item);
-      // If array is empty, check if legacy has records
-      if (Array.isArray(parsed) && parsed.length === 0) {
-        if (key === 'pencatatan_harian' && currentMode === 'REAL') {
-          const recovered = scanAllPossiblePencatatanLogs();
-          if (recovered.length > 0) {
-            localStorage.setItem(fullKey, JSON.stringify(recovered));
-            localStorage.setItem(legacyKey, JSON.stringify(recovered));
-            return recovered as unknown as T;
-          }
-        }
-
-        const legacyItem = localStorage.getItem(legacyKey);
-        if (legacyItem !== null) {
-          const legacyParsed = JSON.parse(legacyItem);
-          if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
-            localStorage.setItem(fullKey, legacyItem);
-            return legacyParsed as unknown as T;
-          }
-        }
-      }
-      return parsed as T;
+      return JSON.parse(item) as T;
     }
 
-    // Fallback: check legacy key
+    // Fallback: check legacy key ONLY on initial migration when fullKey is null
     const legacyItem = localStorage.getItem(legacyKey);
     if (legacyItem !== null) {
       const legacyParsed = JSON.parse(legacyItem);
@@ -137,9 +116,10 @@ function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
 
     if (key === 'pencatatan_harian' && currentMode === 'REAL') {
       const recovered = scanAllPossiblePencatatanLogs();
-      localStorage.setItem(fullKey, JSON.stringify(recovered));
-      localStorage.setItem(legacyKey, JSON.stringify(recovered));
-      return recovered as unknown as T;
+      if (recovered.length > 0) {
+        localStorage.setItem(fullKey, JSON.stringify(recovered));
+        return recovered as unknown as T;
+      }
     }
 
     return fallback;
@@ -223,32 +203,42 @@ export const StorageService = {
     }
   },
 
-  // Pull latest data from Backend Server or static public data bundle
+  // Pull latest data from Backend Server
   fetchFromBackend: async (): Promise<boolean> => {
     try {
       const mode = StorageService.getMode();
       const userId = AuthService.getCurrentUser()?.id || 'usr-default-01';
+      const prefix = getPrefix(mode);
+      const legacyPrefix = mode === 'REAL' ? 'quack_real_' : 'quack_demo_';
+      const isInitialized = localStorage.getItem(`${prefix}initialized`) === 'true';
 
-      // Candidates for data fetching:
-      // 1. Current API_BASE
-      // 2. Localhost 3001
-      // 3. Static public data bundle (works on GitHub Pages!)
+      // Dynamic backend endpoints only
       const endpoints = [
         `${API_BASE}/data?mode=${mode}&userId=${userId}`,
         `http://localhost:3001/api/data?mode=${mode}&userId=${userId}`,
-        `./data/farm_database.json`,
-        `${import.meta.env.BASE_URL}data/farm_database.json`,
       ];
 
+      // Static json fallback is ONLY permitted during initial seed if storage has never been initialized
+      if (!isInitialized) {
+        endpoints.push('./data/farm_database.json');
+        if (import.meta.env.BASE_URL) {
+          endpoints.push(`${import.meta.env.BASE_URL}data/farm_database.json`);
+        }
+      }
+
       let rawData: any = null;
+      let isFromDynamicServer = false;
+
       for (const url of endpoints) {
         try {
           const res = await fetch(url, { signal: AbortSignal.timeout(2500) });
           if (res.ok) {
-            const json = await res.json();
-            if (json) {
-              if (json.REAL || json.kandang || json.pencatatan_harian) {
+            const contentType = res.headers.get('content-type') || '';
+            if (contentType.includes('application/json') || url.endsWith('.json')) {
+              const json = await res.json();
+              if (json && (json.REAL || json.kandang || json.pencatatan_harian || json.pakan !== undefined)) {
                 rawData = json;
+                isFromDynamicServer = !url.endsWith('.json');
                 break;
               }
             }
@@ -260,59 +250,54 @@ export const StorageService = {
 
       if (!rawData) return false;
 
+      // Crucial: Static farm_database.json must NEVER overwrite an already initialized profile
+      if (!isFromDynamicServer && isInitialized) {
+        return false;
+      }
+
       const data = rawData.REAL ? rawData.REAL : rawData;
 
       if (data && mode === 'REAL') {
-        const prefix = getPrefix('REAL');
-        const legacyPrefix = 'quack_real_';
+        let hasChanges = false;
 
-        const mergeById = (existingJson: string | null, incomingList: any[]) => {
-          const existingList = existingJson ? JSON.parse(existingJson) : [];
-          const map = new Map();
-          (incomingList || []).forEach((item: any) => { if (item && item.id) map.set(item.id, item); });
-          (existingList || []).forEach((item: any) => { if (item && item.id) map.set(item.id, item); });
-          return Array.from(map.values());
+        const syncList = (key: string, incoming: any[]) => {
+          if (!Array.isArray(incoming)) return;
+          const currentStr = localStorage.getItem(`${prefix}${key}`);
+          const incomingStr = JSON.stringify(incoming);
+          if (currentStr !== incomingStr) {
+            localStorage.setItem(`${prefix}${key}`, incomingStr);
+            localStorage.setItem(`${legacyPrefix}${key}`, incomingStr);
+            hasChanges = true;
+          }
         };
 
-        if (data.kandang && data.kandang.length > 0) {
-          localStorage.setItem(`${prefix}kandang`, JSON.stringify(data.kandang));
-          localStorage.setItem(`${legacyPrefix}kandang`, JSON.stringify(data.kandang));
-        }
-        if (data.populasi && data.populasi.length > 0) {
-          localStorage.setItem(`${prefix}populasi`, JSON.stringify(data.populasi));
-          localStorage.setItem(`${legacyPrefix}populasi`, JSON.stringify(data.populasi));
-        }
-        if (data.pakan && data.pakan.length > 0) {
-          localStorage.setItem(`${prefix}pakan`, JSON.stringify(data.pakan));
-          localStorage.setItem(`${legacyPrefix}pakan`, JSON.stringify(data.pakan));
-        }
+        if (Array.isArray(data.kandang)) syncList('kandang', data.kandang);
+        if (Array.isArray(data.populasi)) syncList('populasi', data.populasi);
+        if (Array.isArray(data.pakan)) syncList('pakan', data.pakan);
 
         // Merge pencatatan_harian so no local or server records are lost
-        const incomingLogs = data.pencatatan_harian || [];
-        const mergedLogs = mergeById(localStorage.getItem(`${prefix}pencatatan_harian`), incomingLogs);
-        if (mergedLogs.length > 0) {
-          localStorage.setItem(`${prefix}pencatatan_harian`, JSON.stringify(mergedLogs));
-          localStorage.setItem(`${legacyPrefix}pencatatan_harian`, JSON.stringify(mergedLogs));
+        if (Array.isArray(data.pencatatan_harian)) {
+          const existingLogsStr = localStorage.getItem(`${prefix}pencatatan_harian`);
+          const existingLogs: PencatatanHarian[] = existingLogsStr ? JSON.parse(existingLogsStr) : [];
+          const map = new Map<string, PencatatanHarian>();
+          data.pencatatan_harian.forEach((l: PencatatanHarian) => { if (l && l.id) map.set(l.id, l); });
+          existingLogs.forEach((l: PencatatanHarian) => { if (l && l.id) map.set(l.id, l); });
+          const mergedLogs = Array.from(map.values()).sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
+          const mergedLogsStr = JSON.stringify(mergedLogs);
+          if (existingLogsStr !== mergedLogsStr) {
+            localStorage.setItem(`${prefix}pencatatan_harian`, mergedLogsStr);
+            localStorage.setItem(`${legacyPrefix}pencatatan_harian`, mergedLogsStr);
+            hasChanges = true;
+          }
         }
 
-        if (data.transaksi_keuangan && data.transaksi_keuangan.length > 0) {
-          localStorage.setItem(`${prefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
-          localStorage.setItem(`${legacyPrefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
-        }
-        if (data.aset_tetap && data.aset_tetap.length > 0) {
-          localStorage.setItem(`${prefix}aset_tetap`, JSON.stringify(data.aset_tetap));
-          localStorage.setItem(`${legacyPrefix}aset_tetap`, JSON.stringify(data.aset_tetap));
-        }
-        if (data.hutang_piutang && data.hutang_piutang.length > 0) {
-          localStorage.setItem(`${prefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
-          localStorage.setItem(`${legacyPrefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
-        }
-        if (data.kode_akun && data.kode_akun.length > 0) {
-          localStorage.setItem(`${prefix}kode_akun`, JSON.stringify(data.kode_akun));
-          localStorage.setItem(`${legacyPrefix}kode_akun`, JSON.stringify(data.kode_akun));
-        }
+        if (Array.isArray(data.transaksi_keuangan)) syncList('transaksi_keuangan', data.transaksi_keuangan);
+        if (Array.isArray(data.aset_tetap)) syncList('aset_tetap', data.aset_tetap);
+        if (Array.isArray(data.hutang_piutang)) syncList('hutang_piutang', data.hutang_piutang);
+        if (Array.isArray(data.kode_akun)) syncList('kode_akun', data.kode_akun);
+
         localStorage.setItem(`${prefix}initialized`, 'true');
-        return true;
+        return hasChanges;
       }
       return false;
     } catch (e) {
@@ -498,42 +483,63 @@ export const StorageService = {
     const logs = StorageService.getPencatatanHarian();
     const updated = logs.filter((l) => l.id !== id);
     StorageService.savePencatatanHarian(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pencatatan_harian';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deleteTransaksiKeuangan: (id: string) => {
     const trxs = StorageService.getTransaksi();
     const updated = trxs.filter((t) => t.id !== id);
     StorageService.saveTransaksi(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'transaksi_keuangan';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deleteKandang: (id: string) => {
     const list = StorageService.getKandang();
     const updated = list.filter((k) => k.id !== id);
     StorageService.saveKandang(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'kandang';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deletePopulasi: (id: string) => {
     const list = StorageService.getPopulasi();
     const updated = list.filter((p) => p.id !== id);
     StorageService.savePopulasi(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'populasi';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deletePakan: (id: string) => {
     const list = StorageService.getPakan();
     const updated = list.filter((p) => p.id !== id);
     StorageService.savePakan(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pakan';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deleteAset: (id: string) => {
     const list = StorageService.getAset();
     const updated = list.filter((a) => a.id !== id);
     StorageService.saveAset(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'aset_tetap';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   deleteHutangPiutang: (id: string) => {
     const list = StorageService.getHutangPiutang();
     const updated = list.filter((h) => h.id !== id);
     StorageService.saveHutangPiutang(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'hutang_piutang';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
   },
 
   // Add Daily Harvest

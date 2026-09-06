@@ -281,7 +281,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="admin@bebekjaya.com / 0812..."
+                    placeholder="Masukkan email atau no. WhatsApp"
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>

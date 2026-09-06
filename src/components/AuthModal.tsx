@@ -206,12 +206,12 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-amber-400" /> Email Terdaftar
+                  <Mail className="w-3.5 h-3.5 text-amber-400" /> Email atau No. WhatsApp
                 </label>
                 <input
-                  type="email"
+                  type="text"
                   required
-                  placeholder="contoh: admin@bebekjaya.com"
+                  placeholder="Masukkan email atau no. WhatsApp"
                   value={loginEmail}
                   onChange={(e) => setLoginEmail(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"

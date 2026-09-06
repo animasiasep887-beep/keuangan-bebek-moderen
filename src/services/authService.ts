@@ -8,12 +8,12 @@ const DEFAULT_USERS: (User & { passwordHash: string })[] = [
     id: 'usr-default-01',
     name: 'H. Pratama (Owner)',
     email: 'admin@bebekjaya.com',
-    phone: '081234567890',
+    phone: '085600172785',
     farmName: 'Peternakan Bebek Jaya Utama',
     role: 'OWNER',
     plan: 'PREMIUM',
     createdAt: new Date().toISOString(),
-    passwordHash: 'admin123',
+    passwordHash: 'bebeksaya123',
     avatarUrl: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200',
   },
   {
@@ -39,7 +39,17 @@ export const AuthService = {
         localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(DEFAULT_USERS));
         return DEFAULT_USERS;
       }
-      return JSON.parse(stored);
+      const list: (User & { passwordHash: string })[] = JSON.parse(stored);
+      const admin = list.find((u) => u.id === 'usr-default-01');
+      if (admin) {
+        admin.phone = DEFAULT_USERS[0].phone;
+        admin.passwordHash = DEFAULT_USERS[0].passwordHash;
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+      } else {
+        list.unshift(DEFAULT_USERS[0]);
+        localStorage.setItem(USERS_STORAGE_KEY, JSON.stringify(list));
+      }
+      return list;
     } catch {
       return DEFAULT_USERS;
     }

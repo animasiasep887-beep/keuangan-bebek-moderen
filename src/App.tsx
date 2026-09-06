@@ -10,8 +10,11 @@ import {
   ShoppingBag,
   Bell,
 } from 'lucide-react';
+
 import { StorageService } from './services/storage';
 import type { AppMode } from './services/storage';
+import { AuthService } from './services/authService';
+import type { User } from './types';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { OperasionalView } from './components/OperasionalView';
@@ -25,11 +28,16 @@ import { KalkulatorPeternakModal } from './components/KalkulatorPeternakModal';
 import { KasirPanenModal } from './components/KasirPanenModal';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModal';
+import { AuthModal } from './components/AuthModal';
 import { NotificationService } from './services/notificationService';
 
 export function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [appMode, setAppMode] = useState<AppMode>(StorageService.getMode());
+
+  // User Authentication State
+  const [currentUser, setCurrentUser] = useState<User>(AuthService.getCurrentUser());
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // Modal tools state
   const [isKalkulatorOpen, setIsKalkulatorOpen] = useState<boolean>(false);
@@ -57,6 +65,14 @@ export function AppContent() {
     setKodeAkunList(StorageService.getKodeAkun());
     setAsetList(StorageService.getAset());
     setHpList(StorageService.getHutangPiutang());
+  };
+
+  const handleUserChanged = (newUser: User) => {
+    setCurrentUser(newUser);
+    StorageService.initStorage();
+    StorageService.fetchFromBackend().then(() => {
+      refreshAllData();
+    });
   };
 
   const handleResetZero = () => {
@@ -118,22 +134,31 @@ export function AppContent() {
         onOpenKalkulator={() => setIsKalkulatorOpen(true)}
         onOpenKasir={() => setIsKasirOpen(true)}
         onOpenNotifikasi={() => setIsNotifModalOpen(true)}
+        onOpenAuth={() => setIsAuthModalOpen(true)}
+        currentUser={currentUser}
       />
 
-      {/* Mode Banner Indicator */}
+      {/* Mode & Active User Banner Indicator */}
       <div
-        className={`w-full py-1.5 px-4 text-center text-xs font-bold transition-all ${
+        className={`w-full py-1.5 px-4 text-center text-xs font-bold transition-all flex items-center justify-center gap-2 flex-wrap ${
           appMode === 'REAL'
             ? 'bg-emerald-950/70 border-b border-emerald-500/30 text-emerald-300'
             : 'bg-amber-950/70 border-b border-amber-500/30 text-amber-300'
         }`}
       >
         {appMode === 'REAL' ? (
-          <span>🟢 <strong>AKUN REAL (PETERNAKAN SAYA)</strong> — Data tersimpan aman & permanen di Hard Disk + Terhubung ke Bot Telegram.</span>
+          <span>🟢 <strong>AKUN REAL ({currentUser?.farmName || 'Peternakan Saya'})</strong> — Data tersimpan terisolasi per akun di disk.</span>
         ) : (
           <span>🧪 <strong>MODE DEMO (SIMULASI 30 HARI)</strong> — Menggunakan data contoh untuk simulasi & uji coba fitur.</span>
         )}
+        <button
+          onClick={() => setIsAuthModalOpen(true)}
+          className="underline hover:text-white font-extrabold text-[11px] bg-slate-900/60 px-2 py-0.5 rounded-lg border border-slate-700 ml-1"
+        >
+          👤 {currentUser?.name} ({currentUser?.plan}) - Ganti / Login Akun
+        </button>
       </div>
+
 
       {/* Main Content Body */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 lg:pb-12">
@@ -207,11 +232,18 @@ export function AppContent() {
       </main>
 
       {/* Modals & Tools */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
+        onUserChanged={handleUserChanged}
+      />
+
       <KalkulatorPeternakModal
         isOpen={isKalkulatorOpen}
         onClose={() => setIsKalkulatorOpen(false)}
         populasiDefault={metrics.totalPopulasiHidup || 1000}
       />
+
 
       <KasirPanenModal
         isOpen={isKasirOpen}

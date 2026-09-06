@@ -72,9 +72,25 @@ const INITIAL_REAL_DATA = {
 class Database {
   constructor() {
     this.data = {
+      users: [
+        {
+          id: 'usr-default-01',
+          name: 'H. Pratama (Owner)',
+          email: 'admin@bebekjaya.com',
+          farmName: 'Peternakan Bebek Jaya Utama',
+          role: 'OWNER',
+          plan: 'PREMIUM',
+          createdAt: new Date().toISOString(),
+          passwordHash: 'admin123',
+        }
+      ],
+      userData: {
+        'usr-default-01': {
+          REAL: JSON.parse(JSON.stringify(INITIAL_REAL_DATA)),
+          DEMO: null
+        }
+      },
       REAL: JSON.parse(JSON.stringify(INITIAL_REAL_DATA)),
-      DEMO: null,
-      mode: 'REAL',
       lastUpdated: new Date().toISOString()
     };
     this.loadFromDisk();
@@ -85,11 +101,11 @@ class Database {
       if (fs.existsSync(DB_FILE)) {
         const fileContent = fs.readFileSync(DB_FILE, 'utf-8');
         const parsed = JSON.parse(fileContent);
-        if (parsed.REAL) {
-          this.data = { ...this.data, ...parsed };
-          console.log('[DATABASE] Berhasil memuat data peternakan dari hard disk:', DB_FILE);
-          return;
-        }
+        this.data = { ...this.data, ...parsed };
+        if (!this.data.userData) this.data.userData = {};
+        if (!this.data.users) this.data.users = [];
+        console.log('[DATABASE] Berhasil memuat data peternakan dari hard disk:', DB_FILE);
+        return;
       }
       this.saveToDisk();
       console.log('[DATABASE] File database baru diinisialisasi:', DB_FILE);
@@ -113,7 +129,6 @@ class Database {
       const now = new Date();
       const dateStr = now.toISOString().slice(0, 10);
       const backupFile = path.join(BACKUPS_DIR, `backup_${dateStr}.json`);
-      // Create backup once a day
       if (!fs.existsSync(backupFile)) {
         fs.writeFileSync(backupFile, JSON.stringify(this.data, null, 2), 'utf-8');
         console.log('[DATABASE] Backup otomatis dibuat:', backupFile);
@@ -123,9 +138,24 @@ class Database {
     }
   }
 
-  getAllData(mode = 'REAL') {
-    const activeData = this.data[mode] || this.data.REAL;
+  getUserStore(userId = 'usr-default-01', mode = 'REAL') {
+    if (!this.data.userData) this.data.userData = {};
+    if (!this.data.userData[userId]) {
+      this.data.userData[userId] = {
+        REAL: JSON.parse(JSON.stringify(INITIAL_REAL_DATA)),
+        DEMO: null
+      };
+    }
+    if (!this.data.userData[userId][mode]) {
+      this.data.userData[userId][mode] = JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
+    }
+    return this.data.userData[userId][mode];
+  }
+
+  getAllData(mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
     return {
+      userId,
       mode,
       lastUpdated: this.data.lastUpdated,
       kandang: activeData.kandang || [],
@@ -136,15 +166,14 @@ class Database {
       aset_tetap: activeData.aset_tetap || [],
       hutang_piutang: activeData.hutang_piutang || [],
       kode_akun: activeData.kode_akun || DEFAULT_KODE_AKUN,
-      metrics: this.calculateMetrics(mode)
+      metrics: this.calculateMetrics(mode, userId)
     };
   }
 
-  syncAllData(payload, mode = 'REAL') {
-    if (!this.data[mode]) {
-      this.data[mode] = {};
-    }
-    const current = this.data[mode];
+  syncAllData(payload, mode = 'REAL', userId = 'usr-default-01') {
+    const targetUserId = payload.userId || userId || 'usr-default-01';
+    const current = this.getUserStore(targetUserId, mode);
+
     if (payload.kandang) current.kandang = payload.kandang;
     if (payload.populasi) current.populasi = payload.populasi;
     if (payload.pakan) current.pakan = payload.pakan;
@@ -155,11 +184,21 @@ class Database {
     if (payload.kode_akun) current.kode_akun = payload.kode_akun;
 
     this.saveToDisk();
-    return this.getAllData(mode);
+    return this.getAllData(mode, targetUserId);
   }
 
-  addPencatatanHarian(log, mode = 'REAL') {
-    const activeData = this.data[mode] || this.data.REAL;
+  registerUser(newUser) {
+    if (!this.data.users) this.data.users = [];
+    const existing = this.data.users.find(u => u.email.toLowerCase() === newUser.email.toLowerCase());
+    if (existing) return { success: false, message: 'Email sudah terdaftar.' };
+
+    this.data.users.push(newUser);
+    this.saveToDisk();
+    return { success: true, user: newUser };
+  }
+
+  addPencatatanHarian(log, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
     if (!activeData.pencatatan_harian) activeData.pencatatan_harian = [];
     if (!activeData.pakan) activeData.pakan = [];
     if (!activeData.populasi) activeData.populasi = [];
@@ -210,8 +249,8 @@ class Database {
     return newEntry;
   }
 
-  addTransaksiKeuangan(trx, mode = 'REAL') {
-    const activeData = this.data[mode] || this.data.REAL;
+  addTransaksiKeuangan(trx, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
     if (!activeData.transaksi_keuangan) activeData.transaksi_keuangan = [];
 
     const dateStr = new Date().toISOString().slice(0, 10).replace(/-/g, '');
@@ -234,8 +273,8 @@ class Database {
     return newEntry;
   }
 
-  calculateMetrics(mode = 'REAL') {
-    const activeData = this.data[mode] || this.data.REAL;
+  calculateMetrics(mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
     const trxs = activeData.transaksi_keuangan || [];
     const logs = activeData.pencatatan_harian || [];
     const populasi = activeData.populasi || [];
@@ -288,11 +327,14 @@ class Database {
     };
   }
 
-  resetRealData() {
-    this.data.REAL = JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
+  resetRealData(userId = 'usr-default-01') {
+    if (this.data.userData && this.data.userData[userId]) {
+      this.data.userData[userId].REAL = JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
+    }
     this.saveToDisk();
-    return this.getAllData('REAL');
+    return this.getAllData('REAL', userId);
   }
 }
 
 export const db = new Database();
+

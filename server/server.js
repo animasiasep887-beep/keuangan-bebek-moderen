@@ -37,17 +37,39 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+// User Registration & Login endpoints
+app.post('/api/auth/register', (req, res) => {
+  const result = db.registerUser(req.body);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+app.post('/api/auth/login', (req, res) => {
+  const { email, password } = req.body;
+  const users = db.data.users || [];
+  const found = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (!found || (found.passwordHash && found.passwordHash !== password)) {
+    return res.status(401).json({ success: false, message: 'Email atau kata sandi tidak sesuai.' });
+  }
+  const { passwordHash, ...userWithoutPass } = found;
+  res.json({ success: true, user: userWithoutPass });
+});
+
 // Get all farm data
 app.get('/api/data', (req, res) => {
   const mode = req.query.mode || 'REAL';
-  const data = db.getAllData(mode);
+  const userId = req.query.userId || 'usr-default-01';
+  const data = db.getAllData(mode, userId);
   res.json(data);
 });
 
 // Full Sync endpoint
 app.post('/api/sync', (req, res) => {
   const mode = req.query.mode || 'REAL';
-  const updatedData = db.syncAllData(req.body, mode);
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const updatedData = db.syncAllData(req.body, mode, userId);
   res.json({
     success: true,
     message: 'Data peternakan berhasil disimpan permanen ke disk.',
@@ -58,30 +80,32 @@ app.post('/api/sync', (req, res) => {
 // Add daily harvest
 app.post('/api/panen', (req, res) => {
   const mode = req.query.mode || 'REAL';
-  const newLog = db.addPencatatanHarian(req.body, mode);
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const newLog = db.addPencatatanHarian(req.body, mode, userId);
   res.json({
     success: true,
     data: newLog,
-    metrics: db.calculateMetrics(mode)
+    metrics: db.calculateMetrics(mode, userId)
   });
 });
 
 // Add transaction
 app.post('/api/transaksi', (req, res) => {
   const mode = req.query.mode || 'REAL';
-  const newTrx = db.addTransaksiKeuangan(req.body, mode);
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const newTrx = db.addTransaksiKeuangan(req.body, mode, userId);
   res.json({
     success: true,
     data: newTrx,
-    metrics: db.calculateMetrics(mode)
+    metrics: db.calculateMetrics(mode, userId)
   });
 });
 
 // AI Farm Consultant Chat
 app.post('/api/ai/ask', async (req, res) => {
   try {
-    const { question, mode } = req.body;
-    const farmData = db.getAllData(mode || 'REAL');
+    const { question, mode, userId } = req.body;
+    const farmData = db.getAllData(mode || 'REAL', userId || 'usr-default-01');
     const answer = await GeminiService.askFarmConsultant(question, farmData);
     res.json({ success: true, answer });
   } catch (error) {
@@ -94,7 +118,8 @@ app.post('/api/ai/ask', async (req, res) => {
 app.get('/api/ai/analysis', async (req, res) => {
   try {
     const mode = req.query.mode || 'REAL';
-    const farmData = db.getAllData(mode);
+    const userId = req.query.userId || 'usr-default-01';
+    const farmData = db.getAllData(mode, userId);
     const analysis = await GeminiService.getAutomatedAnalysis(farmData);
     res.json({ success: true, analysis });
   } catch (error) {
@@ -111,9 +136,11 @@ app.get('/api/backup/download', (req, res) => {
 
 // Reset Real Data
 app.post('/api/reset-real', (req, res) => {
-  const result = db.resetRealData();
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const result = db.resetRealData(userId);
   res.json({ success: true, data: result });
 });
+
 
 // Serve frontend static build files directly on http://localhost:3001
 const distPath = path.join(__dirname, '..', 'dist');

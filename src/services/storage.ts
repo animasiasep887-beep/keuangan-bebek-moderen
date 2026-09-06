@@ -10,6 +10,7 @@ import type {
   FarmMetricsSummary,
 } from '../types';
 
+import { AuthService } from './authService';
 import {
   INITIAL_KANDANG,
   INITIAL_POPULASI,
@@ -30,7 +31,8 @@ const API_BASE = typeof window !== 'undefined' && window.location.hostname === '
 
 function getPrefix(mode?: AppMode): string {
   const currentMode = mode || StorageService.getMode();
-  return currentMode === 'REAL' ? 'quack_real_' : 'quack_demo_';
+  const userId = AuthService.getCurrentUser()?.id || 'usr-default-01';
+  return currentMode === 'REAL' ? `quack_u_${userId}_real_` : `quack_u_${userId}_demo_`;
 }
 
 function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
@@ -81,7 +83,10 @@ export const StorageService = {
     const mode = StorageService.getMode();
     if (mode !== 'REAL') return; // Only sync REAL data to permanent disk
 
+    const userId = AuthService.getCurrentUser()?.id || 'usr-default-01';
+
     const payload = {
+      userId,
       kandang: StorageService.getKandang(),
       populasi: StorageService.getPopulasi(),
       pakan: StorageService.getPakan(),
@@ -93,7 +98,7 @@ export const StorageService = {
     };
 
     try {
-      await fetch(`${API_BASE}/sync?mode=REAL`, {
+      await fetch(`${API_BASE}/sync?mode=REAL&userId=${userId}`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload),
@@ -107,7 +112,8 @@ export const StorageService = {
   fetchFromBackend: async (): Promise<boolean> => {
     try {
       const mode = StorageService.getMode();
-      const res = await fetch(`${API_BASE}/data?mode=${mode}`);
+      const userId = AuthService.getCurrentUser()?.id || 'usr-default-01';
+      const res = await fetch(`${API_BASE}/data?mode=${mode}&userId=${userId}`);
       if (!res.ok) return false;
       const data = await res.json();
 
@@ -129,6 +135,7 @@ export const StorageService = {
       return false;
     }
   },
+
 
   // Server & Bot Status
   getServerStatus: async () => {

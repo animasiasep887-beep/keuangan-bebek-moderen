@@ -1,7 +1,9 @@
 import React from 'react';
-import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles } from 'lucide-react';
-import type { FarmMetricsSummary } from '../types';
+import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon } from 'lucide-react';
+
+import type { FarmMetricsSummary, User } from '../types';
 import type { AppMode } from '../services/storage';
+import { AuthService } from '../services/authService';
 import { formatIDR } from '../utils/exportUtils';
 
 interface HeaderProps {
@@ -13,6 +15,8 @@ interface HeaderProps {
   onOpenKalkulator?: () => void;
   onOpenKasir?: () => void;
   onOpenNotifikasi?: () => void;
+  onOpenAuth?: () => void;
+  currentUser?: User;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -24,8 +28,11 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenKalkulator,
   onOpenKasir,
   onOpenNotifikasi,
+  onOpenAuth,
+  currentUser,
 }) => {
   const isReal = appMode === 'REAL';
+  const activeUser = currentUser || AuthService.getCurrentUser();
 
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-slate-800/80 shadow-2xl">
@@ -51,8 +58,29 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
           </div>
 
-          {/* Quick Tools & Mode Switcher */}
+          {/* Quick Tools & Mode Switcher & User Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* User Account Button / Avatar */}
+            {onOpenAuth && (
+              <button
+                onClick={onOpenAuth}
+                className="flex items-center gap-2 px-2.5 py-1.5 rounded-xl bg-slate-900 hover:bg-slate-800 border border-amber-500/30 text-xs text-slate-200 transition-all active:scale-95 shadow-md"
+                title="Kelola Akun & Login Multi-User"
+              >
+                <div className="w-6 h-6 rounded-full bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black flex items-center justify-center text-xs">
+                  {activeUser ? activeUser.name.charAt(0) : <UserIcon className="w-3.5 h-3.5" />}
+                </div>
+                <div className="hidden md:flex flex-col items-start leading-none text-left">
+                  <span className="text-[11px] font-extrabold text-amber-300 truncate max-w-[100px]">
+                    {activeUser ? activeUser.name : 'Masuk Akun'}
+                  </span>
+                  <span className="text-[9px] text-slate-400 truncate max-w-[100px]">
+                    {activeUser ? activeUser.farmName : 'Multi-User'}
+                  </span>
+                </div>
+              </button>
+            )}
+
             {/* Quick Kasir POS Button */}
             {onOpenKasir && (
               <button
@@ -179,4 +207,6 @@ export const Header: React.FC<HeaderProps> = ({
     </header>
   );
 };
+
+
 

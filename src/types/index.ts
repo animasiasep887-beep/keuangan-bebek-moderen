@@ -105,6 +105,22 @@ export interface HutangPiutang {
   status: StatusHutangPiutang;
 }
 
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  farmName: string;
+  role: 'OWNER' | 'PETERNAN_PRO' | 'ADMIN';
+  plan: 'PREMIUM' | 'ENTERPRISE' | 'STARTER';
+  createdAt: string;
+  avatarUrl?: string;
+}
+
+export interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+}
+
 export interface FarmMetricsSummary {
   saldoKas: number;
   labaRugiMtd: number;
@@ -116,3 +132,4 @@ export interface FarmMetricsSummary {
   totalPiutang: number;
   totalHutang: number;
 }
+

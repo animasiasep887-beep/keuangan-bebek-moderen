@@ -8,6 +8,8 @@ import {
   Trash2,
   Search,
   ShoppingBag,
+  Pencil,
+  X,
 } from 'lucide-react';
 import type { TransaksiKeuangan, KodeAkun } from '../types';
 import { StorageService } from '../services/storage';
@@ -109,12 +111,60 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
 
   const arusKasBersih = totalPendapatan - totalPengeluaran;
 
-  const handleDeleteTrx = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus transaksi keuangan ini?')) {
-      StorageService.deleteTransaksiKeuangan(id);
-      showToast('Transaksi berhasil dihapus', 'info');
-      onRefreshData();
+  // Delete confirm state
+  const [confirmDeleteTrxId, setConfirmDeleteTrxId] = useState<string | null>(null);
+
+  // Edit Transaksi State
+  const [editingTrx, setEditingTrx] = useState<TransaksiKeuangan | null>(null);
+  const [editTrxTanggal, setEditTrxTanggal] = useState<string>('');
+  const [editTrxTipe, setEditTrxTipe] = useState<'PENDAPATAN' | 'PENGELUARAN'>('PENGELUARAN');
+  const [editTrxKategoriPendapatan, setEditTrxKategoriPendapatan] = useState<any>('TELUR_GRADE_A');
+  const [editTrxKategoriPengeluaran, setEditTrxKategoriPengeluaran] = useState<any>('PAKAN');
+  const [editTrxDeskripsi, setEditTrxDeskripsi] = useState<string>('');
+  const [editTrxNominal, setEditTrxNominal] = useState<number>(0);
+
+  const handleConfirmDeleteTrx = (id: string) => {
+    StorageService.deleteTransaksiKeuangan(id);
+    showToast('Transaksi berhasil dihapus permanen', 'info');
+    setConfirmDeleteTrxId(null);
+    onRefreshData();
+  };
+
+  const handleStartEditTrx = (trx: TransaksiKeuangan) => {
+    setEditingTrx(trx);
+    setEditTrxTanggal(trx.tanggal);
+    setEditTrxTipe(trx.tipeTransaksi === 'PENDAPATAN' ? 'PENDAPATAN' : 'PENGELUARAN');
+    setEditTrxKategoriPendapatan(trx.kategoriPendapatan || 'TELUR_GRADE_A');
+    setEditTrxKategoriPengeluaran(trx.kategoriPengeluaran || 'PAKAN');
+    setEditTrxDeskripsi(trx.deskripsi);
+    setEditTrxNominal(trx.totalNominal);
+  };
+
+  const handleSaveEditTrx = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTrx) return;
+    if (editTrxNominal <= 0) {
+      showToast('Nominal harus lebih dari 0!', 'warning');
+      return;
     }
+    if (!editTrxDeskripsi.trim()) {
+      showToast('Deskripsi tidak boleh kosong!', 'warning');
+      return;
+    }
+
+    StorageService.updateTransaksi({
+      ...editingTrx,
+      tanggal: editTrxTanggal,
+      tipeTransaksi: editTrxTipe,
+      kategoriPendapatan: editTrxTipe === 'PENDAPATAN' ? editTrxKategoriPendapatan : undefined,
+      kategoriPengeluaran: editTrxTipe === 'PENGELUARAN' ? editTrxKategoriPengeluaran : undefined,
+      deskripsi: editTrxDeskripsi,
+      totalNominal: editTrxNominal,
+    });
+
+    showToast('Transaksi keuangan berhasil diperbarui!', 'success');
+    setEditingTrx(null);
+    onRefreshData();
   };
 
   return (
@@ -434,19 +484,176 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
                         {isInc ? '+' : '-'}{formatIDR(trx.totalNominal)}
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleDeleteTrx(trx.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                          title="Hapus Transaksi Ini"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditTrx(trx)}
+                            className="px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold text-[11px] border border-blue-500/20 transition-colors flex items-center gap-1"
+                            title="Edit Transaksi Ini"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                            <span>Edit</span>
+                          </button>
+
+                          {confirmDeleteTrxId === trx.id ? (
+                            <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                              <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDeleteTrx(trx.id)}
+                                className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                              >
+                                Ya
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteTrxId(null)}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteTrxId(trx.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                              title="Hapus Transaksi Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   );
                 })}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT TRANSAKSI */}
+      {editingTrx && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Transaksi Keuangan</h3>
+                  <p className="text-xs text-slate-400">Perbarui rincian transaksi kas atau operasional.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingTrx(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditTrx} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    value={editTrxTanggal}
+                    onChange={(e) => setEditTrxTanggal(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Tipe Transaksi</label>
+                  <select
+                    value={editTrxTipe}
+                    onChange={(e) => setEditTrxTipe(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="PENDAPATAN">Pendapatan (+)</option>
+                    <option value="PENGELUARAN">Pengeluaran (-)</option>
+                  </select>
+                </div>
+              </div>
+
+              {editTrxTipe === 'PENDAPATAN' ? (
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Kategori Pendapatan</label>
+                  <select
+                    value={editTrxKategoriPendapatan}
+                    onChange={(e) => setEditTrxKategoriPendapatan(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="TELUR_GRADE_A">Penjualan Telur Grade A (Utuh)</option>
+                    <option value="TELUR_GRADE_B">Penjualan Telur Grade B (Retak)</option>
+                    <option value="BEBEK_AFKIR">Penjualan Bebek Afkir / Daging</option>
+                    <option value="PUPUK_KANDANG">Penjualan Pupuk Kandang</option>
+                    <option value="LAINNYA">Pendapatan Lain-lain</option>
+                  </select>
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Kategori Pengeluaran</label>
+                  <select
+                    value={editTrxKategoriPengeluaran}
+                    onChange={(e) => setEditTrxKategoriPengeluaran(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="PAKAN">Belanja Pakan Konsentrat / Jagung / Dedak</option>
+                    <option value="OBAT_VAKSIN">Vaksin, Vitamin & Desinfektan</option>
+                    <option value="GAJI">Gaji & Upah Anak Kandang</option>
+                    <option value="OPERASIONAL_KANDANG">Sekam, Pemeliharaan & Alat</option>
+                    <option value="LISTRIK_AIR">Listrik & Air Kandang</option>
+                    <option value="LAINNYA">Beban Operasional Lainnya</option>
+                  </select>
+                </div>
+              )}
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Deskripsi / Keterangan</label>
+                <input
+                  type="text"
+                  value={editTrxDeskripsi}
+                  onChange={(e) => setEditTrxDeskripsi(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Total Nominal (Rp)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editTrxNominal}
+                  onChange={(e) => setEditTrxNominal(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold text-amber-400"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingTrx(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

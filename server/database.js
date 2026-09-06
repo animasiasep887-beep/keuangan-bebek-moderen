@@ -105,29 +105,12 @@ class Database {
         if (!this.data.userData) this.data.userData = {};
         if (!this.data.users) this.data.users = [];
 
-        // Auto-migration: Ensure existing REAL data is preserved for default user
-        if (this.data.REAL) {
-          if (!this.data.userData['usr-default-01']) {
-            this.data.userData['usr-default-01'] = {
-              REAL: JSON.parse(JSON.stringify(this.data.REAL)),
-              DEMO: this.data.DEMO || null
-            };
-          } else {
-            // If userData has empty logs but this.data.REAL has logs, preserve existing logs
-            if (this.data.REAL.pencatatan_harian?.length > 0) {
-              const currentLogs = this.data.userData['usr-default-01'].REAL?.pencatatan_harian || [];
-              this.data.REAL.pencatatan_harian.forEach(log => {
-                if (!currentLogs.some(l => l.id === log.id)) {
-                  currentLogs.push(log);
-                }
-              });
-              if (!this.data.userData['usr-default-01'].REAL) {
-                this.data.userData['usr-default-01'].REAL = JSON.parse(JSON.stringify(this.data.REAL));
-              } else {
-                this.data.userData['usr-default-01'].REAL.pencatatan_harian = currentLogs;
-              }
-            }
-          }
+        // Auto-migration: Ensure existing REAL data structure is initialized for default user
+        if (this.data.REAL && !this.data.userData['usr-default-01']) {
+          this.data.userData['usr-default-01'] = {
+            REAL: JSON.parse(JSON.stringify(this.data.REAL)),
+            DEMO: this.data.DEMO || null
+          };
         }
 
         console.log('[DATABASE] Berhasil memuat data peternakan dari hard disk:', DB_FILE);
@@ -176,14 +159,6 @@ class Database {
     if (!this.data.userData[userId][mode]) {
       const fallbackData = (mode === 'REAL' && this.data.REAL) ? JSON.parse(JSON.stringify(this.data.REAL)) : JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
       this.data.userData[userId][mode] = fallbackData;
-    }
-
-    // Safety fallback: if user logs are empty but this.data.REAL has logs, always restore them!
-    if (mode === 'REAL' && this.data.REAL?.pencatatan_harian?.length > 0) {
-      const userLogs = this.data.userData[userId].REAL?.pencatatan_harian || [];
-      if (userLogs.length === 0) {
-        this.data.userData[userId].REAL.pencatatan_harian = JSON.parse(JSON.stringify(this.data.REAL.pencatatan_harian));
-      }
     }
 
     return this.data.userData[userId][mode];
@@ -374,6 +349,219 @@ class Database {
       totalPiutang,
       totalHutang
     };
+  }
+
+  // --- CRUD HELPERS (UPDATE & DELETE) ---
+
+  deletePencatatanHarian(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.pencatatan_harian) {
+      activeData.pencatatan_harian = activeData.pencatatan_harian.filter(l => l.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.pencatatan_harian) {
+      this.data.REAL.pencatatan_harian = this.data.REAL.pencatatan_harian.filter(l => l.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updatePencatatanHarian(id, updatedLog, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.pencatatan_harian) activeData.pencatatan_harian = [];
+    
+    // Recalculate HDP & FCR if needed
+    const totalPopulasi = (activeData.populasi || []).reduce((acc, p) => acc + (p.jumlahSaatIni || 0), 0) || 500;
+    const totalTelur = (Number(updatedLog.telurUtuh) || 0) + (Number(updatedLog.telurRetak) || 0) + (Number(updatedLog.telurRusak) || 0);
+    const hdp = totalPopulasi > 0 ? Number(((totalTelur / totalPopulasi) * 100).toFixed(1)) : 0;
+    const totalBeratTelurKg = Number(updatedLog.totalBeratTelurKg) || Number(((totalTelur * 65) / 1000).toFixed(2));
+    const fcr = totalBeratTelurKg > 0 && updatedLog.pakanKg ? Number((Number(updatedLog.pakanKg) / totalBeratTelurKg).toFixed(2)) : 0;
+
+    const merged = {
+      ...updatedLog,
+      id,
+      telurUtuh: Number(updatedLog.telurUtuh) || 0,
+      telurRetak: Number(updatedLog.telurRetak) || 0,
+      telurRusak: Number(updatedLog.telurRusak) || 0,
+      totalBeratTelurKg,
+      bebekMati: Number(updatedLog.bebekMati) || 0,
+      bebekAfkir: Number(updatedLog.bebekAfkir) || 0,
+      pakanKg: Number(updatedLog.pakanKg) || 0,
+      hdpPercentage: updatedLog.hdpPercentage !== undefined ? Number(updatedLog.hdpPercentage) : hdp,
+      fcr: updatedLog.fcr !== undefined ? Number(updatedLog.fcr) : fcr,
+    };
+
+    activeData.pencatatan_harian = activeData.pencatatan_harian.map(l => l.id === id ? merged : l);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.pencatatan_harian) {
+      this.data.REAL.pencatatan_harian = this.data.REAL.pencatatan_harian.map(l => l.id === id ? merged : l);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deletePakan(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.pakan) {
+      activeData.pakan = activeData.pakan.filter(p => p.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.pakan) {
+      this.data.REAL.pakan = this.data.REAL.pakan.filter(p => p.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updatePakan(id, updatedPakan, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.pakan) activeData.pakan = [];
+    const merged = { ...updatedPakan, id };
+    activeData.pakan = activeData.pakan.map(p => p.id === id ? merged : p);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.pakan) {
+      this.data.REAL.pakan = this.data.REAL.pakan.map(p => p.id === id ? merged : p);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deleteTransaksiKeuangan(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.transaksi_keuangan) {
+      activeData.transaksi_keuangan = activeData.transaksi_keuangan.filter(t => t.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.transaksi_keuangan) {
+      this.data.REAL.transaksi_keuangan = this.data.REAL.transaksi_keuangan.filter(t => t.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updateTransaksiKeuangan(id, updatedTrx, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.transaksi_keuangan) activeData.transaksi_keuangan = [];
+    const merged = { ...updatedTrx, id, totalNominal: Number(updatedTrx.totalNominal) || 0 };
+    activeData.transaksi_keuangan = activeData.transaksi_keuangan.map(t => t.id === id ? merged : t);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.transaksi_keuangan) {
+      this.data.REAL.transaksi_keuangan = this.data.REAL.transaksi_keuangan.map(t => t.id === id ? merged : t);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deleteKandang(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.kandang) {
+      activeData.kandang = activeData.kandang.filter(k => k.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.kandang) {
+      this.data.REAL.kandang = this.data.REAL.kandang.filter(k => k.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updateKandang(id, updated, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.kandang) activeData.kandang = [];
+    const merged = { ...updated, id, kapasitas: Number(updated.kapasitas) || 0 };
+    activeData.kandang = activeData.kandang.map(k => k.id === id ? merged : k);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.kandang) {
+      this.data.REAL.kandang = this.data.REAL.kandang.map(k => k.id === id ? merged : k);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deletePopulasi(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.populasi) {
+      activeData.populasi = activeData.populasi.filter(p => p.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.populasi) {
+      this.data.REAL.populasi = this.data.REAL.populasi.filter(p => p.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updatePopulasi(id, updated, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.populasi) activeData.populasi = [];
+    const merged = {
+      ...updated,
+      id,
+      jumlahAwal: Number(updated.jumlahAwal) || 0,
+      jumlahSaatIni: Number(updated.jumlahSaatIni) || 0,
+      hargaBeliPerEkor: Number(updated.hargaBeliPerEkor) || 0,
+      umurMinggu: Number(updated.umurMinggu) || 0
+    };
+    activeData.populasi = activeData.populasi.map(p => p.id === id ? merged : p);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.populasi) {
+      this.data.REAL.populasi = this.data.REAL.populasi.map(p => p.id === id ? merged : p);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deleteAset(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.aset_tetap) {
+      activeData.aset_tetap = activeData.aset_tetap.filter(a => a.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.aset_tetap) {
+      this.data.REAL.aset_tetap = this.data.REAL.aset_tetap.filter(a => a.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updateAset(id, updated, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.aset_tetap) activeData.aset_tetap = [];
+    const nilaiPerolehan = Number(updated.nilaiPerolehan) || 0;
+    const masaManfaatBulan = Number(updated.masaManfaatBulan) || 12;
+    const penyusutanBulanan = masaManfaatBulan > 0 ? Math.round(nilaiPerolehan / masaManfaatBulan) : 0;
+    const merged = {
+      ...updated,
+      id,
+      nilaiPerolehan,
+      masaManfaatBulan,
+      penyusutanBulanan,
+      nilaiBuku: updated.nilaiBuku !== undefined ? Number(updated.nilaiBuku) : nilaiPerolehan
+    };
+    activeData.aset_tetap = activeData.aset_tetap.map(a => a.id === id ? merged : a);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.aset_tetap) {
+      this.data.REAL.aset_tetap = this.data.REAL.aset_tetap.map(a => a.id === id ? merged : a);
+    }
+    this.saveToDisk();
+    return merged;
+  }
+
+  deleteHutangPiutang(id, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (activeData.hutang_piutang) {
+      activeData.hutang_piutang = activeData.hutang_piutang.filter(h => h.id !== id);
+    }
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.hutang_piutang) {
+      this.data.REAL.hutang_piutang = this.data.REAL.hutang_piutang.filter(h => h.id !== id);
+    }
+    this.saveToDisk();
+    return true;
+  }
+
+  updateHutangPiutang(id, updated, mode = 'REAL', userId = 'usr-default-01') {
+    const activeData = this.getUserStore(userId, mode);
+    if (!activeData.hutang_piutang) activeData.hutang_piutang = [];
+    const merged = {
+      ...updated,
+      id,
+      nominalTotal: Number(updated.nominalTotal) || 0,
+      sisaNominal: Number(updated.sisaNominal) !== undefined ? Number(updated.sisaNominal) : Number(updated.nominalTotal) || 0
+    };
+    activeData.hutang_piutang = activeData.hutang_piutang.map(h => h.id === id ? merged : h);
+    if (this.data.REAL && (userId === 'usr-default-01' || mode === 'REAL') && this.data.REAL.hutang_piutang) {
+      this.data.REAL.hutang_piutang = this.data.REAL.hutang_piutang.map(h => h.id === id ? merged : h);
+    }
+    this.saveToDisk();
+    return merged;
   }
 
   resetRealData(userId = 'usr-default-01') {

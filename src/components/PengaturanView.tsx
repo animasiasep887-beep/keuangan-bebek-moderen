@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive, Bell } from 'lucide-react';
+import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive, Bell, Pencil, X } from 'lucide-react';
 import type { Kandang, PopulasiBebek, KodeAkun, StatusPopulasi, TipeAkun, SaldoNormal } from '../types';
 import { StorageService } from '../services/storage';
 
@@ -153,18 +153,99 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
     setTimeout(() => setSuccessMsg(null), 2000);
   };
 
-  const handleDeleteKandang = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus unit kandang ini?')) {
-      StorageService.deleteKandang(id);
-      onRefreshData();
-    }
+  // Edit Kandang State
+  const [editingKandang, setEditingKandang] = useState<Kandang | null>(null);
+  const [editNamaKandang, setEditNamaKandang] = useState('');
+  const [editKapasitasKandang, setEditKapasitasKandang] = useState(500);
+  const [editStatusKandang, setEditStatusKandang] = useState<'AKTIF' | 'ISTIRAHAT' | 'PERAWATAN'>('AKTIF');
+  const [editCatatanKandang, setEditCatatanKandang] = useState('');
+
+  // Edit Populasi State
+  const [editingPopulasi, setEditingPopulasi] = useState<PopulasiBebek | null>(null);
+  const [editPopKandangId, setEditPopKandangId] = useState('');
+  const [editPopKodeBatch, setEditPopKodeBatch] = useState('');
+  const [editPopJumlahSaatIni, setEditPopJumlahSaatIni] = useState(500);
+  const [editPopJumlahAwal, setEditPopJumlahAwal] = useState(500);
+  const [editPopUmurMinggu, setEditPopUmurMinggu] = useState(20);
+  const [editPopStatus, setEditPopStatus] = useState<StatusPopulasi>('PRODUKTIF');
+  const [editPopHargaBeli, setEditPopHargaBeli] = useState(75000);
+
+  // Delete confirmation states
+  const [confirmDeleteKandangId, setConfirmDeleteKandangId] = useState<string | null>(null);
+  const [confirmDeletePopulasiId, setConfirmDeletePopulasiId] = useState<string | null>(null);
+
+  const handleConfirmDeleteKandang = (id: string) => {
+    StorageService.deleteKandang(id);
+    showToast('Kandang berhasil dihapus permanen', 'info');
+    setConfirmDeleteKandangId(null);
+    onRefreshData();
   };
 
-  const handleDeletePopulasi = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data populasi bebek ini?')) {
-      StorageService.deletePopulasi(id);
-      onRefreshData();
+  const handleStartEditKandang = (k: Kandang) => {
+    setEditingKandang(k);
+    setEditNamaKandang(k.namaKandang);
+    setEditKapasitasKandang(k.kapasitas);
+    setEditStatusKandang(k.status);
+    setEditCatatanKandang(k.catatan || '');
+  };
+
+  const handleSaveEditKandang = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingKandang) return;
+    if (!editNamaKandang.trim()) {
+      showToast('Nama kandang tidak boleh kosong!', 'warning');
+      return;
     }
+    StorageService.updateKandang({
+      ...editingKandang,
+      namaKandang: editNamaKandang,
+      kapasitas: editKapasitasKandang,
+      status: editStatusKandang,
+      catatan: editCatatanKandang,
+    });
+    showToast(`Kandang ${editNamaKandang} berhasil diperbarui!`, 'success');
+    setEditingKandang(null);
+    onRefreshData();
+  };
+
+  const handleConfirmDeletePopulasi = (id: string) => {
+    StorageService.deletePopulasi(id);
+    showToast('Batch populasi berhasil dihapus permanen', 'info');
+    setConfirmDeletePopulasiId(null);
+    onRefreshData();
+  };
+
+  const handleStartEditPopulasi = (pop: PopulasiBebek) => {
+    setEditingPopulasi(pop);
+    setEditPopKandangId(pop.kandangId);
+    setEditPopKodeBatch(pop.kodeBatch);
+    setEditPopJumlahSaatIni(pop.jumlahSaatIni);
+    setEditPopJumlahAwal(pop.jumlahAwal);
+    setEditPopUmurMinggu(pop.umurMinggu);
+    setEditPopStatus(pop.status);
+    setEditPopHargaBeli(pop.hargaBeliPerEkor);
+  };
+
+  const handleSaveEditPopulasi = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPopulasi) return;
+    if (!editPopKodeBatch.trim()) {
+      showToast('Kode batch tidak boleh kosong!', 'warning');
+      return;
+    }
+    StorageService.updatePopulasi({
+      ...editingPopulasi,
+      kandangId: editPopKandangId,
+      kodeBatch: editPopKodeBatch,
+      jumlahSaatIni: editPopJumlahSaatIni,
+      jumlahAwal: editPopJumlahAwal,
+      umurMinggu: editPopUmurMinggu,
+      status: editPopStatus,
+      hargaBeliPerEkor: editPopHargaBeli,
+    });
+    showToast(`Batch populasi ${editPopKodeBatch} berhasil diperbarui!`, 'success');
+    setEditingPopulasi(null);
+    onRefreshData();
   };
 
   return (
@@ -444,17 +525,47 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                       <p className="font-bold text-white text-sm">{k.namaKandang}</p>
                       <p className="text-xs text-slate-400">Kapasitas Maksimal: {k.kapasitas} ekor</p>
                     </div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                       <span className="px-2.5 py-1 rounded text-[10px] font-bold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                         {k.status}
                       </span>
                       <button
-                        onClick={() => handleDeleteKandang(k.id)}
-                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                        title="Hapus Kandang Ini"
+                        type="button"
+                        onClick={() => handleStartEditKandang(k)}
+                        className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                        title="Edit Kandang"
                       >
-                        <Trash2 className="w-3.5 h-3.5" />
+                        <Pencil className="w-3.5 h-3.5" />
                       </button>
+
+                      {confirmDeleteKandangId === k.id ? (
+                        <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                          <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmDeleteKandang(k.id)}
+                            className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                          >
+                            Ya
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteKandangId(null)}
+                            className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteKandangId(k.id)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                          title="Hapus Kandang Ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
@@ -619,13 +730,45 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                         </span>
                       </td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleDeletePopulasi(pop.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                          title="Hapus Populasi Ini"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditPopulasi(pop)}
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                            title="Edit Batch Populasi"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          {confirmDeletePopulasiId === pop.id ? (
+                            <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                              <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDeletePopulasi(pop.id)}
+                                className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                              >
+                                Ya
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeletePopulasiId(null)}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeletePopulasiId(pop.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                              title="Hapus Populasi Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -758,6 +901,226 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                 ))}
               </tbody>
             </table>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT KANDANG */}
+      {editingKandang && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Unit Kandang</h3>
+                  <p className="text-xs text-slate-400">Perbarui nama, kapasitas, dan status kandang.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingKandang(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditKandang} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Nama Kandang</label>
+                <input
+                  type="text"
+                  value={editNamaKandang}
+                  onChange={(e) => setEditNamaKandang(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Kapasitas (Ekor)</label>
+                <input
+                  type="number"
+                  min="1"
+                  value={editKapasitasKandang}
+                  onChange={(e) => setEditKapasitasKandang(parseInt(e.target.value) || 0)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Status Kandang</label>
+                <select
+                  value={editStatusKandang}
+                  onChange={(e) => setEditStatusKandang(e.target.value as any)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                >
+                  <option value="AKTIF">AKTIF</option>
+                  <option value="ISTIRAHAT">ISTIRAHAT</option>
+                  <option value="PERAWATAN">PERAWATAN</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Catatan</label>
+                <input
+                  type="text"
+                  placeholder="Catatan kondisi unit kandang..."
+                  value={editCatatanKandang}
+                  onChange={(e) => setEditCatatanKandang(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingKandang(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT POPULASI */}
+      {editingPopulasi && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Batch Populasi Bebek</h3>
+                  <p className="text-xs text-slate-400">Perbarui informasi populasi bebek petelur.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPopulasi(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPopulasi} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Kode Batch</label>
+                  <input
+                    type="text"
+                    value={editPopKodeBatch}
+                    onChange={(e) => setEditPopKodeBatch(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Kandang</label>
+                  <select
+                    value={editPopKandangId}
+                    onChange={(e) => setEditPopKandangId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    {kandangList.map((k) => (
+                      <option key={k.id} value={k.id}>{k.namaKandang}</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Jumlah Saat Ini (Ekor)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editPopJumlahSaatIni}
+                    onChange={(e) => setEditPopJumlahSaatIni(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold text-emerald-400"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Jumlah Awal (Ekor)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editPopJumlahAwal}
+                    onChange={(e) => setEditPopJumlahAwal(parseInt(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Umur (Minggu)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editPopUmurMinggu}
+                    onChange={(e) => setEditPopUmurMinggu(parseInt(e.target.value) || 1)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Status</label>
+                  <select
+                    value={editPopStatus}
+                    onChange={(e) => setEditPopStatus(e.target.value as StatusPopulasi)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="PRODUKTIF">PRODUKTIF</option>
+                    <option value="PEMBESARAN">PEMBESARAN</option>
+                    <option value="AFKIR">AFKIR</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Harga Beli/Ekor</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editPopHargaBeli}
+                    onChange={(e) => setEditPopHargaBeli(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingPopulasi(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

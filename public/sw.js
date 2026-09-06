@@ -1,5 +1,5 @@
 // Service Worker - PRATAMA BISNIS GRUP (Bebek Petelur SIM)
-const CACHE_NAME = 'pratama-farm-v3';
+const CACHE_NAME = 'pratama-farm-v4';
 const STATIC_ASSETS = [
   './',
   './index.html',

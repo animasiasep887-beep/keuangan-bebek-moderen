@@ -27,10 +27,21 @@
           navigator.serviceWorker.register('./sw.js')
             .then((reg) => {
               console.log('Service Worker Registered for PRATAMA BISNIS GRUP PWA', reg.scope);
+              // Force check for updates every time app opens
+              reg.update();
             })
             .catch((err) => {
               console.log('Service Worker Registration Failed', err);
             });
+        });
+
+        // Auto reload when new service worker takes control
+        let refreshing = false;
+        navigator.serviceWorker.addEventListener('controllerchange', () => {
+          if (!refreshing) {
+            refreshing = true;
+            window.location.reload();
+          }
         });
       }
     </script>

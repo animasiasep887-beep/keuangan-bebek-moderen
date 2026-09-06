@@ -99,6 +99,52 @@ app.post('/api/transaksi', (req, res) => {
     data: newTrx,
     metrics: db.calculateMetrics(mode, userId)
   });
+// Update daily harvest
+app.put('/api/panen/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const updated = db.updatePencatatanHarian(req.params.id, req.body, mode, userId);
+  res.json({ success: true, data: updated, metrics: db.calculateMetrics(mode, userId) });
+});
+
+// Delete daily harvest
+app.delete('/api/panen/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  db.deletePencatatanHarian(req.params.id, mode, userId);
+  res.json({ success: true, message: 'Data panen berhasil dihapus.', metrics: db.calculateMetrics(mode, userId) });
+});
+
+// Update pakan
+app.put('/api/pakan/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const updated = db.updatePakan(req.params.id, req.body, mode, userId);
+  res.json({ success: true, data: updated });
+});
+
+// Delete pakan
+app.delete('/api/pakan/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  db.deletePakan(req.params.id, mode, userId);
+  res.json({ success: true, message: 'Data pakan berhasil dihapus.' });
+});
+
+// Update transaction
+app.put('/api/transaksi/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  const updated = db.updateTransaksiKeuangan(req.params.id, req.body, mode, userId);
+  res.json({ success: true, data: updated, metrics: db.calculateMetrics(mode, userId) });
+});
+
+// Delete transaction
+app.delete('/api/transaksi/:id', (req, res) => {
+  const mode = req.query.mode || 'REAL';
+  const userId = req.query.userId || req.body.userId || 'usr-default-01';
+  db.deleteTransaksiKeuangan(req.params.id, mode, userId);
+  res.json({ success: true, message: 'Transaksi berhasil dihapus.', metrics: db.calculateMetrics(mode, userId) });
 });
 
 // AI Farm Consultant Chat

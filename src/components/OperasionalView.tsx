@@ -12,6 +12,8 @@ import {
   ShoppingBag,
   Calculator,
   Filter,
+  Pencil,
+  X,
 } from 'lucide-react';
 import type { PencatatanHarian, Kandang, PopulasiBebek, PakanItem } from '../types';
 import { StorageService } from '../services/storage';
@@ -115,12 +117,116 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
     }, 1500);
   };
 
-  const handleDeleteLog = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus data panen harian ini?')) {
-      const updated = logs.filter((l) => l.id !== id);
-      StorageService.savePencatatanHarian(updated);
-      onRefreshData();
+  // Delete confirm state for logs
+  const [confirmDeleteLogId, setConfirmDeleteLogId] = useState<string | null>(null);
+
+  // Edit Log State
+  const [editingLog, setEditingLog] = useState<PencatatanHarian | null>(null);
+  const [editTanggal, setEditTanggal] = useState<string>('');
+  const [editKandangId, setEditKandangId] = useState<string>('');
+  const [editPopulasiId, setEditPopulasiId] = useState<string>('');
+  const [editTelurUtuh, setEditTelurUtuh] = useState<number>(0);
+  const [editTelurRetak, setEditTelurRetak] = useState<number>(0);
+  const [editTelurRusak, setEditTelurRusak] = useState<number>(0);
+  const [editBebekMati, setEditBebekMati] = useState<number>(0);
+  const [editBebekAfkir, setEditBebekAfkir] = useState<number>(0);
+  const [editPakanKg, setEditPakanKg] = useState<number>(0);
+  const [editPakanId, setEditPakanId] = useState<string>('');
+  const [editCatatan, setEditCatatan] = useState<string>('');
+
+  // Edit Pakan State
+  const [editingPakan, setEditingPakan] = useState<PakanItem | null>(null);
+  const [editNamaPakan, setEditNamaPakan] = useState<string>('');
+  const [editMerkPakan, setEditMerkPakan] = useState<string>('');
+  const [editStokKg, setEditStokKg] = useState<number>(0);
+  const [editHargaPerKg, setEditHargaPerKg] = useState<number>(0);
+  const [editMinStokKg, setEditMinStokKg] = useState<number>(0);
+
+  const handleConfirmDeleteLog = (id: string) => {
+    StorageService.deletePencatatanHarian(id);
+    showToast('Data panen telur berhasil dihapus permanen', 'info');
+    setConfirmDeleteLogId(null);
+    onRefreshData();
+  };
+
+  const handleStartEditLog = (log: PencatatanHarian) => {
+    setEditingLog(log);
+    setEditTanggal(log.tanggal);
+    setEditKandangId(log.kandangId);
+    setEditPopulasiId(log.populasiId);
+    setEditTelurUtuh(log.telurUtuh);
+    setEditTelurRetak(log.telurRetak);
+    setEditTelurRusak(log.telurRusak);
+    setEditBebekMati(log.bebekMati);
+    setEditBebekAfkir(log.bebekAfkir);
+    setEditPakanKg(log.pakanKg);
+    setEditPakanId(log.pakanId);
+    setEditCatatan(log.catatan || '');
+  };
+
+  const handleSaveEditLog = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingLog) return;
+
+    const totalT = editTelurUtuh + editTelurRetak + editTelurRusak;
+    const pop = populasiList.find((p) => p.id === editPopulasiId);
+    const duckCount = pop ? pop.jumlahSaatIni : 500;
+    const hdp = duckCount > 0 ? Number(((totalT / duckCount) * 100).toFixed(1)) : 0;
+    const beratKg = Number(((totalT * 65) / 1000).toFixed(1));
+    const fcrVal = beratKg > 0 ? Number((editPakanKg / beratKg).toFixed(2)) : 0;
+
+    StorageService.updatePencatatanHarian({
+      ...editingLog,
+      tanggal: editTanggal,
+      kandangId: editKandangId,
+      populasiId: editPopulasiId,
+      telurUtuh: editTelurUtuh,
+      telurRetak: editTelurRetak,
+      telurRusak: editTelurRusak,
+      totalBeratTelurKg: beratKg,
+      pakanKg: editPakanKg,
+      pakanId: editPakanId,
+      bebekMati: editBebekMati,
+      bebekAfkir: editBebekAfkir,
+      hdpPercentage: hdp,
+      fcr: fcrVal,
+      catatan: editCatatan,
+    });
+
+    showToast('Data panen harian berhasil diperbarui!', 'success');
+    setEditingLog(null);
+    onRefreshData();
+  };
+
+  const handleStartEditPakan = (pakan: PakanItem) => {
+    setEditingPakan(pakan);
+    setEditNamaPakan(pakan.namaPakan);
+    setEditMerkPakan(pakan.merk);
+    setEditStokKg(pakan.stokKg);
+    setEditHargaPerKg(pakan.hargaPerKg);
+    setEditMinStokKg(pakan.minStokKg);
+  };
+
+  const handleSaveEditPakan = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingPakan) return;
+    if (!editNamaPakan.trim()) {
+      showToast('Mohon isi nama pakan!', 'warning');
+      return;
     }
+
+    StorageService.updatePakan({
+      ...editingPakan,
+      namaPakan: editNamaPakan,
+      merk: editMerkPakan || 'Lokal / Standard',
+      stokKg: editStokKg,
+      hargaPerKg: editHargaPerKg,
+      minStokKg: editMinStokKg,
+    });
+
+    showToast(`Data pakan ${editNamaPakan} berhasil diperbarui!`, 'success');
+    setEditingPakan(null);
+    onRefreshData();
   };
 
   const handleAddPakanSubmit = (e: React.FormEvent) => {
@@ -562,7 +668,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                   <th className="px-4 py-3">Pakan (Kg)</th>
                   <th className="px-4 py-3">FCR</th>
                   <th className="px-4 py-3">Mati</th>
-                  <th className="px-4 py-3 text-right">Aksi</th>
+                  <th className="px-4 py-3 text-right sticky right-0 bg-slate-900 shadow-[-4px_0_12px_rgba(0,0,0,0.6)] z-10">Aksi</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-800/60 bg-slate-950/40 font-medium">
@@ -577,7 +683,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <td className="px-4 py-3">{log.pakanKg} kg</td>
                     <td className="px-4 py-3 text-sky-400 font-bold">{log.fcr}</td>
                     <td className="px-4 py-3 text-rose-400">{log.bebekMati > 0 ? `${log.bebekMati} ekor` : '-'}</td>
-                    <td className="px-4 py-3 text-right">
+                    <td className="px-4 py-3 text-right sticky right-0 bg-slate-950/95 backdrop-blur shadow-[-4px_0_12px_rgba(0,0,0,0.6)] z-10">
                       <div className="flex items-center justify-end gap-1.5">
                         {onOpenKasir && (
                           <button
@@ -589,12 +695,41 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                           </button>
                         )}
                         <button
-                          onClick={() => handleDeleteLog(log.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                          title="Hapus Catatan"
+                          onClick={() => handleStartEditLog(log)}
+                          className="px-2 py-1 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 font-bold text-[11px] border border-blue-500/20 transition-colors flex items-center gap-1"
+                          title="Edit Catatan Panen"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          <Pencil className="w-3.5 h-3.5" />
+                          <span>Edit</span>
                         </button>
+
+                        {confirmDeleteLogId === log.id ? (
+                          <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                            <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                            <button
+                              type="button"
+                              onClick={() => handleConfirmDeleteLog(log.id)}
+                              className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                            >
+                              Ya
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteLogId(null)}
+                              className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                            >
+                              Batal
+                            </button>
+                          </div>
+                        ) : (
+                          <button
+                            onClick={() => setConfirmDeleteLogId(log.id)}
+                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                            title="Hapus Catatan"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
                       </div>
                     </td>
                   </tr>
@@ -742,25 +877,361 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                       </div>
                     </div>
                   ) : (
-                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80">
+                    <div className="flex items-center justify-between pt-2 border-t border-slate-800/80 gap-1.5">
                       <button
                         onClick={() => handleRestockPakan(pakan.id, pakan.namaPakan)}
-                        className="px-3 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 transition-colors"
+                        className="px-2.5 py-1 rounded-lg bg-emerald-500/20 text-emerald-300 font-bold text-xs hover:bg-emerald-500/30 transition-colors"
                       >
-                        + Restock (Tambah Kg)
+                        + Restock
                       </button>
-                      <button
-                        onClick={() => setConfirmDeleteId(pakan.id)}
-                        className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                        title="Hapus Pakan Ini"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button
+                          type="button"
+                          onClick={() => handleStartEditPakan(pakan)}
+                          className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                          title="Edit Jenis Pakan"
+                        >
+                          <Pencil className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteId(pakan.id)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                          title="Hapus Pakan Ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
                   )}
                 </div>
               ))
             )}
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT CATATAN PANEN TELUR HARIAN */}
+      {editingLog && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4 my-8 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Catatan Panen Telur</h3>
+                  <p className="text-xs text-slate-400">Perbarui data panen harian, pakan, dan mortalitas.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingLog(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditLog} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Tanggal</label>
+                  <input
+                    type="date"
+                    value={editTanggal}
+                    onChange={(e) => setEditTanggal(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Pilih Kandang</label>
+                  <select
+                    value={editKandangId}
+                    onChange={(e) => setEditKandangId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    {kandangList.map((k) => (
+                      <option key={k.id} value={k.id}>{k.namaKandang}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Pilih Batch Populasi</label>
+                  <select
+                    value={editPopulasiId}
+                    onChange={(e) => setEditPopulasiId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    {populasiList.map((p) => (
+                      <option key={p.id} value={p.id}>{p.kodeBatch} ({p.jumlahSaatIni} ekor)</option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Produksi Telur */}
+              <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                <span className="font-bold text-amber-400 text-xs">Produksi Telur</span>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Grade A (Utuh)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editTelurUtuh}
+                      onChange={(e) => setEditTelurUtuh(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      required
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Grade B (Retak)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editTelurRetak}
+                      onChange={(e) => setEditTelurRetak(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-slate-300 font-medium mb-1">Pecah / Rusak</label>
+                    <input
+                      type="number"
+                      min="0"
+                      value={editTelurRusak}
+                      onChange={(e) => setEditTelurRusak(parseInt(e.target.value) || 0)}
+                      className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Pakan & Mortalitas */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                  <span className="font-bold text-sky-400 text-xs">Konsumsi Pakan</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">Pakan (Kg)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        step="0.1"
+                        value={editPakanKg}
+                        onChange={(e) => setEditPakanKg(parseFloat(e.target.value) || 0)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">Jenis Pakan</label>
+                      <select
+                        value={editPakanId}
+                        onChange={(e) => setEditPakanId(e.target.value)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      >
+                        {pakanList.map((pak) => (
+                          <option key={pak.id} value={pak.id}>{pak.namaPakan}</option>
+                        ))}
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="p-3 bg-slate-950/60 rounded-xl border border-slate-800 space-y-2">
+                  <span className="font-bold text-rose-400 text-xs">Mortalitas & Afkir</span>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">Mati (Ekor)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editBebekMati}
+                        onChange={(e) => setEditBebekMati(parseInt(e.target.value) || 0)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-slate-300 font-medium mb-1">Afkir (Ekor)</label>
+                      <input
+                        type="number"
+                        min="0"
+                        value={editBebekAfkir}
+                        onChange={(e) => setEditBebekAfkir(parseInt(e.target.value) || 0)}
+                        className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Catatan */}
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Catatan Tambahan</label>
+                <input
+                  type="text"
+                  placeholder="Kondisi cuaca, sekam, dll..."
+                  value={editCatatan}
+                  onChange={(e) => setEditCatatan(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                />
+              </div>
+
+              {/* Live Preview Perhitungan */}
+              <div className="p-3 rounded-xl bg-gradient-to-r from-amber-500/10 via-emerald-500/10 to-sky-500/10 border border-amber-500/20 grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Total Telur</span>
+                  <span className="text-sm font-bold text-amber-400">{editTelurUtuh + editTelurRetak + editTelurRusak} butir</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block">Estimasi Berat</span>
+                  <span className="text-sm font-bold text-white">{(((editTelurUtuh + editTelurRetak + editTelurRusak) * 65) / 1000).toFixed(1)} kg</span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block">HDP %</span>
+                  <span className="text-sm font-bold text-emerald-400">
+                    {(() => {
+                      const pop = populasiList.find(p => p.id === editPopulasiId);
+                      const d = pop ? pop.jumlahSaatIni : 500;
+                      const tot = editTelurUtuh + editTelurRetak + editTelurRusak;
+                      return d > 0 ? ((tot / d) * 100).toFixed(1) : '0';
+                    })()}%
+                  </span>
+                </div>
+                <div>
+                  <span className="text-[10px] text-slate-400 block">FCR</span>
+                  <span className="text-sm font-bold text-sky-400">
+                    {(() => {
+                      const tot = editTelurUtuh + editTelurRetak + editTelurRusak;
+                      const b = (tot * 65) / 1000;
+                      return b > 0 ? (editPakanKg / b).toFixed(2) : '0';
+                    })()}
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingLog(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT PAKAN */}
+      {editingPakan && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Stok Pakan</h3>
+                  <p className="text-xs text-slate-400">Perbarui informasi dan jumlah stok pakan.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingPakan(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditPakan} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Nama Pakan</label>
+                <input
+                  type="text"
+                  value={editNamaPakan}
+                  onChange={(e) => setEditNamaPakan(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Merk / Produsen</label>
+                <input
+                  type="text"
+                  value={editMerkPakan}
+                  onChange={(e) => setEditMerkPakan(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Stok Tersisa (Kg)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    step="0.1"
+                    value={editStokKg}
+                    onChange={(e) => setEditStokKg(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Harga Per Kg (Rp)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editHargaPerKg}
+                    onChange={(e) => setEditHargaPerKg(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Batas Minimum Peringatan (Kg)</label>
+                <input
+                  type="number"
+                  min="0"
+                  value={editMinStokKg}
+                  onChange={(e) => setEditMinStokKg(parseFloat(e.target.value) || 0)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingPakan(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
           </div>
         </div>
       )}

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Trash2, PlusCircle, X, Building, Scale, CreditCard, Search, Share2 } from 'lucide-react';
+import { ShieldCheck, Trash2, PlusCircle, X, Building, Scale, CreditCard, Search, Share2, Pencil } from 'lucide-react';
 import type { AsetTetap, HutangPiutang } from '../types';
 import { formatIDR } from '../utils/exportUtils';
 import { StorageService } from '../services/storage';
@@ -41,6 +41,110 @@ export const AsetKewajibanView: React.FC<AsetKewajibanViewProps> = ({
   const [deskripsiHp, setDeskripsiHp] = useState('');
   const [nominalTotalHp, setNominalTotalHp] = useState<number>(0);
   const [tglJatuhTempo, setTglJatuhTempo] = useState<string>(new Date().toISOString().split('T')[0]);
+
+  // Delete confirm state
+  const [confirmDeleteAsetId, setConfirmDeleteAsetId] = useState<string | null>(null);
+  const [confirmDeleteHpId, setConfirmDeleteHpId] = useState<string | null>(null);
+
+  // Edit Aset State
+  const [editingAset, setEditingAset] = useState<AsetTetap | null>(null);
+  const [editNamaAset, setEditNamaAset] = useState('');
+  const [editKategoriAset, setEditKategoriAset] = useState<'KANDANG' | 'PERALATAN' | 'BIOLOGIS_BEBEK' | 'KENDARAAN' | 'LAINNYA'>('KANDANG');
+  const [editNilaiPerolehan, setEditNilaiPerolehan] = useState<number>(0);
+  const [editMasaManfaatBulan, setEditMasaManfaatBulan] = useState<number>(60);
+  const [editTglPerolehan, setEditTglPerolehan] = useState<string>('');
+
+  // Edit Hutang/Piutang State
+  const [editingHp, setEditingHp] = useState<HutangPiutang | null>(null);
+  const [editJenisHp, setEditJenisHp] = useState<'HUTANG' | 'PIUTANG'>('PIUTANG');
+  const [editNamaKontak, setEditNamaKontak] = useState('');
+  const [editNoHp, setEditNoHp] = useState('');
+  const [editDeskripsiHp, setEditDeskripsiHp] = useState('');
+  const [editNominalTotalHp, setEditNominalTotalHp] = useState<number>(0);
+  const [editSisaNominalHp, setEditSisaNominalHp] = useState<number>(0);
+  const [editTglJatuhTempo, setEditTglJatuhTempo] = useState<string>('');
+  const [editStatusHp, setEditStatusHp] = useState<'BELUM_LUNAS' | 'LUNAS'>('BELUM_LUNAS');
+
+  const handleConfirmDeleteAset = (id: string) => {
+    StorageService.deleteAset(id);
+    showToast('Aset berhasil dihapus permanen', 'info');
+    setConfirmDeleteAsetId(null);
+    onRefreshData();
+  };
+
+  const handleStartEditAset = (aset: AsetTetap) => {
+    setEditingAset(aset);
+    setEditNamaAset(aset.namaAset);
+    setEditKategoriAset(aset.kategori);
+    setEditNilaiPerolehan(aset.nilaiPerolehan);
+    setEditMasaManfaatBulan(aset.masaManfaatBulan);
+    setEditTglPerolehan(aset.tglPerolehan);
+  };
+
+  const handleSaveEditAset = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingAset) return;
+    if (!editNamaAset.trim() || editNilaiPerolehan <= 0) {
+      showToast('Mohon lengkapi nama aset dan nilai perolehan!', 'warning');
+      return;
+    }
+    const bulanan = editMasaManfaatBulan > 0 ? Math.round(editNilaiPerolehan / editMasaManfaatBulan) : 0;
+    StorageService.updateAset({
+      ...editingAset,
+      namaAset: editNamaAset,
+      kategori: editKategoriAset,
+      nilaiPerolehan: editNilaiPerolehan,
+      masaManfaatBulan: editMasaManfaatBulan,
+      penyusutanBulanan: bulanan,
+      nilaiBuku: editNilaiPerolehan - (editingAset.akumulasiPenyusutan || 0),
+      tglPerolehan: editTglPerolehan,
+    });
+    showToast(`Aset ${editNamaAset} berhasil diperbarui!`, 'success');
+    setEditingAset(null);
+    onRefreshData();
+  };
+
+  const handleConfirmDeleteHp = (id: string) => {
+    StorageService.deleteHutangPiutang(id);
+    showToast('Catatan hutang/piutang berhasil dihapus permanen', 'info');
+    setConfirmDeleteHpId(null);
+    onRefreshData();
+  };
+
+  const handleStartEditHp = (hp: HutangPiutang) => {
+    setEditingHp(hp);
+    setEditJenisHp(hp.jenis);
+    setEditNamaKontak(hp.namaKontak);
+    setEditNoHp(hp.noHp || '');
+    setEditDeskripsiHp(hp.deskripsi);
+    setEditNominalTotalHp(hp.nominalTotal);
+    setEditSisaNominalHp(hp.sisaNominal);
+    setEditTglJatuhTempo(hp.tglJatuhTempo);
+    setEditStatusHp(hp.status);
+  };
+
+  const handleSaveEditHp = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingHp) return;
+    if (!editNamaKontak.trim() || editNominalTotalHp <= 0) {
+      showToast('Mohon lengkapi kontak dan nominal!', 'warning');
+      return;
+    }
+    StorageService.updateHutangPiutang({
+      ...editingHp,
+      jenis: editJenisHp,
+      namaKontak: editNamaKontak,
+      noHp: editNoHp || undefined,
+      deskripsi: editDeskripsiHp,
+      nominalTotal: editNominalTotalHp,
+      sisaNominal: editSisaNominalHp,
+      tglJatuhTempo: editTglJatuhTempo,
+      status: editStatusHp,
+    });
+    showToast(`Catatan ${editJenisHp === 'PIUTANG' ? 'Piutang' : 'Hutang'} ${editNamaKontak} berhasil diperbarui!`, 'success');
+    setEditingHp(null);
+    onRefreshData();
+  };
 
   // Total Valuasi Aset Tetap
   const totalPerolehan = asetList.reduce((acc, a) => acc + a.nilaiPerolehan, 0);
@@ -110,21 +214,6 @@ export const AsetKewajibanView: React.FC<AsetKewajibanViewProps> = ({
     setShowAddForm(false);
   };
 
-  const handleDeleteAset = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus catatan aset ini?')) {
-      StorageService.deleteAset(id);
-      showToast('Aset berhasil dihapus', 'info');
-      onRefreshData();
-    }
-  };
-
-  const handleDeleteHP = (id: string) => {
-    if (confirm('Apakah Anda yakin ingin menghapus catatan hutang/piutang ini?')) {
-      StorageService.deleteHutangPiutang(id);
-      showToast('Catatan hutang/piutang berhasil dihapus', 'info');
-      onRefreshData();
-    }
-  };
 
   const handleSendQuickWA = (hp: HutangPiutang) => {
     const phoneClean = hp.noHp ? hp.noHp.replace(/\D/g, '') : '';
@@ -478,13 +567,45 @@ Mohon konfirmasi jika telah melakukan pembayaran. Terima kasih banyak! 🙏`;
                       <td className="px-4 py-3 font-black text-sky-400">{formatIDR(aset.nilaiBuku)}</td>
                       <td className="px-4 py-3 text-amber-400">{formatIDR(aset.penyusutanBulanan)}</td>
                       <td className="px-4 py-3 text-right">
-                        <button
-                          onClick={() => handleDeleteAset(aset.id)}
-                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                          title="Hapus Aset Ini"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditAset(aset)}
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                            title="Edit Aset"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          {confirmDeleteAsetId === aset.id ? (
+                            <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                              <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDeleteAset(aset.id)}
+                                className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                              >
+                                Ya
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteAsetId(null)}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteAsetId(aset.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                              title="Hapus Aset Ini"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))
@@ -644,12 +765,42 @@ Mohon konfirmasi jika telah melakukan pembayaran. Terima kasih banyak! 🙏`;
                               )}
 
                               <button
-                                onClick={() => handleDeleteHP(hp.id)}
-                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
-                                title="Hapus Catatan Ini"
+                                type="button"
+                                onClick={() => handleStartEditHp(hp)}
+                                className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 transition-colors"
+                                title="Edit Catatan"
                               >
-                                <Trash2 className="w-3.5 h-3.5" />
+                                <Pencil className="w-3.5 h-3.5" />
                               </button>
+
+                              {confirmDeleteHpId === hp.id ? (
+                                <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                                  <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleConfirmDeleteHp(hp.id)}
+                                    className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
+                                  >
+                                    Ya
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => setConfirmDeleteHpId(null)}
+                                    className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
+                                  >
+                                    Batal
+                                  </button>
+                                </div>
+                              ) : (
+                                <button
+                                  type="button"
+                                  onClick={() => setConfirmDeleteHpId(hp.id)}
+                                  className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 transition-colors"
+                                  title="Hapus Catatan Ini"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
                             </div>
                           </td>
 
@@ -673,6 +824,251 @@ Mohon konfirmasi jika telah melakukan pembayaran. Terima kasih banyak! 🙏`;
         targetItem={selectedHpItem}
         onRefreshData={onRefreshData}
       />
+
+      {/* MODAL EDIT ASET */}
+      {editingAset && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-md bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Aset Tetap</h3>
+                  <p className="text-xs text-slate-400">Perbarui nilai perolehan dan amortisasi aset.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingAset(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditAset} className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Nama Aset</label>
+                <input
+                  type="text"
+                  value={editNamaAset}
+                  onChange={(e) => setEditNamaAset(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Kategori</label>
+                  <select
+                    value={editKategoriAset}
+                    onChange={(e) => setEditKategoriAset(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="KANDANG">Kandang & Bangunan</option>
+                    <option value="PERALATAN">Peralatan & Mesin</option>
+                    <option value="BIOLOGIS_BEBEK">Aset Biologis (Bebek)</option>
+                    <option value="KENDARAAN">Kendaraan Operasional</option>
+                    <option value="LAINNYA">Lainnya</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Tgl Perolehan</label>
+                  <input
+                    type="date"
+                    value={editTglPerolehan}
+                    onChange={(e) => setEditTglPerolehan(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Nilai Perolehan (Rp)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editNilaiPerolehan}
+                    onChange={(e) => setEditNilaiPerolehan(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold text-sky-400"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Masa Manfaat (Bulan)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editMasaManfaatBulan}
+                    onChange={(e) => setEditMasaManfaatBulan(parseInt(e.target.value) || 12)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingAset(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL EDIT HUTANG / PIUTANG */}
+      {editingHp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md animate-fade-in">
+          <div className="relative w-full max-w-lg bg-slate-900 border border-slate-700/80 rounded-2xl p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+              <div className="flex items-center gap-2">
+                <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+                  <Pencil className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-bold text-white">Edit Catatan {editingHp.jenis === 'PIUTANG' ? 'Piutang' : 'Hutang'}</h3>
+                  <p className="text-xs text-slate-400">Perbarui kontak, sisa tagihan, atau status pelunasan.</p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setEditingHp(null)}
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveEditHp} className="space-y-3 text-xs">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Jenis</label>
+                  <select
+                    value={editJenisHp}
+                    onChange={(e) => setEditJenisHp(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="PIUTANG">Piutang (Tagihan Pelanggan)</option>
+                    <option value="HUTANG">Hutang Usaha (Kewajiban Supplier)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Status</label>
+                  <select
+                    value={editStatusHp}
+                    onChange={(e) => setEditStatusHp(e.target.value as any)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  >
+                    <option value="BELUM_LUNAS">BELUM LUNAS</option>
+                    <option value="LUNAS">LUNAS</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Nama Kontak / Mitra</label>
+                  <input
+                    type="text"
+                    value={editNamaKontak}
+                    onChange={(e) => setEditNamaKontak(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">No WhatsApp / HP</label>
+                  <input
+                    type="text"
+                    placeholder="Contoh: 08123456789"
+                    value={editNoHp}
+                    onChange={(e) => setEditNoHp(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Keterangan / Deskripsi</label>
+                <input
+                  type="text"
+                  value={editDeskripsiHp}
+                  onChange={(e) => setEditDeskripsiHp(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Nominal Total (Rp)</label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={editNominalTotalHp}
+                    onChange={(e) => setEditNominalTotalHp(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-slate-300 font-semibold mb-1">Sisa Tagihan (Rp)</label>
+                  <input
+                    type="number"
+                    min="0"
+                    value={editSisaNominalHp}
+                    onChange={(e) => setEditSisaNominalHp(parseFloat(e.target.value) || 0)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs font-bold text-amber-400"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Tanggal Jatuh Tempo</label>
+                <input
+                  type="date"
+                  value={editTglJatuhTempo}
+                  onChange={(e) => setEditTglJatuhTempo(e.target.value)}
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                  required
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-800">
+                <button
+                  type="button"
+                  onClick={() => setEditingHp(null)}
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                >
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold shadow-md transition-all active:scale-95"
+                >
+                  Simpan Perubahan
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

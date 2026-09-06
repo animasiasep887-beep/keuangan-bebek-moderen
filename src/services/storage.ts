@@ -76,14 +76,6 @@ export function scanAllPossiblePencatatanLogs(): PencatatanHarian[] {
     }
   } catch {}
 
-  // Guarantee historical seed log is always merged if not already present
-  INITIAL_REAL_PENCATATAN.forEach((initLog) => {
-    if (!seenIds.has(initLog.id)) {
-      seenIds.add(initLog.id);
-      foundLogs.push(initLog);
-    }
-  });
-
   return foundLogs;
 }
 
@@ -275,21 +267,7 @@ export const StorageService = {
         if (Array.isArray(data.populasi)) syncList('populasi', data.populasi);
         if (Array.isArray(data.pakan)) syncList('pakan', data.pakan);
 
-        // Merge pencatatan_harian so no local or server records are lost
-        if (Array.isArray(data.pencatatan_harian)) {
-          const existingLogsStr = localStorage.getItem(`${prefix}pencatatan_harian`);
-          const existingLogs: PencatatanHarian[] = existingLogsStr ? JSON.parse(existingLogsStr) : [];
-          const map = new Map<string, PencatatanHarian>();
-          data.pencatatan_harian.forEach((l: PencatatanHarian) => { if (l && l.id) map.set(l.id, l); });
-          existingLogs.forEach((l: PencatatanHarian) => { if (l && l.id) map.set(l.id, l); });
-          const mergedLogs = Array.from(map.values()).sort((a, b) => new Date(b.tanggal).getTime() - new Date(a.tanggal).getTime());
-          const mergedLogsStr = JSON.stringify(mergedLogs);
-          if (existingLogsStr !== mergedLogsStr) {
-            localStorage.setItem(`${prefix}pencatatan_harian`, mergedLogsStr);
-            localStorage.setItem(`${legacyPrefix}pencatatan_harian`, mergedLogsStr);
-            hasChanges = true;
-          }
-        }
+        if (Array.isArray(data.pencatatan_harian)) syncList('pencatatan_harian', data.pencatatan_harian);
 
         if (Array.isArray(data.transaksi_keuangan)) syncList('transaksi_keuangan', data.transaksi_keuangan);
         if (Array.isArray(data.aset_tetap)) syncList('aset_tetap', data.aset_tetap);
@@ -457,12 +435,7 @@ export const StorageService = {
   getPencatatanHarian: (mode?: AppMode): PencatatanHarian[] => {
     const currentMode = mode || StorageService.getMode();
     const stored = getStoredData<PencatatanHarian[]>('pencatatan_harian', [], currentMode);
-    if (currentMode === 'REAL' && (!stored || stored.length === 0)) {
-      const recovered = scanAllPossiblePencatatanLogs();
-      setStoredData('pencatatan_harian', recovered, 'REAL');
-      return recovered;
-    }
-    return stored;
+    return stored || [];
   },
   getKodeAkun: (): KodeAkun[] => getStoredData('kode_akun', INITIAL_KODE_AKUN),
   getTransaksi: (): TransaksiKeuangan[] => getStoredData('transaksi_keuangan', []),
@@ -478,6 +451,91 @@ export const StorageService = {
   saveAset: (data: AsetTetap[]) => setStoredData('aset_tetap', data),
   saveHutangPiutang: (data: HutangPiutang[]) => setStoredData('hutang_piutang', data),
 
+  // UPDATE METHODS
+  updatePencatatanHarian: (updatedLog: PencatatanHarian) => {
+    const logs = StorageService.getPencatatanHarian();
+    const updated = logs.map((l) => (l.id === updatedLog.id ? updatedLog : l));
+    StorageService.savePencatatanHarian(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pencatatan_harian';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/panen/${updatedLog.id}?mode=${StorageService.getMode()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedLog),
+      });
+    } catch {}
+  },
+
+  updatePakan: (updatedPakan: PakanItem) => {
+    const list = StorageService.getPakan();
+    const updated = list.map((p) => (p.id === updatedPakan.id ? updatedPakan : p));
+    StorageService.savePakan(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pakan';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/pakan/${updatedPakan.id}?mode=${StorageService.getMode()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedPakan),
+      });
+    } catch {}
+  },
+
+  updateTransaksi: (updatedTrx: TransaksiKeuangan) => {
+    const trxs = StorageService.getTransaksi();
+    const updated = trxs.map((t) => (t.id === updatedTrx.id ? updatedTrx : t));
+    StorageService.saveTransaksi(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'transaksi_keuangan';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/transaksi/${updatedTrx.id}?mode=${StorageService.getMode()}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedTrx),
+      });
+    } catch {}
+  },
+
+  updateKandang: (updatedKandang: Kandang) => {
+    const list = StorageService.getKandang();
+    const updated = list.map((k) => (k.id === updatedKandang.id ? updatedKandang : k));
+    StorageService.saveKandang(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'kandang';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+  },
+
+  updatePopulasi: (updatedPopulasi: PopulasiBebek) => {
+    const list = StorageService.getPopulasi();
+    const updated = list.map((p) => (p.id === updatedPopulasi.id ? updatedPopulasi : p));
+    StorageService.savePopulasi(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'populasi';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+  },
+
+  updateAset: (updatedAset: AsetTetap) => {
+    const list = StorageService.getAset();
+    const updated = list.map((a) => (a.id === updatedAset.id ? updatedAset : a));
+    StorageService.saveAset(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'aset_tetap';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+  },
+
+  updateHutangPiutang: (updatedHp: HutangPiutang) => {
+    const list = StorageService.getHutangPiutang();
+    const updated = list.map((h) => (h.id === updatedHp.id ? updatedHp : h));
+    StorageService.saveHutangPiutang(updated);
+    const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'hutang_piutang';
+    localStorage.setItem(legacyKey, JSON.stringify(updated));
+    StorageService.syncToBackend();
+  },
+
   // DELETE METHODS
   deletePencatatanHarian: (id: string) => {
     const logs = StorageService.getPencatatanHarian();
@@ -485,7 +543,24 @@ export const StorageService = {
     StorageService.savePencatatanHarian(updated);
     const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pencatatan_harian';
     localStorage.setItem(legacyKey, JSON.stringify(updated));
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.includes('pencatatan_harian')) {
+          const val = localStorage.getItem(k);
+          if (val && val.includes(id)) {
+            const arr = JSON.parse(val);
+            if (Array.isArray(arr)) {
+              localStorage.setItem(k, JSON.stringify(arr.filter((item: any) => item && item.id !== id)));
+            }
+          }
+        }
+      }
+    } catch {}
     StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/panen/${id}?mode=${StorageService.getMode()}`, { method: 'DELETE' });
+    } catch {}
   },
 
   deleteTransaksiKeuangan: (id: string) => {
@@ -495,6 +570,9 @@ export const StorageService = {
     const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'transaksi_keuangan';
     localStorage.setItem(legacyKey, JSON.stringify(updated));
     StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/transaksi/${id}?mode=${StorageService.getMode()}`, { method: 'DELETE' });
+    } catch {}
   },
 
   deleteKandang: (id: string) => {
@@ -521,7 +599,24 @@ export const StorageService = {
     StorageService.savePakan(updated);
     const legacyKey = (StorageService.getMode() === 'REAL' ? 'quack_real_' : 'quack_demo_') + 'pakan';
     localStorage.setItem(legacyKey, JSON.stringify(updated));
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const k = localStorage.key(i);
+        if (k && k.includes('pakan')) {
+          const val = localStorage.getItem(k);
+          if (val && val.includes(id)) {
+            const arr = JSON.parse(val);
+            if (Array.isArray(arr)) {
+              localStorage.setItem(k, JSON.stringify(arr.filter((item: any) => item && item.id !== id)));
+            }
+          }
+        }
+      }
+    } catch {}
     StorageService.syncToBackend();
+    try {
+      fetch(`${API_BASE}/pakan/${id}?mode=${StorageService.getMode()}`, { method: 'DELETE' });
+    } catch {}
   },
 
   deleteAset: (id: string) => {

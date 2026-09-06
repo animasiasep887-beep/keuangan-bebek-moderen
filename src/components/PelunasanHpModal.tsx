@@ -3,9 +3,11 @@ import {
   CreditCard,
   X,
   CheckCircle2,
+  Share2,
 } from 'lucide-react';
 import type { HutangPiutang } from '../types';
 import { StorageService } from '../services/storage';
+import { AuthService } from '../services/authService';
 import { formatIDR } from '../utils/exportUtils';
 import { useToast } from './ToastContainer';
 
@@ -32,9 +34,39 @@ export const PelunasanHpModal: React.FC<PelunasanHpModalProps> = ({
   const [akunKasId, setAkunKasId] = useState<string>('101'); // 101: Kas Tunai, 102: Bank
   const [catatan, setCatatan] = useState<string>('');
 
+  const handleSendReminderWA = () => {
+    if (!targetItem) return;
+    const phoneClean = targetItem.noHp ? targetItem.noHp.replace(/\D/g, '') : '';
+    const formattedPhone = phoneClean.startsWith('0') ? '62' + phoneClean.slice(1) : phoneClean;
+    const farmName = AuthService.getCurrentUser()?.farmName || 'PETERNAKAN BEBEK JAYA';
+    const ownerName = AuthService.getCurrentUser()?.name || 'H. Pratama';
+
+    const msg = `Halo Bapak/Ibu *${targetItem.namaKontak}*,
+Semoga usaha dan aktivitas Bapak/Ibu senantiasa lancar.
+
+Kami dari *${farmName}* ingin mengonfirmasikan catatan tagihan penjualan hasil panen telur bebek:
+• Keterangan : *${targetItem.deskripsi}*
+• Total Tagihan : *${formatIDR(targetItem.nominalTotal)}*
+• Sisa Belum Lunas : *${formatIDR(targetItem.sisaNominal)}*
+• Jatuh Tempo : *${targetItem.tglJatuhTempo}*
+
+Pembayaran dapat ditransfer melalui:
+BCA : 887-201-9922 a.n ${ownerName}
+BRI : 0122-01-002931-50 a.n ${ownerName}
+
+Mohon konfirmasi jika transfer telah dilakukan. Terima kasih banyak atas kerja sama baiknya! 🙏`;
+
+    const waUrl = formattedPhone
+      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+
+    window.open(waUrl, '_blank');
+  };
+
   const handleQuickPercent = (pct: number) => {
     setNominalBayar(Math.round((targetItem.sisaNominal * pct) / 100));
   };
+
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,9 +149,20 @@ export const PelunasanHpModal: React.FC<PelunasanHpModalProps> = ({
             </div>
             <div className="flex items-center justify-between text-[11px] text-slate-500 pt-1 border-t border-slate-800">
               <span>Jatuh Tempo:</span>
-              <span>{targetItem.tglJatuhTempo}</span>
+              <span className="font-bold text-amber-300">{targetItem.tglJatuhTempo}</span>
             </div>
+
+            {isPiutang && targetItem.sisaNominal > 0 && (
+              <button
+                type="button"
+                onClick={handleSendReminderWA}
+                className="w-full mt-2 py-2 rounded-xl bg-emerald-500/20 border border-emerald-500/40 text-emerald-300 hover:bg-emerald-500/30 text-xs font-bold flex items-center justify-center gap-1.5 transition-all shadow-sm"
+              >
+                <Share2 className="w-3.5 h-3.5" /> Kirim Pengingat Tagihan via WhatsApp
+              </button>
+            )}
           </div>
+
 
           {/* Nominal Pembayaran & Quick Buttons */}
           <div>

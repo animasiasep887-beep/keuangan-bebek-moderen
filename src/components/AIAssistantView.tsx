@@ -259,7 +259,35 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ metrics }) => 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Quick Prompt Chips */}
+          {/* Dokter Unggas AI: Triage Gejala Penyakit Bebek */}
+          <div className="p-3.5 bg-slate-950/70 border-t border-slate-800/80 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-extrabold text-rose-400 flex items-center gap-1.5 uppercase tracking-wider text-[11px]">
+                🩺 Dokter Unggas AI • Diagnosa Gejala Kilat:
+              </span>
+              <span className="text-[10px] text-slate-500 hidden sm:inline">Klik gejala untuk tindakan darurat & obat</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+              {[
+                { label: '🦠 Feses Hijau / Putih Encer', prompt: 'DOKTER UNGGAS AI: Bebek saya mengalami kotoran / feses warna hijau dan putih encer, nafsu makan turun. Tolong diagnosa apakah ini Kolera Bebek (Duck Cholera) atau Salmonellosis, serta berikan langkah penanganan medis darurat, obat/antibiotik yang tepat, dosis, dan sterilisasi kandang.' },
+                { label: '🥚 Telur Lembek / Tanpa Cangkang', prompt: 'DOKTER UNGGAS AI: Sejumlah bebek menghasilkan telur berkulit lunak / tipis / tanpa cangkang (egg drop). Apakah ini defisiensi kalsium, stres cuaca, atau EDS (Egg Drop Syndrome)? Tolong berikan racikan pakan suplemen mineral dan vitamin yang tepat.' },
+                { label: '📉 HDP Turun Mendadak >10%', prompt: 'DOKTER UNGGAS AI: Produksi telur (HDP) di kandang saya turun mendadak lebih dari 10% dalam 3 hari terakhir. Apa saja faktor penyebab utama (pakan, stres kebisingan, cuaca ekstrim, penyakit) dan bagaimana SOP pemulihan cepatnya?' },
+                { label: '🦆 Bebek Ngorok & Mata Berair', prompt: 'DOKTER UNGGAS AI: Bebek bersuara ngorok saat bernapas dan matanya berbusa/berair. Tolong panduan diagnosa infeksi pernapasan (Coryza/Snot) serta obat dan cara isolasinya.' },
+                { label: '⚡ Anti-Stres Pasca Vaksin/Pindah', prompt: 'DOKTER UNGGAS AI: Bagaimana SOP pemberian vitamin elektrolit anti-stres terbaik setelah bebek divaksinasi atau dipindahkan ke kandang baru agar tidak mogok bertelur?' },
+              ].map((symptom, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSendMessage(symptom.prompt)}
+                  disabled={isLoading}
+                  className="whitespace-nowrap text-[11px] px-3 py-1.5 rounded-xl bg-rose-950/40 hover:bg-rose-900/60 text-rose-200 border border-rose-500/30 hover:border-rose-400 transition-all font-semibold flex items-center gap-1 shrink-0 active:scale-95 shadow-sm"
+                >
+                  {symptom.label}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Quick Prompt Chips: Nutrisi & Finansial */}
           <div className="p-3 bg-slate-950/40 border-t border-slate-800/60 overflow-x-auto flex gap-2 no-scrollbar">
             {quickPrompts.map((prompt, idx) => (
               <button
@@ -273,6 +301,7 @@ export const AIAssistantView: React.FC<AIAssistantViewProps> = ({ metrics }) => 
               </button>
             ))}
           </div>
+
 
           {/* Input Box */}
           <div className="p-4 bg-slate-950/90 border-t border-slate-800">

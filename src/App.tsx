@@ -29,6 +29,7 @@ import { KasirPanenModal } from './components/KasirPanenModal';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModal';
 import { AuthModal } from './components/AuthModal';
+import { ProyeksiBisnisModal } from './components/ProyeksiBisnisModal';
 import { NotificationService } from './services/notificationService';
 
 export function AppContent() {
@@ -43,6 +44,7 @@ export function AppContent() {
   const [isKalkulatorOpen, setIsKalkulatorOpen] = useState<boolean>(false);
   const [isKasirOpen, setIsKasirOpen] = useState<boolean>(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState<boolean>(false);
+  const [isProyeksiOpen, setIsProyeksiOpen] = useState<boolean>(false);
 
   // Application Data States
   const [metrics, setMetrics] = useState(StorageService.calculateMetrics());
@@ -171,7 +173,9 @@ export function AppContent() {
             setActiveTab={setActiveTab}
             onOpenKalkulator={() => setIsKalkulatorOpen(true)}
             onOpenKasir={() => setIsKasirOpen(true)}
+            onOpenProyeksi={() => setIsProyeksiOpen(true)}
           />
+
         )}
 
         {activeTab === 'operasional' && (
@@ -243,6 +247,13 @@ export function AppContent() {
         onClose={() => setIsKalkulatorOpen(false)}
         populasiDefault={metrics.totalPopulasiHidup || 1000}
       />
+
+      <ProyeksiBisnisModal
+        isOpen={isProyeksiOpen}
+        onClose={() => setIsProyeksiOpen(false)}
+        populasiDefault={metrics.totalPopulasiHidup || 1000}
+      />
+
 
 
       <KasirPanenModal

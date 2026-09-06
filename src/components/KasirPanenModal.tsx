@@ -12,6 +12,8 @@ import {
 import { StorageService } from '../services/storage';
 import { formatIDR } from '../utils/exportUtils';
 import { useToast } from './ToastContainer';
+import { NotaStrukModal } from './NotaStrukModal';
+import type { NotaData } from './NotaStrukModal';
 
 interface KasirPanenModalProps {
   isOpen: boolean;
@@ -38,6 +40,10 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
   );
   const [catatan, setCatatan] = useState<string>('');
+
+  // Digital Receipt State
+  const [notaData, setNotaData] = useState<NotaData | null>(null);
+  const [isNotaOpen, setIsNotaOpen] = useState<boolean>(false);
 
   // Auto total calculation
   const totalNominal = jumlahQty * hargaPerSatuan;
@@ -82,6 +88,15 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     }
 
     try {
+      const kategoriLabel =
+        kategori === 'TELUR_GRADE_A' ? 'Telur Grade A (Utuh)' :
+        kategori === 'TELUR_GRADE_B' ? 'Telur Grade B (Retak)' :
+        kategori === 'BEBEK_AFKIR' ? 'Bebek Afkir' : 'Pupuk Kandang';
+
+      const noRef = `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(
+        100 + Math.random() * 900
+      )}`;
+
       StorageService.recordEggSalePOS({
         tanggal,
         namaPembeli,
@@ -96,19 +111,35 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
         catatan: catatan || undefined,
       });
 
+      setNotaData({
+        noRef,
+        tanggal,
+        namaPembeli,
+        noHp,
+        kategoriLabel,
+        jumlahQty,
+        satuan,
+        hargaPerSatuan,
+        totalNominal,
+        metodeBayar,
+        tglJatuhTempo: metodeBayar === 'TEMPO' ? tglJatuhTempo : undefined,
+        catatan,
+      });
+
       onRefreshData();
       showToast(
-        `Penjualan ${formatIDR(totalNominal)} berhasil dicatat ke ${metodeBayar === 'TEMPO' ? 'Piutang' : 'Kas'}!`,
+        `Penjualan ${formatIDR(totalNominal)} berhasil dicatat! Struk nota siap dicetak/dikirim.`,
         'success',
         'Penjualan Berhasil'
       );
-      onClose();
+      setIsNotaOpen(true);
     } catch (err: any) {
       showToast(`Gagal mencatat penjualan: ${err.message}`, 'error');
     }
   };
 
   if (!isOpen) return null;
+
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
@@ -356,6 +387,17 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
           </div>
         </form>
       </div>
+
+      {/* Instant Digital Receipt / Struk POS */}
+      <NotaStrukModal
+        isOpen={isNotaOpen}
+        onClose={() => {
+          setIsNotaOpen(false);
+          onClose();
+        }}
+        nota={notaData}
+      />
     </div>
   );
 };
+

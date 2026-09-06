@@ -1,10 +1,12 @@
 import React, { useState } from 'react';
-import { ShieldCheck, Trash2, PlusCircle, X, Building, Scale, CreditCard, Search } from 'lucide-react';
+import { ShieldCheck, Trash2, PlusCircle, X, Building, Scale, CreditCard, Search, Share2 } from 'lucide-react';
 import type { AsetTetap, HutangPiutang } from '../types';
 import { formatIDR } from '../utils/exportUtils';
 import { StorageService } from '../services/storage';
+import { AuthService } from '../services/authService';
 import { PelunasanHpModal } from './PelunasanHpModal';
 import { useToast } from './ToastContainer';
+
 
 interface AsetKewajibanViewProps {
   asetList: AsetTetap[];
@@ -124,8 +126,37 @@ export const AsetKewajibanView: React.FC<AsetKewajibanViewProps> = ({
     }
   };
 
+  const handleSendQuickWA = (hp: HutangPiutang) => {
+    const phoneClean = hp.noHp ? hp.noHp.replace(/\D/g, '') : '';
+    const formattedPhone = phoneClean.startsWith('0') ? '62' + phoneClean.slice(1) : phoneClean;
+    const farmName = AuthService.getCurrentUser()?.farmName || 'PETERNAKAN BEBEK JAYA';
+    const ownerName = AuthService.getCurrentUser()?.name || 'H. Pratama';
+
+    const msg = `Halo Bapak/Ibu *${hp.namaKontak}*,
+Salam hangat dari *${farmName}*.
+
+Kami mengonfirmasikan pengingat tagihan hasil panen telur bebek:
+• Keterangan : *${hp.deskripsi}*
+• Total Tagihan : *${formatIDR(hp.nominalTotal)}*
+• Sisa Belum Lunas : *${formatIDR(hp.sisaNominal)}*
+• Jatuh Tempo : *${hp.tglJatuhTempo}*
+
+Pembayaran dapat ditransfer via rekening:
+BCA: 887-201-9922 a.n ${ownerName}
+BRI: 0122-01-002931-50 a.n ${ownerName}
+
+Mohon konfirmasi jika telah melakukan pembayaran. Terima kasih banyak! 🙏`;
+
+    const waUrl = formattedPhone
+      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(msg)}`
+      : `https://api.whatsapp.com/send?text=${encodeURIComponent(msg)}`;
+
+    window.open(waUrl, '_blank');
+  };
+
   return (
     <div className="space-y-6">
+
       {/* Module Title & Tab Control */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
         <div>
@@ -584,6 +615,16 @@ export const AsetKewajibanView: React.FC<AsetKewajibanViewProps> = ({
                           </td>
                           <td className="px-4 py-3 text-right">
                             <div className="flex items-center justify-end gap-1.5">
+                              {isPiutang && !isLunas && (
+                                <button
+                                  onClick={() => handleSendQuickWA(hp)}
+                                  className="p-1.5 rounded-lg bg-emerald-500/15 hover:bg-emerald-500/30 text-emerald-300 border border-emerald-500/30 transition-colors"
+                                  title="Kirim Pengingat Tagihan via WhatsApp"
+                                >
+                                  <Share2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+
                               {!isLunas && (
                                 <button
                                   onClick={() => {
@@ -611,6 +652,7 @@ export const AsetKewajibanView: React.FC<AsetKewajibanViewProps> = ({
                               </button>
                             </div>
                           </td>
+
                         </tr>
                       );
                     })

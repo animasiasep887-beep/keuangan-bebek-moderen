@@ -25,6 +25,7 @@ interface DashboardViewProps {
   setActiveTab: (tab: string) => void;
   onOpenKalkulator?: () => void;
   onOpenKasir?: () => void;
+  onOpenProyeksi?: () => void;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -35,6 +36,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   setActiveTab,
   onOpenKalkulator,
   onOpenKasir,
+  onOpenProyeksi,
 }) => {
   const isProfit = metrics.labaRugiMtd >= 0;
 
@@ -55,6 +57,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     hdpVal >= 65 ? { label: 'Produksi Normal', color: 'text-amber-400 bg-amber-500/10' } :
     { label: 'Produksi Rendah', color: 'text-rose-400 bg-rose-500/10' };
 
+  // Business Health Scorecard (0 - 100)
+  const hdpScore = Math.min(35, Math.round((hdpVal / 85) * 35));
+  const fcrScore = fcrVal <= 3.2 ? 25 : fcrVal <= 3.8 ? 20 : 12;
+  const cashflowScore = metrics.saldoKas > 0 ? 25 : metrics.saldoKas === 0 ? 15 : 5;
+  const piutangScore = metrics.totalPiutang < Math.max(1, metrics.saldoKas * 1.5) ? 15 : 8;
+  const totalHealthScore = Math.min(100, Math.max(15, hdpScore + fcrScore + cashflowScore + piutangScore));
+
+  const healthStatus =
+    totalHealthScore >= 85
+      ? { label: 'PERFORMA PRIMA', desc: 'Peternakan sangat produktif & arus kas sehat.', color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' }
+      : totalHealthScore >= 70
+      ? { label: 'PERFORMA BAIK', desc: 'Operasional stabil, terus jaga efisiensi pakan.', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10' }
+      : { label: 'PERLU EVALUASI', desc: 'Tingkatkan HDP dan evaluasi ransum pakan.', color: 'text-rose-400 border-rose-500/30 bg-rose-500/10' };
+
   return (
     <div className="space-y-6">
       {/* Banner / Welcome Bar */}
@@ -64,7 +80,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> PRATAMA BISNIS GRUP • MONITORING REALTIME
+                <Sparkles className="w-3.5 h-3.5" /> BEBEKJAYA PRO ENTERPRISE • MONITORING REALTIME
               </span>
               <span className="text-xs text-slate-400 font-medium hidden sm:inline">
                 {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
@@ -89,12 +105,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </button>
             )}
 
+            {onOpenProyeksi && (
+              <button
+                onClick={onOpenProyeksi}
+                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+              >
+                <span>📈 Proyeksi 12 Bulan</span>
+              </button>
+            )}
+
             {onOpenKalkulator && (
               <button
                 onClick={onOpenKalkulator}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm border border-slate-700 shadow-md transition-all active:scale-95"
               >
-                <span>🧮 Kalkulator Cerdas</span>
+                <span>🧮 Kalkulator</span>
               </button>
             )}
 
@@ -105,45 +130,59 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               <PlusCircle className="w-4 h-4 text-amber-400" />
               Catat Panen
             </button>
-
-            <button
-              onClick={() => setActiveTab('keuangan')}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95"
-            >
-              <DollarSign className="w-4 h-4 text-emerald-400" />
-              Kas Masuk/Keluar
-            </button>
           </div>
         </div>
 
-        {/* Operational Health Quick Bar */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-2 sm:grid-cols-4 gap-3">
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Status HDP:</span>
-            <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${hdpStatus.color}`}>
-              {metrics.hdpHariIni}% ({hdpStatus.label})
-            </span>
+        {/* Business Health Scorecard Bar */}
+        <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+          {/* Health Score Pill */}
+          <div className="md:col-span-4 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 text-slate-950 font-black flex items-center justify-center text-lg shadow-md">
+              {totalHealthScore}
+            </div>
+            <div>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] text-slate-400 uppercase font-extrabold">Health Scorecard:</span>
+                <span className={`text-[10px] font-black px-1.5 py-0.2 rounded border ${healthStatus.color}`}>
+                  {healthStatus.label}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-300 font-medium leading-tight mt-0.5">
+                {healthStatus.desc}
+              </p>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Rasio FCR:</span>
-            <span className={`px-2 py-0.5 rounded-md text-[11px] font-bold ${fcrStatus.color}`}>
-              {fcrVal} ({fcrStatus.label})
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Piutang Panen:</span>
-            <span className="text-[11px] font-bold text-emerald-400">
-              {formatIDR(metrics.totalPiutang)}
-            </span>
-          </div>
-          <div className="flex items-center gap-2">
-            <span className="text-[11px] text-slate-400">Hutang Pakan/Ops:</span>
-            <span className="text-[11px] font-bold text-rose-400">
-              {formatIDR(metrics.totalHutang)}
-            </span>
+
+          {/* Quick Metrics */}
+          <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
+            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+              <span className="text-[10px] text-slate-400 block">Status HDP:</span>
+              <span className={`text-xs font-black ${hdpStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
+                {metrics.hdpHariIni}%
+              </span>
+            </div>
+            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+              <span className="text-[10px] text-slate-400 block">Rasio FCR:</span>
+              <span className={`text-xs font-black ${fcrStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
+                {fcrVal}
+              </span>
+            </div>
+            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+              <span className="text-[10px] text-slate-400 block">Piutang Panen:</span>
+              <span className="text-xs font-black text-emerald-400 block mt-0.5">
+                {formatIDR(metrics.totalPiutang)}
+              </span>
+            </div>
+            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+              <span className="text-[10px] text-slate-400 block">Hutang Pakan/Ops:</span>
+              <span className="text-xs font-black text-rose-400 block mt-0.5">
+                {formatIDR(metrics.totalHutang)}
+              </span>
+            </div>
           </div>
         </div>
       </div>
+
 
       {/* Low Feed Warning Banner if any */}
       {lowFeedItems.length > 0 && (

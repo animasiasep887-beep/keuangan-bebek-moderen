@@ -37,9 +37,35 @@ function getPrefix(mode?: AppMode): string {
 
 function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
   try {
+    const currentMode = mode || StorageService.getMode();
     const fullKey = getPrefix(mode) + key;
+    const legacyKey = (currentMode === 'REAL' ? 'quack_real_' : 'quack_demo_') + key;
+
     const item = localStorage.getItem(fullKey);
-    return item !== null ? JSON.parse(item) : fallback;
+    if (item !== null) {
+      const parsed = JSON.parse(item);
+      // If array is empty, check if legacy has records
+      if (Array.isArray(parsed) && parsed.length === 0) {
+        const legacyItem = localStorage.getItem(legacyKey);
+        if (legacyItem !== null) {
+          const legacyParsed = JSON.parse(legacyItem);
+          if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
+            localStorage.setItem(fullKey, legacyItem);
+            return legacyParsed as unknown as T;
+          }
+        }
+      }
+      return parsed as T;
+    }
+
+    // Fallback: check legacy key
+    const legacyItem = localStorage.getItem(legacyKey);
+    if (legacyItem !== null) {
+      localStorage.setItem(fullKey, legacyItem);
+      return JSON.parse(legacyItem) as T;
+    }
+
+    return fallback;
   } catch (error) {
     console.error(`Error reading ${key} from LocalStorage:`, error);
     return fallback;
@@ -48,14 +74,23 @@ function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
 
 function setStoredData<T>(key: string, data: T, mode?: AppMode): void {
   try {
+    const currentMode = mode || StorageService.getMode();
     const fullKey = getPrefix(mode) + key;
+    const legacyKey = (currentMode === 'REAL' ? 'quack_real_' : 'quack_demo_') + key;
+
     localStorage.setItem(fullKey, JSON.stringify(data));
+    // Mirror to legacy key so historical data is never lost across mode or user changes
+    if (currentMode === 'REAL') {
+      localStorage.setItem(legacyKey, JSON.stringify(data));
+    }
+
     // Trigger backend sync asynchronously
     StorageService.syncToBackendDebounced();
   } catch (error) {
     console.error(`Error writing ${key} to LocalStorage:`, error);
   }
 }
+
 
 let syncTimeout: any = null;
 
@@ -119,14 +154,38 @@ export const StorageService = {
 
       if (data && mode === 'REAL') {
         const prefix = getPrefix('REAL');
-        if (data.kandang && data.kandang.length > 0) localStorage.setItem(`${prefix}kandang`, JSON.stringify(data.kandang));
-        if (data.populasi && data.populasi.length > 0) localStorage.setItem(`${prefix}populasi`, JSON.stringify(data.populasi));
-        if (data.pakan && data.pakan.length > 0) localStorage.setItem(`${prefix}pakan`, JSON.stringify(data.pakan));
-        if (data.pencatatan_harian) localStorage.setItem(`${prefix}pencatatan_harian`, JSON.stringify(data.pencatatan_harian));
-        if (data.transaksi_keuangan) localStorage.setItem(`${prefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
-        if (data.aset_tetap) localStorage.setItem(`${prefix}aset_tetap`, JSON.stringify(data.aset_tetap));
-        if (data.hutang_piutang) localStorage.setItem(`${prefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
-        if (data.kode_akun) localStorage.setItem(`${prefix}kode_akun`, JSON.stringify(data.kode_akun));
+        if (data.kandang && data.kandang.length > 0) {
+          localStorage.setItem(`${prefix}kandang`, JSON.stringify(data.kandang));
+          localStorage.setItem('quack_real_kandang', JSON.stringify(data.kandang));
+        }
+        if (data.populasi && data.populasi.length > 0) {
+          localStorage.setItem(`${prefix}populasi`, JSON.stringify(data.populasi));
+          localStorage.setItem('quack_real_populasi', JSON.stringify(data.populasi));
+        }
+        if (data.pakan && data.pakan.length > 0) {
+          localStorage.setItem(`${prefix}pakan`, JSON.stringify(data.pakan));
+          localStorage.setItem('quack_real_pakan', JSON.stringify(data.pakan));
+        }
+        if (data.pencatatan_harian && data.pencatatan_harian.length > 0) {
+          localStorage.setItem(`${prefix}pencatatan_harian`, JSON.stringify(data.pencatatan_harian));
+          localStorage.setItem('quack_real_pencatatan_harian', JSON.stringify(data.pencatatan_harian));
+        }
+        if (data.transaksi_keuangan && data.transaksi_keuangan.length > 0) {
+          localStorage.setItem(`${prefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
+          localStorage.setItem('quack_real_transaksi_keuangan', JSON.stringify(data.transaksi_keuangan));
+        }
+        if (data.aset_tetap && data.aset_tetap.length > 0) {
+          localStorage.setItem(`${prefix}aset_tetap`, JSON.stringify(data.aset_tetap));
+          localStorage.setItem('quack_real_aset_tetap', JSON.stringify(data.aset_tetap));
+        }
+        if (data.hutang_piutang && data.hutang_piutang.length > 0) {
+          localStorage.setItem(`${prefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
+          localStorage.setItem('quack_real_hutang_piutang', JSON.stringify(data.hutang_piutang));
+        }
+        if (data.kode_akun && data.kode_akun.length > 0) {
+          localStorage.setItem(`${prefix}kode_akun`, JSON.stringify(data.kode_akun));
+          localStorage.setItem('quack_real_kode_akun', JSON.stringify(data.kode_akun));
+        }
         localStorage.setItem(`${prefix}initialized`, 'true');
         return true;
       }
@@ -135,7 +194,6 @@ export const StorageService = {
       return false;
     }
   },
-
 
   // Server & Bot Status
   getServerStatus: async () => {
@@ -191,34 +249,55 @@ export const StorageService = {
 
     if (!isInit) {
       if (mode === 'REAL') {
-        const defaultKandang: Kandang[] = [
-          { id: 'k-1', namaKandang: 'Kandang 1 (Utama)', kapasitas: 1000, status: 'AKTIF', catatan: 'Unit kandang utama' },
-        ];
-        const defaultPopulasi: PopulasiBebek[] = [
-          {
-            id: 'pop-1',
-            kandangId: 'k-1',
-            kodeBatch: 'BATCH-01',
-            tglMasuk: new Date().toISOString().split('T')[0],
-            jumlahAwal: 500,
-            jumlahSaatIni: 500,
-            hargaBeliPerEkor: 75000,
-            umurMinggu: 24,
-            status: 'PRODUKTIF',
-          },
-        ];
-        const defaultPakan: PakanItem[] = [
-          { id: 'pak-1', namaPakan: 'Konsentrat Bebek Petelur K-99', merk: 'Standard', stokKg: 500, hargaPerKg: 8000, minStokKg: 100 },
-        ];
+        const legacyPencatatan = localStorage.getItem('quack_real_pencatatan_harian');
+        const legacyTransaksi = localStorage.getItem('quack_real_transaksi_keuangan');
+        const legacyKandang = localStorage.getItem('quack_real_kandang');
+        const legacyPopulasi = localStorage.getItem('quack_real_populasi');
+        const legacyPakan = localStorage.getItem('quack_real_pakan');
+        const legacyAset = localStorage.getItem('quack_real_aset_tetap');
+        const legacyHp = localStorage.getItem('quack_real_hutang_piutang');
+        const legacyKodeAkun = localStorage.getItem('quack_real_kode_akun');
+
+        const defaultKandang: Kandang[] = legacyKandang
+          ? JSON.parse(legacyKandang)
+          : [
+              { id: 'k-1', namaKandang: 'Kandang 1 (Utama)', kapasitas: 1000, status: 'AKTIF', catatan: 'Unit kandang utama' },
+            ];
+        const defaultPopulasi: PopulasiBebek[] = legacyPopulasi
+          ? JSON.parse(legacyPopulasi)
+          : [
+              {
+                id: 'pop-1',
+                kandangId: 'k-1',
+                kodeBatch: 'BATCH-01',
+                tglMasuk: new Date().toISOString().split('T')[0],
+                jumlahAwal: 500,
+                jumlahSaatIni: 500,
+                hargaBeliPerEkor: 75000,
+                umurMinggu: 24,
+                status: 'PRODUKTIF',
+              },
+            ];
+        const defaultPakan: PakanItem[] = legacyPakan
+          ? JSON.parse(legacyPakan)
+          : [
+              { id: 'pak-1', namaPakan: 'Konsentrat Bebek Petelur K-99', merk: 'Standard', stokKg: 500, hargaPerKg: 8000, minStokKg: 100 },
+            ];
+
+        const defaultPencatatan = legacyPencatatan ? JSON.parse(legacyPencatatan) : [];
+        const defaultTransaksi = legacyTransaksi ? JSON.parse(legacyTransaksi) : [];
+        const defaultAset = legacyAset ? JSON.parse(legacyAset) : [];
+        const defaultHp = legacyHp ? JSON.parse(legacyHp) : [];
+        const defaultKodeAkun = legacyKodeAkun ? JSON.parse(legacyKodeAkun) : INITIAL_KODE_AKUN;
 
         setStoredData('kandang', defaultKandang, 'REAL');
         setStoredData('populasi', defaultPopulasi, 'REAL');
         setStoredData('pakan', defaultPakan, 'REAL');
-        setStoredData('kode_akun', INITIAL_KODE_AKUN, 'REAL');
-        setStoredData('pencatatan_harian', [], 'REAL');
-        setStoredData('transaksi_keuangan', [], 'REAL');
-        setStoredData('aset_tetap', [], 'REAL');
-        setStoredData('hutang_piutang', [], 'REAL');
+        setStoredData('kode_akun', defaultKodeAkun, 'REAL');
+        setStoredData('pencatatan_harian', defaultPencatatan, 'REAL');
+        setStoredData('transaksi_keuangan', defaultTransaksi, 'REAL');
+        setStoredData('aset_tetap', defaultAset, 'REAL');
+        setStoredData('hutang_piutang', defaultHp, 'REAL');
         localStorage.setItem(`${prefix}initialized`, 'true');
       } else {
         setStoredData('kandang', INITIAL_KANDANG, 'DEMO');
@@ -232,6 +311,7 @@ export const StorageService = {
         localStorage.setItem(`${prefix}initialized`, 'true');
       }
     }
+
     // Pull server data in background
     StorageService.fetchFromBackend();
   },

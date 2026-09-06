@@ -104,6 +104,32 @@ class Database {
         this.data = { ...this.data, ...parsed };
         if (!this.data.userData) this.data.userData = {};
         if (!this.data.users) this.data.users = [];
+
+        // Auto-migration: Ensure existing REAL data is preserved for default user
+        if (this.data.REAL) {
+          if (!this.data.userData['usr-default-01']) {
+            this.data.userData['usr-default-01'] = {
+              REAL: JSON.parse(JSON.stringify(this.data.REAL)),
+              DEMO: this.data.DEMO || null
+            };
+          } else {
+            // If userData has empty logs but this.data.REAL has logs, preserve existing logs
+            if (this.data.REAL.pencatatan_harian?.length > 0) {
+              const currentLogs = this.data.userData['usr-default-01'].REAL?.pencatatan_harian || [];
+              this.data.REAL.pencatatan_harian.forEach(log => {
+                if (!currentLogs.some(l => l.id === log.id)) {
+                  currentLogs.push(log);
+                }
+              });
+              if (!this.data.userData['usr-default-01'].REAL) {
+                this.data.userData['usr-default-01'].REAL = JSON.parse(JSON.stringify(this.data.REAL));
+              } else {
+                this.data.userData['usr-default-01'].REAL.pencatatan_harian = currentLogs;
+              }
+            }
+          }
+        }
+
         console.log('[DATABASE] Berhasil memuat data peternakan dari hard disk:', DB_FILE);
         return;
       }
@@ -141,16 +167,28 @@ class Database {
   getUserStore(userId = 'usr-default-01', mode = 'REAL') {
     if (!this.data.userData) this.data.userData = {};
     if (!this.data.userData[userId]) {
+      const fallbackReal = this.data.REAL ? JSON.parse(JSON.stringify(this.data.REAL)) : JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
       this.data.userData[userId] = {
-        REAL: JSON.parse(JSON.stringify(INITIAL_REAL_DATA)),
+        REAL: fallbackReal,
         DEMO: null
       };
     }
     if (!this.data.userData[userId][mode]) {
-      this.data.userData[userId][mode] = JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
+      const fallbackData = (mode === 'REAL' && this.data.REAL) ? JSON.parse(JSON.stringify(this.data.REAL)) : JSON.parse(JSON.stringify(INITIAL_REAL_DATA));
+      this.data.userData[userId][mode] = fallbackData;
     }
+
+    // Safety fallback: if user logs are empty but this.data.REAL has logs, always restore them!
+    if (mode === 'REAL' && this.data.REAL?.pencatatan_harian?.length > 0) {
+      const userLogs = this.data.userData[userId].REAL?.pencatatan_harian || [];
+      if (userLogs.length === 0) {
+        this.data.userData[userId].REAL.pencatatan_harian = JSON.parse(JSON.stringify(this.data.REAL.pencatatan_harian));
+      }
+    }
+
     return this.data.userData[userId][mode];
   }
+
 
   getAllData(mode = 'REAL', userId = 'usr-default-01') {
     const activeData = this.getUserStore(userId, mode);

@@ -1,5 +1,5 @@
 import React from 'react';
-import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon, LogOut } from 'lucide-react';
+import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon, LogOut, Bell } from 'lucide-react';
 
 import type { FarmMetricsSummary, User } from '../types';
 import type { AppMode } from '../services/storage';
@@ -95,11 +95,11 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Quick Kasir POS Button */}
+            {/* Quick Kasir POS Button - hidden on mobile because BottomNav has prominent center Kasir */}
             {onOpenKasir && (
               <button
                 onClick={onOpenKasir}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+                className="hidden md:flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 text-xs font-black shadow-md shadow-amber-500/20 active:scale-95 transition-all"
                 title="Kasir Jual Cepat Hasil Panen"
               >
                 <span>🛒 Kasir Telur</span>
@@ -117,16 +117,17 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Quick Notification Settings Button */}
+            {/* Quick Notification Settings Button - compact icon on mobile */}
             {onOpenNotifikasi && (
               <button
                 onClick={onOpenNotifikasi}
-                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 text-xs font-bold transition-all active:scale-95 relative"
+                className="flex items-center gap-1 px-2 py-1.5 sm:px-2.5 sm:py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 border border-slate-700 text-amber-400 text-xs font-bold transition-all active:scale-95 relative"
                 title="Pengingat Panen Jam 07:00 & 08:00 Pagi"
               >
                 <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping absolute -top-0.5 -right-0.5" />
                 <span className="w-2 h-2 rounded-full bg-amber-400 absolute -top-0.5 -right-0.5" />
-                <span>🔔 Pengingat</span>
+                <Bell className="w-4 h-4 text-amber-400 shrink-0" />
+                <span className="hidden sm:inline">Pengingat</span>
               </button>
             )}
 

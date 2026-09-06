@@ -1,7 +1,7 @@
 import type { User } from '../types';
 
 const USERS_STORAGE_KEY = 'quack_app_users_v1';
-const CURRENT_USER_KEY = 'quack_current_user_v1';
+const CURRENT_USER_KEY = 'quack_current_session_user';
 
 const DEFAULT_USERS: (User & { passwordHash: string })[] = [
   {
@@ -54,10 +54,14 @@ export const AuthService = {
     }
   },
 
-  // Get active logged in user (null if unauthenticated)
+  // Get active logged in user (null if unauthenticated in current session)
   getCurrentUser: (): User | null => {
     try {
-      const stored = localStorage.getItem(CURRENT_USER_KEY);
+      // Clear legacy permanent session from previous app versions
+      if (localStorage.getItem('quack_current_user_v1')) {
+        localStorage.removeItem('quack_current_user_v1');
+      }
+      const stored = sessionStorage.getItem(CURRENT_USER_KEY);
       if (stored) {
         return JSON.parse(stored);
       }
@@ -65,14 +69,15 @@ export const AuthService = {
     return null;
   },
 
-  // Set current logged in user
+  // Set current logged in user (per session)
   setCurrentUser: (user: User | null) => {
     try {
       if (user) {
-        localStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
+        sessionStorage.setItem(CURRENT_USER_KEY, JSON.stringify(user));
       } else {
-        localStorage.removeItem(CURRENT_USER_KEY);
+        sessionStorage.removeItem(CURRENT_USER_KEY);
       }
+      localStorage.removeItem('quack_current_user_v1');
     } catch (e) {
       console.error('Failed to set current user:', e);
     }
@@ -246,7 +251,10 @@ export const AuthService = {
 
   // Logout current user
   logout: () => {
-    localStorage.removeItem(CURRENT_USER_KEY);
+    try {
+      sessionStorage.removeItem(CURRENT_USER_KEY);
+      localStorage.removeItem('quack_current_user_v1');
+    } catch {}
   },
 
   // Guest demo mode

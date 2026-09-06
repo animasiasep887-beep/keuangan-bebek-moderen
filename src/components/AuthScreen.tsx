@@ -17,7 +17,7 @@ import type { User } from '../types';
 
 interface AuthScreenProps {
   onSuccess: (user: User) => void;
-  onDemoClick: () => void;
+  onDemoClick?: () => void;
 }
 
 export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }) => {
@@ -158,12 +158,10 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
           </div>
         </div>
 
-        <button
-          onClick={onDemoClick}
-          className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-slate-700/80 transition-all active:scale-95 shadow-sm"
-        >
-          Mode Demo 🧪
-        </button>
+        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-900/80 text-emerald-400 border border-emerald-500/20 text-[11px] font-bold shadow-sm">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span>Sistem Aman</span>
+        </div>
       </header>
 
       {/* Main Authentication Container */}
@@ -313,14 +311,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
                 </div>
               </div>
 
-              {/* Quick Credentials Info for User */}
-              <div className="p-2.5 rounded-xl bg-slate-900/60 border border-slate-800 text-[11px] text-slate-400 space-y-1">
-                <p className="font-bold text-amber-400 flex items-center gap-1">
-                  💡 Akun Bawaan Demo / Siap Pakai:
-                </p>
-                <p>• Email: <code className="text-white font-mono">admin@bebekjaya.com</code></p>
-                <p>• Password: <code className="text-white font-mono">admin123</code></p>
-              </div>
+              {/* Tombol Masuk */}
 
               <button
                 type="submit"
@@ -479,6 +470,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
           <span className="flex items-center gap-1">💬 Nota WhatsApp</span>
         </div>
         <p>© 2026 PRATAMA BISNIS GRUP • Didesain Khusus untuk Peternak Bebek Indonesia</p>
+        {onDemoClick && (
+          <p className="pt-0.5">
+            <button
+              type="button"
+              onClick={onDemoClick}
+              className="text-slate-500 hover:text-slate-300 text-[11px] underline transition-colors"
+            >
+              Uji Coba Cepat (Mode Demo)
+            </button>
+          </p>
+        )}
       </footer>
 
       {/* GOOGLE SIGN-IN INTERACTIVE MODAL */}

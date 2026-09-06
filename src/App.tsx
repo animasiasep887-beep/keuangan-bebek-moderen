@@ -165,30 +165,44 @@ export function AppContent() {
         currentUser={currentUser}
       />
 
-      {/* Mode & Active User Banner Indicator */}
+      {/* Mode & Active User Banner Indicator - Slim 1-line on mobile */}
       <div
-        className={`w-full py-1.5 px-4 text-center text-xs font-bold transition-all flex items-center justify-center gap-2 flex-wrap ${
+        className={`w-full py-1 sm:py-1.5 px-3 sm:px-4 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-between sm:justify-center gap-2 ${
           appMode === 'REAL'
             ? 'bg-emerald-950/70 border-b border-emerald-500/30 text-emerald-300'
             : 'bg-amber-950/70 border-b border-amber-500/30 text-amber-300'
         }`}
       >
-        {appMode === 'REAL' ? (
-          <span>🟢 <strong>AKUN REAL ({currentUser?.farmName || 'Peternakan Saya'})</strong> — Data tersimpan terisolasi per akun di disk.</span>
-        ) : (
-          <span>🧪 <strong>MODE DEMO (SIMULASI 30 HARI)</strong> — Menggunakan data contoh untuk simulasi & uji coba fitur.</span>
-        )}
+        <div className="flex items-center gap-1.5 truncate">
+          {appMode === 'REAL' ? (
+            <>
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
+              <span className="truncate">
+                <strong className="text-white">{currentUser?.farmName || 'Peternakan'}</strong>
+                <span className="hidden md:inline"> — Data tersimpan terisolasi per akun di disk</span>
+              </span>
+            </>
+          ) : (
+            <>
+              <span className="shrink-0">🧪</span>
+              <span className="truncate">
+                <strong className="text-white">MODE DEMO</strong>
+                <span className="hidden md:inline"> (SIMULASI 30 HARI) — Menggunakan data contoh simulasi</span>
+              </span>
+            </>
+          )}
+        </div>
+
         <button
           onClick={() => setIsAuthModalOpen(true)}
-          className="underline hover:text-white font-extrabold text-[11px] bg-slate-900/60 px-2 py-0.5 rounded-lg border border-slate-700 ml-1"
+          className="shrink-0 text-[10px] sm:text-[11px] font-extrabold bg-slate-900/80 hover:bg-slate-800 text-amber-300 px-2 py-0.5 rounded-lg border border-slate-700/80 transition-colors"
         >
-          👤 {currentUser?.name} ({currentUser?.plan}) - Ganti / Login Akun
+          👤 {currentUser?.name || 'Akun'}
         </button>
       </div>
 
-
-      {/* Main Content Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6 pb-28 lg:pb-12">
+      {/* Main Content Body with generous bottom clearance for BottomNav on mobile */}
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-36 sm:pb-32 lg:pb-12">
         {activeTab === 'dashboard' && (
           <DashboardView
             metrics={metrics}

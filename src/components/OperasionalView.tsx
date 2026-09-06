@@ -56,6 +56,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [filterKandangId, setFilterKandangId] = useState<string>('all');
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [showGuide, setShowGuide] = useState<boolean>(false);
 
   // Form State - Tambah Pakan Baru / Restock
   const [showPakanForm, setShowPakanForm] = useState<boolean>(false);
@@ -189,7 +190,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
           {onOpenKasir && (
             <button
               onClick={onOpenKasir}
-              className="px-3 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-1.5"
+              className="hidden sm:flex px-3 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all items-center gap-1.5"
             >
               <ShoppingBag className="w-4 h-4" />
               Kasir Jual Telur
@@ -199,17 +200,17 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
           {onOpenKalkulator && (
             <button
               onClick={onOpenKalkulator}
-              className="px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 transition-all flex items-center gap-1.5"
+              className="hidden sm:flex px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 transition-all items-center gap-1.5"
             >
               <Calculator className="w-4 h-4" />
               Kalkulator Ransum
             </button>
           )}
 
-          <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
+          <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-between sm:justify-start">
             <button
               onClick={() => setActiveTabLocal('form')}
-              className={`px-3.5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'form'
                   ? 'bg-amber-500 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
@@ -220,18 +221,18 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTabLocal('table')}
-              className={`px-3.5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'table'
                   ? 'bg-amber-500 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
               }`}
             >
               <Layers className="w-4 h-4" />
-              Riwayat Panen
+              Riwayat
             </button>
             <button
               onClick={() => setActiveTabLocal('pakan')}
-              className={`px-3.5 py-2 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'pakan'
                   ? 'bg-amber-500 text-slate-950 shadow-md'
                   : 'text-slate-400 hover:text-slate-200'
@@ -254,42 +255,56 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
       {/* VIEW 1: Form Input Panen Harian */}
       {activeTab === 'form' && (
         <div className="space-y-4">
-          {/* Card Panduan & Contoh Pengisian */}
-          <div className="p-4 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-slate-300 space-y-2 text-xs">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2 font-bold text-amber-400 text-sm">
-                <span className="text-base">💡</span> Panduan & Contoh Pengisian Form Panen
-              </div>
+          {/* Card Panduan & Contoh Pengisian (Collapsible untuk Layar HP) */}
+          <div className="rounded-2xl bg-amber-500/10 border border-amber-500/20 text-slate-300 text-xs overflow-hidden">
+            <div className="p-3 sm:p-4 flex items-center justify-between gap-2">
+              <button
+                type="button"
+                onClick={() => setShowGuide(!showGuide)}
+                className="flex items-center gap-2 font-bold text-amber-400 hover:text-amber-300 text-left transition-colors"
+              >
+                <span>💡</span>
+                <span className="text-xs sm:text-sm">Panduan & Contoh Pengisian Form Panen</span>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/20 text-amber-300">
+                  {showGuide ? 'Tutup ▴' : 'Lihat Contoh ▾'}
+                </span>
+              </button>
               {setActiveTab && (
                 <button
+                  type="button"
                   onClick={() => setActiveTab('pengaturan')}
-                  className="text-xs text-amber-400 hover:underline font-bold"
+                  className="text-[11px] text-amber-400 hover:underline font-bold shrink-0 hidden sm:inline"
                 >
-                  ⚙️ Kelola Batch Populasi Bebek & Kandang →
+                  ⚙️ Kelola Batch Populasi →
                 </button>
               )}
             </div>
-            <p className="text-slate-300">
-              Formulir di bawah ini <strong>murni dari 0 (kosong)</strong> agar Anda dapat memasukkan data asli peternakan Anda. Berikut adalah contoh standar pengisian data harian:
-            </p>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-[11px]">
-              <div>
-                <span className="text-slate-400 block">Contoh Telur Utuh:</span>
-                <span className="font-bold text-amber-400">850 butir</span>
+
+            {showGuide && (
+              <div className="px-3 sm:px-4 pb-3 sm:pb-4 space-y-2 border-t border-amber-500/15 pt-3 animate-fadeIn">
+                <p className="text-slate-300">
+                  Formulir di bawah ini <strong>murni dari 0 (kosong)</strong> agar Anda dapat memasukkan data asli peternakan Anda. Berikut adalah contoh standar pengisian data harian:
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 bg-slate-900/80 p-3 rounded-xl border border-slate-800 text-[11px]">
+                  <div>
+                    <span className="text-slate-400 block">Contoh Telur Utuh:</span>
+                    <span className="font-bold text-amber-400">850 butir</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Contoh Telur Retak:</span>
+                    <span className="font-bold text-orange-400">20 butir</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Contoh Pakan Harian:</span>
+                    <span className="font-bold text-sky-400">360 kg</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 block">Hasil HDP %:</span>
+                    <span className="font-bold text-emerald-400">Auto Hitung 87.0%</span>
+                  </div>
+                </div>
               </div>
-              <div>
-                <span className="text-slate-400 block">Contoh Telur Retak:</span>
-                <span className="font-bold text-orange-400">20 butir</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Contoh Pakan Harian:</span>
-                <span className="font-bold text-sky-400">360 kg</span>
-              </div>
-              <div>
-                <span className="text-slate-400 block">Hasil HDP %:</span>
-                <span className="font-bold text-emerald-400">Auto Hitung 87.0%</span>
-              </div>
-            </div>
+            )}
           </div>
 
           <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
@@ -477,12 +492,12 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             />
           </div>
 
-          <div className="flex justify-end">
+          <div className="flex justify-end pt-3">
             <button
               type="submit"
-              className="px-6 py-3 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold text-sm shadow-xl shadow-amber-500/20 active:scale-95 transition-all"
+              className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
-              Simpan Pencatatan Harian
+              <span>Simpan Pencatatan Harian</span>
             </button>
           </div>
         </form>

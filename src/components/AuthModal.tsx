@@ -13,7 +13,6 @@ import {
   Crown,
   CheckCircle2,
   AlertCircle,
-  Users,
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
 import type { User } from '../types';
@@ -25,7 +24,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserChanged }) => {
-  const [tab, setTab] = useState<'LOGIN' | 'REGISTER' | 'USERS'>('LOGIN');
+  const [tab, setTab] = useState<'LOGIN' | 'REGISTER'>('LOGIN');
 
   // Form states
   const [loginEmail, setLoginEmail] = useState('');
@@ -42,7 +41,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
   const [loading, setLoading] = useState(false);
 
   const currentUser = AuthService.getCurrentUser();
-  const registeredUsers = AuthService.getUsers();
 
   useEffect(() => {
     if (isOpen) {
@@ -104,25 +102,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleSwitchAccount = (user: User & { passwordHash: string }) => {
-    const safeUser: User = {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      farmName: user.farmName,
-      role: user.role,
-      plan: user.plan,
-      createdAt: user.createdAt,
-      avatarUrl: user.avatarUrl,
-    };
-    AuthService.setCurrentUser(safeUser);
-    setSuccessMessage(`Beralih ke akun ${user.name}`);
-    setTimeout(() => {
-      onUserChanged(safeUser);
-      onClose();
-    }, 400);
   };
 
   const handleGuestMode = () => {
@@ -202,17 +181,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             }`}
           >
             <UserPlus className="w-4 h-4" /> Buat Akun Baru
-          </button>
-          <button
-            onClick={() => setTab('USERS')}
-            className={`px-3 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 ${
-              tab === 'USERS'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
-            }`}
-            title="Pilih Pengguna Registered"
-          >
-            <Users className="w-4 h-4" /> ({registeredUsers.length})
           </button>
         </div>
 
@@ -359,52 +327,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 </button>
               </div>
             </form>
-          )}
-
-          {tab === 'USERS' && (
-            <div className="space-y-3">
-              <div className="text-xs font-bold text-slate-400 mb-2">
-                Pilih Akun yang Tersimpan di Perangkat Ini:
-              </div>
-              {registeredUsers.map((u) => {
-                const isCurrent = currentUser?.id === u.id;
-                return (
-                  <div
-                    key={u.id}
-                    onClick={() => handleSwitchAccount(u)}
-                    className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between ${
-                      isCurrent
-                        ? 'bg-amber-500/10 border-amber-500/60 text-white'
-                        : 'bg-slate-950/60 border-slate-800 text-slate-300 hover:border-slate-700 hover:bg-slate-950'
-                    }`}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-slate-800 border border-slate-700 flex items-center justify-center font-bold text-amber-400 text-base">
-                        {u.name.charAt(0)}
-                      </div>
-                      <div>
-                        <div className="text-sm font-bold flex items-center gap-2">
-                          {u.name}
-                          <span className="text-[10px] bg-slate-800 px-1.5 py-0.5 rounded text-amber-300 font-extrabold">
-                            {u.plan}
-                          </span>
-                        </div>
-                        <div className="text-xs text-slate-400">{u.farmName} ({u.email})</div>
-                      </div>
-                    </div>
-                    {isCurrent ? (
-                      <span className="text-xs font-bold text-emerald-400 bg-emerald-950 px-2 py-1 rounded-lg border border-emerald-500/40">
-                        Aktif
-                      </span>
-                    ) : (
-                      <button className="text-xs font-bold text-amber-400 hover:underline">
-                        Ganti &gt;
-                      </button>
-                    )}
-                  </div>
-                );
-              })}
-            </div>
           )}
         </div>
 

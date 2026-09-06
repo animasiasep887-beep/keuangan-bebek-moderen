@@ -25,9 +25,67 @@ import {
 export type AppMode = 'REAL' | 'DEMO';
 
 const MODE_KEY = 'quack_active_mode';
-const API_BASE = typeof window !== 'undefined' && window.location.hostname === 'localhost' && window.location.port === '5173'
-  ? 'http://localhost:3001/api'
+const API_BASE = typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+  ? (window.location.port === '3001' ? '/api' : 'http://localhost:3001/api')
   : '/api';
+
+export const INITIAL_REAL_PENCATATAN: PencatatanHarian[] = [
+  {
+    id: 'log-1787941454271',
+    tanggal: '2026-08-28',
+    kandangId: 'k-1',
+    populasiId: 'pop-1',
+    telurUtuh: 10,
+    telurRetak: 0,
+    telurRusak: 0,
+    totalBeratTelurKg: 0.65,
+    pakanId: 'pak-1',
+    pakanKg: 0,
+    bebekMati: 0,
+    bebekAfkir: 0,
+    hdpPercentage: 2,
+    fcr: 0,
+    catatan: 'Auto AI (via Telegram: "saya panen 10 telur")',
+    createdBy: 'Telegram (@あなたの敵)',
+  },
+];
+
+export function scanAllPossiblePencatatanLogs(): PencatatanHarian[] {
+  const foundLogs: PencatatanHarian[] = [];
+  const seenIds = new Set<string>();
+
+  try {
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && key.includes('pencatatan_harian')) {
+        try {
+          const val = localStorage.getItem(key);
+          if (val) {
+            const parsed = JSON.parse(val);
+            if (Array.isArray(parsed) && parsed.length > 0) {
+              parsed.forEach((item: any) => {
+                if (item && item.id && !seenIds.has(item.id)) {
+                  seenIds.add(item.id);
+                  foundLogs.push(item);
+                }
+              });
+            }
+          }
+        } catch {}
+      }
+    }
+  } catch {}
+
+  // Guarantee historical seed log is always merged if not already present
+  INITIAL_REAL_PENCATATAN.forEach((initLog) => {
+    if (!seenIds.has(initLog.id)) {
+      seenIds.add(initLog.id);
+      foundLogs.push(initLog);
+    }
+  });
+
+  return foundLogs;
+}
 
 function getPrefix(mode?: AppMode): string {
   const currentMode = mode || StorageService.getMode();
@@ -46,6 +104,15 @@ function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
       const parsed = JSON.parse(item);
       // If array is empty, check if legacy has records
       if (Array.isArray(parsed) && parsed.length === 0) {
+        if (key === 'pencatatan_harian' && currentMode === 'REAL') {
+          const recovered = scanAllPossiblePencatatanLogs();
+          if (recovered.length > 0) {
+            localStorage.setItem(fullKey, JSON.stringify(recovered));
+            localStorage.setItem(legacyKey, JSON.stringify(recovered));
+            return recovered as unknown as T;
+          }
+        }
+
         const legacyItem = localStorage.getItem(legacyKey);
         if (legacyItem !== null) {
           const legacyParsed = JSON.parse(legacyItem);
@@ -61,13 +128,26 @@ function getStoredData<T>(key: string, fallback: T, mode?: AppMode): T {
     // Fallback: check legacy key
     const legacyItem = localStorage.getItem(legacyKey);
     if (legacyItem !== null) {
-      localStorage.setItem(fullKey, legacyItem);
-      return JSON.parse(legacyItem) as T;
+      const legacyParsed = JSON.parse(legacyItem);
+      if (Array.isArray(legacyParsed) && legacyParsed.length > 0) {
+        localStorage.setItem(fullKey, legacyItem);
+        return legacyParsed as unknown as T;
+      }
+    }
+
+    if (key === 'pencatatan_harian' && currentMode === 'REAL') {
+      const recovered = scanAllPossiblePencatatanLogs();
+      localStorage.setItem(fullKey, JSON.stringify(recovered));
+      localStorage.setItem(legacyKey, JSON.stringify(recovered));
+      return recovered as unknown as T;
     }
 
     return fallback;
   } catch (error) {
     console.error(`Error reading ${key} from LocalStorage:`, error);
+    if (key === 'pencatatan_harian' && (mode || StorageService.getMode()) === 'REAL') {
+      return INITIAL_REAL_PENCATATAN as unknown as T;
+    }
     return fallback;
   }
 }
@@ -143,48 +223,93 @@ export const StorageService = {
     }
   },
 
-  // Pull latest data from Backend Server
+  // Pull latest data from Backend Server or static public data bundle
   fetchFromBackend: async (): Promise<boolean> => {
     try {
       const mode = StorageService.getMode();
       const userId = AuthService.getCurrentUser()?.id || 'usr-default-01';
-      const res = await fetch(`${API_BASE}/data?mode=${mode}&userId=${userId}`);
-      if (!res.ok) return false;
-      const data = await res.json();
+
+      // Candidates for data fetching:
+      // 1. Current API_BASE
+      // 2. Localhost 3001
+      // 3. Static public data bundle (works on GitHub Pages!)
+      const endpoints = [
+        `${API_BASE}/data?mode=${mode}&userId=${userId}`,
+        `http://localhost:3001/api/data?mode=${mode}&userId=${userId}`,
+        `./data/farm_database.json`,
+        `${import.meta.env.BASE_URL}data/farm_database.json`,
+      ];
+
+      let rawData: any = null;
+      for (const url of endpoints) {
+        try {
+          const res = await fetch(url, { signal: AbortSignal.timeout(2500) });
+          if (res.ok) {
+            const json = await res.json();
+            if (json) {
+              if (json.REAL || json.kandang || json.pencatatan_harian) {
+                rawData = json;
+                break;
+              }
+            }
+          }
+        } catch {
+          // ignore and try next
+        }
+      }
+
+      if (!rawData) return false;
+
+      const data = rawData.REAL ? rawData.REAL : rawData;
 
       if (data && mode === 'REAL') {
         const prefix = getPrefix('REAL');
+        const legacyPrefix = 'quack_real_';
+
+        const mergeById = (existingJson: string | null, incomingList: any[]) => {
+          const existingList = existingJson ? JSON.parse(existingJson) : [];
+          const map = new Map();
+          (incomingList || []).forEach((item: any) => { if (item && item.id) map.set(item.id, item); });
+          (existingList || []).forEach((item: any) => { if (item && item.id) map.set(item.id, item); });
+          return Array.from(map.values());
+        };
+
         if (data.kandang && data.kandang.length > 0) {
           localStorage.setItem(`${prefix}kandang`, JSON.stringify(data.kandang));
-          localStorage.setItem('quack_real_kandang', JSON.stringify(data.kandang));
+          localStorage.setItem(`${legacyPrefix}kandang`, JSON.stringify(data.kandang));
         }
         if (data.populasi && data.populasi.length > 0) {
           localStorage.setItem(`${prefix}populasi`, JSON.stringify(data.populasi));
-          localStorage.setItem('quack_real_populasi', JSON.stringify(data.populasi));
+          localStorage.setItem(`${legacyPrefix}populasi`, JSON.stringify(data.populasi));
         }
         if (data.pakan && data.pakan.length > 0) {
           localStorage.setItem(`${prefix}pakan`, JSON.stringify(data.pakan));
-          localStorage.setItem('quack_real_pakan', JSON.stringify(data.pakan));
+          localStorage.setItem(`${legacyPrefix}pakan`, JSON.stringify(data.pakan));
         }
-        if (data.pencatatan_harian && data.pencatatan_harian.length > 0) {
-          localStorage.setItem(`${prefix}pencatatan_harian`, JSON.stringify(data.pencatatan_harian));
-          localStorage.setItem('quack_real_pencatatan_harian', JSON.stringify(data.pencatatan_harian));
+
+        // Merge pencatatan_harian so no local or server records are lost
+        const incomingLogs = data.pencatatan_harian || [];
+        const mergedLogs = mergeById(localStorage.getItem(`${prefix}pencatatan_harian`), incomingLogs);
+        if (mergedLogs.length > 0) {
+          localStorage.setItem(`${prefix}pencatatan_harian`, JSON.stringify(mergedLogs));
+          localStorage.setItem(`${legacyPrefix}pencatatan_harian`, JSON.stringify(mergedLogs));
         }
+
         if (data.transaksi_keuangan && data.transaksi_keuangan.length > 0) {
           localStorage.setItem(`${prefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
-          localStorage.setItem('quack_real_transaksi_keuangan', JSON.stringify(data.transaksi_keuangan));
+          localStorage.setItem(`${legacyPrefix}transaksi_keuangan`, JSON.stringify(data.transaksi_keuangan));
         }
         if (data.aset_tetap && data.aset_tetap.length > 0) {
           localStorage.setItem(`${prefix}aset_tetap`, JSON.stringify(data.aset_tetap));
-          localStorage.setItem('quack_real_aset_tetap', JSON.stringify(data.aset_tetap));
+          localStorage.setItem(`${legacyPrefix}aset_tetap`, JSON.stringify(data.aset_tetap));
         }
         if (data.hutang_piutang && data.hutang_piutang.length > 0) {
           localStorage.setItem(`${prefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
-          localStorage.setItem('quack_real_hutang_piutang', JSON.stringify(data.hutang_piutang));
+          localStorage.setItem(`${legacyPrefix}hutang_piutang`, JSON.stringify(data.hutang_piutang));
         }
         if (data.kode_akun && data.kode_akun.length > 0) {
           localStorage.setItem(`${prefix}kode_akun`, JSON.stringify(data.kode_akun));
-          localStorage.setItem('quack_real_kode_akun', JSON.stringify(data.kode_akun));
+          localStorage.setItem(`${legacyPrefix}kode_akun`, JSON.stringify(data.kode_akun));
         }
         localStorage.setItem(`${prefix}initialized`, 'true');
         return true;
@@ -249,7 +374,6 @@ export const StorageService = {
 
     if (!isInit) {
       if (mode === 'REAL') {
-        const legacyPencatatan = localStorage.getItem('quack_real_pencatatan_harian');
         const legacyTransaksi = localStorage.getItem('quack_real_transaksi_keuangan');
         const legacyKandang = localStorage.getItem('quack_real_kandang');
         const legacyPopulasi = localStorage.getItem('quack_real_populasi');
@@ -284,7 +408,8 @@ export const StorageService = {
               { id: 'pak-1', namaPakan: 'Konsentrat Bebek Petelur K-99', merk: 'Standard', stokKg: 500, hargaPerKg: 8000, minStokKg: 100 },
             ];
 
-        const defaultPencatatan = legacyPencatatan ? JSON.parse(legacyPencatatan) : [];
+        const scannedLogs = scanAllPossiblePencatatanLogs();
+        const defaultPencatatan = scannedLogs.length > 0 ? scannedLogs : INITIAL_REAL_PENCATATAN;
         const defaultTransaksi = legacyTransaksi ? JSON.parse(legacyTransaksi) : [];
         const defaultAset = legacyAset ? JSON.parse(legacyAset) : [];
         const defaultHp = legacyHp ? JSON.parse(legacyHp) : [];
@@ -344,7 +469,16 @@ export const StorageService = {
   getKandang: (): Kandang[] => getStoredData('kandang', []),
   getPopulasi: (): PopulasiBebek[] => getStoredData('populasi', []),
   getPakan: (): PakanItem[] => getStoredData('pakan', []),
-  getPencatatanHarian: (): PencatatanHarian[] => getStoredData('pencatatan_harian', []),
+  getPencatatanHarian: (mode?: AppMode): PencatatanHarian[] => {
+    const currentMode = mode || StorageService.getMode();
+    const stored = getStoredData<PencatatanHarian[]>('pencatatan_harian', [], currentMode);
+    if (currentMode === 'REAL' && (!stored || stored.length === 0)) {
+      const recovered = scanAllPossiblePencatatanLogs();
+      setStoredData('pencatatan_harian', recovered, 'REAL');
+      return recovered;
+    }
+    return stored;
+  },
   getKodeAkun: (): KodeAkun[] => getStoredData('kode_akun', INITIAL_KODE_AKUN),
   getTransaksi: (): TransaksiKeuangan[] => getStoredData('transaksi_keuangan', []),
   getAset: (): AsetTetap[] => getStoredData('aset_tetap', []),

@@ -1,11 +1,12 @@
 // Service Worker - PRATAMA BISNIS GRUP (Bebek Petelur SIM)
-const CACHE_NAME = 'pratama-farm-v1';
+const CACHE_NAME = 'pratama-farm-v2';
 const STATIC_ASSETS = [
   './',
   './index.html',
   './favicon.svg',
   './icons.svg',
   './manifest.json',
+  './data/farm_database.json',
 ];
 
 // Install Event

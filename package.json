@@ -8,6 +8,7 @@
     "server": "node server/server.js",
     "start": "node server/server.js",
     "dev:all": "concurrently -n \"SERVER,CLIENT\" -c \"bgBlue.bold,bgMagenta.bold\" \"node server/server.js\" \"vite\"",
+    "prebuild": "node -e \"import('node:fs').then(fs => { fs.mkdirSync('public/data', { recursive: true }); fs.copyFileSync('server/data/farm_database.json', 'public/data/farm_database.json'); })\"",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview"

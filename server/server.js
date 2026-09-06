@@ -99,6 +99,8 @@ app.post('/api/transaksi', (req, res) => {
     data: newTrx,
     metrics: db.calculateMetrics(mode, userId)
   });
+});
+
 // Update daily harvest
 app.put('/api/panen/:id', (req, res) => {
   const mode = req.query.mode || 'REAL';

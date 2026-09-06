@@ -10,11 +10,11 @@ import {
   Mail,
   Building2,
   User as UserIcon,
-  Crown,
   CheckCircle2,
   AlertCircle,
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
+import { BrandLogo } from './BrandLogo';
 import type { User } from '../types';
 
 interface AuthModalProps {
@@ -123,9 +123,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
           </button>
 
           <div className="flex items-center gap-3">
-            <div className="p-3 bg-gradient-to-tr from-amber-500 to-amber-400 rounded-2xl text-slate-950 shadow-lg shadow-amber-500/30">
-              <Crown className="w-6 h-6" />
-            </div>
+            <BrandLogo size="md" />
             <div>
               <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
                 Akun & Multi-User <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />

@@ -13,6 +13,7 @@ import {
   AlertCircle,
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
+import { BrandLogo } from './BrandLogo';
 import type { User } from '../types';
 
 interface AuthScreenProps {
@@ -145,9 +146,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
       {/* Top Brand Bar */}
       <header className="max-w-md w-full mx-auto flex items-center justify-between z-10 pt-2">
         <div className="flex items-center gap-2.5">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-br from-amber-400 to-amber-600 flex items-center justify-center text-slate-950 shadow-lg shadow-amber-500/20 font-black text-xl">
-            🦆
-          </div>
+          <BrandLogo size="md" />
           <div>
             <h1 className="text-base font-black tracking-tight text-white flex items-center gap-1.5">
               PRATAMA BISNIS GRUP
@@ -167,8 +166,11 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
       {/* Main Authentication Container */}
       <main className="max-w-md w-full mx-auto my-auto z-10 py-6">
         <div className="glass-panel-glow rounded-3xl p-6 sm:p-8 border border-slate-800/90 shadow-2xl relative">
-          {/* Header Title */}
+          {/* Header Title & Brand Emblem */}
           <div className="text-center mb-6">
+            <div className="flex justify-center mb-3">
+              <BrandLogo size="lg" />
+            </div>
             <span className="inline-flex items-center gap-1 px-3 py-1 rounded-full text-[11px] font-extrabold bg-amber-500/15 text-amber-400 border border-amber-500/30 mb-2.5 shadow-sm">
               <Sparkles className="w-3.5 h-3.5" /> APLIKASI KHUSUS PETERNAK BEBEK
             </span>

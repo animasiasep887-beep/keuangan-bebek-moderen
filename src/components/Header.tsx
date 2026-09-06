@@ -1,5 +1,6 @@
 import React from 'react';
 import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon, LogOut, Bell } from 'lucide-react';
+import { BrandLogo } from './BrandLogo';
 
 import type { FarmMetricsSummary, User } from '../types';
 import type { AppMode } from '../services/storage';
@@ -42,12 +43,10 @@ export const Header: React.FC<HeaderProps> = ({
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Brand & Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => setActiveTab('dashboard')}>
-            <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-amber-400 to-yellow-300 flex items-center justify-center shadow-lg shadow-amber-500/20">
-              <Egg className="w-6 h-6 sm:w-7 sm:h-7 text-slate-950 stroke-[2.5]" />
-            </div>
+            <BrandLogo size="md" />
             <div>
               <div className="flex items-center gap-2">
-                <h1 className="text-lg sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5">
+                <h1 className="text-base sm:text-xl font-black tracking-tight text-white flex items-center gap-1.5">
                   PRATAMA <span className="gradient-text-gold">BISNIS GRUP</span>
                 </h1>
                 <span className="hidden sm:inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold bg-amber-500/10 text-amber-400 border border-amber-500/20">

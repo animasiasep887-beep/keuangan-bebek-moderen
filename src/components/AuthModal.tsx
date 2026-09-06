@@ -85,7 +85,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
       const res = await AuthService.register({
         name: regName,
         email: regEmail,
-        passwordHash: regPassword,
+        password: regPassword,
         farmName: regFarmName,
         plan: regPlan,
       });

@@ -1,15 +1,5 @@
 import { useState, useEffect } from 'react';
-import {
-  Layers,
-  Egg,
-  Wallet,
-  ShieldCheck,
-  TrendingUp,
-  Settings,
-  Bot,
-  ShoppingBag,
-  Bell,
-} from 'lucide-react';
+
 
 import { StorageService } from './services/storage';
 import type { AppMode } from './services/storage';
@@ -31,13 +21,15 @@ import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModa
 import { AuthModal } from './components/AuthModal';
 import { ProyeksiBisnisModal } from './components/ProyeksiBisnisModal';
 import { NotificationService } from './services/notificationService';
+import { AuthScreen } from './components/AuthScreen';
+import { BottomNav } from './components/BottomNav';
 
 export function AppContent() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [appMode, setAppMode] = useState<AppMode>(StorageService.getMode());
 
   // User Authentication State
-  const [currentUser, setCurrentUser] = useState<User>(AuthService.getCurrentUser());
+  const [currentUser, setCurrentUser] = useState<User | null>(() => AuthService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
 
   // Modal tools state
@@ -119,10 +111,42 @@ export function AppContent() {
     refreshAllData();
   };
 
+  const handleLogout = () => {
+    if (confirm('Apakah Anda yakin ingin keluar dari akun peternakan ini?')) {
+      AuthService.logout();
+      setCurrentUser(null);
+    }
+  };
+
   // Scroll to top when changing tab
   useEffect(() => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }, [activeTab]);
+
+  // If user is unauthenticated, show public Google/Registration Auth Screen
+  if (!currentUser) {
+    return (
+      <AuthScreen
+        onSuccess={(user) => {
+          setCurrentUser(user);
+          StorageService.setMode('REAL');
+          StorageService.initStorage('REAL');
+          StorageService.fetchFromBackend().then(() => {
+            refreshAllData();
+          });
+          setActiveTab('dashboard');
+        }}
+        onDemoClick={() => {
+          const guest = AuthService.switchToGuest();
+          setCurrentUser(guest);
+          StorageService.setMode('DEMO');
+          StorageService.initStorage('DEMO');
+          refreshAllData();
+          setActiveTab('dashboard');
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#080c14] text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 pb-safe">
@@ -137,6 +161,7 @@ export function AppContent() {
         onOpenKasir={() => setIsKasirOpen(true)}
         onOpenNotifikasi={() => setIsNotifModalOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onLogout={handleLogout}
         currentUser={currentUser}
       />
 
@@ -213,6 +238,8 @@ export function AppContent() {
             transactions={transactions}
             asetList={asetList}
             hpList={hpList}
+            logs={logs}
+            currentUser={currentUser}
           />
         )}
 
@@ -254,8 +281,6 @@ export function AppContent() {
         populasiDefault={metrics.totalPopulasiHidup || 1000}
       />
 
-
-
       <KasirPanenModal
         isOpen={isKasirOpen}
         onClose={() => setIsKasirOpen(false)}
@@ -270,58 +295,23 @@ export function AppContent() {
       {/* PWA Mobile App Install Prompt Banner */}
       <PWAInstallPrompt />
 
-      {/* Footer */}
+      {/* Footer Desktop */}
       <footer className="hidden lg:block border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
           <p>© 2026 PRATAMA BISNIS GRUP — Sistem Informasi Manajemen Peternakan Bebek Petelur Terpadu.</p>
         </div>
       </footer>
 
-      {/* Mobile Bottom Navigation Bar (Thumb-friendly & Ergonomic) */}
-      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-40 glass-panel border-t border-slate-800/90 px-1.5 py-1.5 backdrop-blur-2xl bg-slate-950/95 shadow-2xl">
-        <div className="flex items-center justify-around">
-          {[
-            { id: 'dashboard', label: 'Home', icon: Layers },
-            { id: 'operasional', label: 'Panen', icon: Egg },
-            { id: 'kasir_modal', label: 'Kasir', icon: ShoppingBag, isAction: true },
-            { id: 'keuangan', label: 'Kas', icon: Wallet },
-            { id: 'notif_modal', label: 'Notif', icon: Bell, isNotifAction: true },
-            { id: 'laporan', label: 'Laporan', icon: TrendingUp },
-            { id: 'aset', label: 'Aset', icon: ShieldCheck },
-            { id: 'ai', label: 'AI Bot', icon: Bot },
-            { id: 'pengaturan', label: 'Data', icon: Settings },
-          ].map((item) => {
-            const Icon = item.icon;
-            const isActive = activeTab === item.id;
-            return (
-              <button
-                key={item.id}
-                onClick={() => {
-                  if (item.isAction) {
-                    setIsKasirOpen(true);
-                  } else if (item.isNotifAction) {
-                    setIsNotifModalOpen(true);
-                  } else {
-                    setActiveTab(item.id);
-                  }
-                }}
-                className={`flex flex-col items-center gap-0.5 px-1 py-1 rounded-xl transition-all ${
-                  item.isAction
-                    ? 'text-amber-400 font-black scale-110'
-                    : item.isNotifAction
-                    ? 'text-amber-300 font-bold'
-                    : isActive
-                    ? 'text-amber-400 font-extrabold scale-105'
-                    : 'text-slate-400 font-medium hover:text-slate-200'
-                }`}
-              >
-                <Icon className={`w-4 h-4 ${isActive || item.isAction ? 'text-amber-400 stroke-[2.5]' : 'text-slate-400'}`} />
-                <span className="text-[9px] tracking-tight">{item.label}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
+      {/* Mobile Bottom Navigation Bar (Ergonomic for Android & Handphone) */}
+      <BottomNav
+        activeTab={activeTab}
+        setActiveTab={setActiveTab}
+        onOpenKasir={() => setIsKasirOpen(true)}
+        onOpenKalkulator={() => setIsKalkulatorOpen(true)}
+        onOpenProyeksi={() => setIsProyeksiOpen(true)}
+        onLogout={handleLogout}
+        currentUser={currentUser}
+      />
     </div>
   );
 }

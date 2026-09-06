@@ -109,11 +109,13 @@ export interface User {
   id: string;
   name: string;
   email: string;
+  phone?: string;
   farmName: string;
   role: 'OWNER' | 'PETERNAN_PRO' | 'ADMIN';
   plan: 'PREMIUM' | 'ENTERPRISE' | 'STARTER';
   createdAt: string;
   avatarUrl?: string;
+  isGoogleAuth?: boolean;
 }
 
 export interface AuthState {

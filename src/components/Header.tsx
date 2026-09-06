@@ -1,5 +1,5 @@
 import React from 'react';
-import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon } from 'lucide-react';
+import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon, LogOut } from 'lucide-react';
 
 import type { FarmMetricsSummary, User } from '../types';
 import type { AppMode } from '../services/storage';
@@ -16,7 +16,8 @@ interface HeaderProps {
   onOpenKasir?: () => void;
   onOpenNotifikasi?: () => void;
   onOpenAuth?: () => void;
-  currentUser?: User;
+  onLogout?: () => void;
+  currentUser?: User | null;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -29,6 +30,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenKasir,
   onOpenNotifikasi,
   onOpenAuth,
+  onLogout,
   currentUser,
 }) => {
   const isReal = appMode === 'REAL';
@@ -78,6 +80,18 @@ export const Header: React.FC<HeaderProps> = ({
                     {activeUser ? activeUser.farmName : 'Multi-User'}
                   </span>
                 </div>
+              </button>
+            )}
+
+            {/* Quick Logout Button */}
+            {onLogout && activeUser && (
+              <button
+                onClick={onLogout}
+                className="hidden sm:flex items-center gap-1 px-2 py-1.5 rounded-xl bg-slate-900 hover:bg-rose-950/40 border border-slate-700/80 hover:border-rose-500/40 text-[11px] font-bold text-slate-300 hover:text-rose-300 transition-all active:scale-95 shadow-sm"
+                title="Keluar dari Akun"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span className="hidden md:inline">Keluar</span>
               </button>
             )}
 

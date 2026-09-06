@@ -7,19 +7,23 @@ import {
   FileText,
   BookOpen,
 } from 'lucide-react';
-import type { TransaksiKeuangan, AsetTetap, HutangPiutang } from '../types';
+import type { TransaksiKeuangan, AsetTetap, HutangPiutang, PencatatanHarian, User } from '../types';
 import { formatIDR, ExportService } from '../utils/exportUtils';
 
 interface LaporanViewProps {
   transactions: TransaksiKeuangan[];
   asetList: AsetTetap[];
   hpList: HutangPiutang[];
+  logs?: PencatatanHarian[];
+  currentUser?: User | null;
 }
 
 export const LaporanView: React.FC<LaporanViewProps> = ({
   transactions,
   asetList,
   hpList,
+  logs = [],
+  currentUser,
 }) => {
   const [reportType, setReportType] = useState<'laba_rugi' | 'neraca' | 'buku_besar'>('laba_rugi');
   
@@ -134,50 +138,74 @@ export const LaporanView: React.FC<LaporanViewProps> = ({
       { nama: 'Beban Penyusutan Aset & Populasi Bebek', total: expensePenyusutan },
     ];
 
-    ExportService.exportLabaRugiPDF(
+    ExportService.exportLabaRugiPDF({
       startDate,
       endDate,
       revenueItems,
       expenseItems,
       totalRevenue,
-      totalExpense + expensePenyusutan,
-      netProfit
-    );
+      totalExpense: totalExpense + expensePenyusutan,
+      netProfit,
+      currentUser,
+      logs,
+    });
+  };
+
+  const handleExportEksekutifPDF = () => {
+    ExportService.exportLaporanEksekutifLengkapPDF({
+      startDate,
+      endDate,
+      currentUser,
+      transactions,
+      logs,
+      asetList,
+      hpList,
+    });
   };
 
   const handleExportExcel = () => {
-    ExportService.exportLaporanLengkapExcel(transactions, [], asetList, hpList);
+    ExportService.exportLaporanLengkapExcel(transactions, logs, asetList, hpList, currentUser);
   };
 
   return (
     <div className="space-y-6">
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass-panel p-4 sm:p-5 rounded-2xl border border-slate-800">
         <div>
           <h2 className="text-xl font-bold text-white flex items-center gap-2">
             <FileSpreadsheet className="w-6 h-6 text-amber-400" />
-            Modul Generator Laporan Keuangan Otomatis
+            Modul Generator Laporan Keuangan & Panen
           </h2>
-          <p className="text-xs text-slate-400">
-            Generate Laporan Laba/Rugi, Neraca Keuangan, dan Buku Besar berformat standar akuntansi.
+          <p className="text-xs text-slate-400 mt-1">
+            Ekspor laporan resmi berstandar akuntansi dengan identitas peternakan, rincian panen, dan tanda tangan.
           </p>
         </div>
 
         {/* Export Action Buttons */}
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2">
           <button
             onClick={handleExportPDF}
-            className="px-3.5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+            className="px-3 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold text-xs flex items-center gap-1.5 shadow-md shadow-amber-500/20 active:scale-95 transition-all"
+            title="Cetak Laporan Laba Rugi Resmi PDF"
           >
             <Download className="w-4 h-4" />
-            Cetak PDF
+            <span>PDF Laba Rugi</span>
+          </button>
+          <button
+            onClick={handleExportEksekutifPDF}
+            className="px-3 py-2 rounded-xl bg-gradient-to-r from-amber-600 to-amber-500 hover:from-amber-500 hover:to-amber-400 text-slate-950 font-black text-xs flex items-center gap-1.5 shadow-lg shadow-amber-500/25 active:scale-95 transition-all"
+            title="Cetak Buku Laporan Eksekutif Lengkap (Keuangan, Panen, Aset & Tanda Tangan)"
+          >
+            <BookOpen className="w-4 h-4" />
+            <span>PDF Eksekutif Lengkap</span>
           </button>
           <button
             onClick={handleExportExcel}
-            className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-lg shadow-emerald-600/20 active:scale-95 transition-all"
+            className="px-3 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs flex items-center gap-1.5 shadow-md shadow-emerald-600/20 active:scale-95 transition-all"
+            title="Export Buku Kerja Excel 6-Sheet Lengkap"
           >
             <FileSpreadsheet className="w-4 h-4" />
-            Export Excel
+            <span>Excel (6 Sheet)</span>
           </button>
         </div>
       </div>

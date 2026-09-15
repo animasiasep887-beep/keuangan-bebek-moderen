@@ -1,0 +1,33 @@
+name: Auto Deploy to VPS (BebekJaya PRO)
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+concurrency:
+  group: 'deploy-vps'
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Sync & Deploy to VPS
+    runs-on: self-hosted
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Deploy to Windows VPS
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: |
+          powershell -ExecutionPolicy Bypass -File "scripts/deploy.ps1"
+
+      - name: Deploy to Linux VPS
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          chmod +x scripts/deploy.sh
+          ./scripts/deploy.sh

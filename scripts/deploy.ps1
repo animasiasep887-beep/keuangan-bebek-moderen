@@ -73,10 +73,20 @@ npm install --no-audit --no-fund
 npm run build
 Write-Host "      Build selesai!" -ForegroundColor Green
 
-# 6. Restart Server via PM2 atau Node
+# 6. Restart Server via PM2
 Write-Host "[6/6] Memulai ulang proses server..." -ForegroundColor Cyan
 
 $pm2Exists = Get-Command pm2 -ErrorAction SilentlyContinue
+
+if (-not $pm2Exists) {
+    Write-Host "      PM2 belum terpasang. Memasang PM2 secara otomatis..." -ForegroundColor Yellow
+    try {
+        npm install -g pm2 pm2-windows-startup | Out-Null
+        $pm2Exists = Get-Command pm2 -ErrorAction SilentlyContinue
+    } catch {
+        Write-Host "      Gagal auto-install PM2: $_" -ForegroundColor Yellow
+    }
+}
 
 if ($pm2Exists) {
     if (Test-Path "ecosystem.config.cjs") {
@@ -98,8 +108,8 @@ if ($pm2Exists) {
         }
     }
 } else {
-    Write-Host "      [INFO] PM2 belum terpasang secara global. Disarankan pasang PM2 (npm i -g pm2)." -ForegroundColor Yellow
-    Write-Host "      Aplikasi dapat dijalankan manual dengan: npm start" -ForegroundColor Yellow
+    Write-Host "      [PERINGATAN] PM2 tidak dapat dijalankan. Memulai server via Node..." -ForegroundColor Yellow
+    Start-Process -FilePath "node" -ArgumentList "server/server.js" -WindowStyle Hidden
 }
 
 Write-Host "=========================================================" -ForegroundColor Cyan

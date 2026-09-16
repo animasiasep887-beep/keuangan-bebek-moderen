@@ -1,4 +1,5 @@
 @echo off
+chcp 65001 >nul
 cd /d "%~dp0"
 title BebekJaya PRO - Update Otomatis di VPS
 color 0A

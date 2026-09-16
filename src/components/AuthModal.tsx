@@ -238,13 +238,13 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-md p-4 animate-in fade-in duration-200">
-      <div className="bg-slate-900 border border-slate-700/60 rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col relative">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/85 backdrop-blur-md p-2.5 sm:p-4 animate-in fade-in duration-200 overflow-y-auto">
+      <div className="bg-slate-900 border border-slate-700/70 rounded-2xl sm:rounded-3xl max-w-lg w-full shadow-2xl overflow-hidden flex flex-col relative max-h-[92vh] my-auto">
         {/* Top Header Banner */}
-        <div className="bg-gradient-to-r from-amber-600/30 via-amber-500/20 to-slate-900 border-b border-amber-500/20 p-6 relative">
+        <div className="bg-gradient-to-r from-amber-600/30 via-amber-500/20 to-slate-900 border-b border-amber-500/20 p-4 sm:p-6 relative shrink-0">
           <button
             onClick={onClose}
-            className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800/60 transition-all"
+            className="absolute top-3 right-3 sm:top-4 sm:right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800/60 transition-all"
           >
             <X className="w-5 h-5" />
           </button>
@@ -334,7 +334,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
         </div>
 
         {/* Form Body */}
-        <div className="p-6 pt-2 max-h-[60vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 pt-2 flex-1 overflow-y-auto">
           {tab === 'LOGIN' && (
             <div className="space-y-4">
               {/* 1-Click Google Sign In */}

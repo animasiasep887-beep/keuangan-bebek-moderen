@@ -63,17 +63,17 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-white/[0.08] shadow-2xl backdrop-blur-xl">
       <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-14 sm:h-20 gap-1.5 sm:gap-4">
+        <div className="flex items-center justify-between h-14 sm:h-20 gap-1 sm:gap-4">
           {/* Left: Brand & Commodity Selector */}
-          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-3 min-w-0">
             <div
-              className="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer select-none group"
+              className="flex items-center gap-1 sm:gap-2.5 cursor-pointer select-none group shrink-0"
               onClick={() => setActiveTab('dashboard')}
             >
               <BrandLogo size="sm" />
-              <div>
-                <h1 className="text-xs sm:text-base font-black tracking-tight text-white flex items-center gap-1">
-                  PRATAMA <span className="gradient-text-gold hidden sm:inline">BISNIS GRUP</span>
+              <div className="min-w-0">
+                <h1 className="text-xs sm:text-base font-black tracking-tight text-white flex items-center gap-1 truncate">
+                  <span>PRATAMA</span> <span className="gradient-text-gold hidden sm:inline">BISNIS GRUP</span>
                 </h1>
                 <p className="text-[10px] text-slate-400 font-medium hidden md:block">
                   Sistem Manajemen Peternakan Modern
@@ -83,7 +83,7 @@ export const Header: React.FC<HeaderProps> = ({
 
             {/* Sektor Komoditas Dropdown */}
             {onChangeCommodity && (
-              <div className="pl-1 sm:pl-2 border-l border-white/[0.08]">
+              <div className="pl-1 sm:pl-2 border-l border-white/[0.08] shrink-0">
                 <KomoditasSelector
                   activeCommodity={activeCommodity}
                   onChangeCommodity={onChangeCommodity}
@@ -93,7 +93,7 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
 
           {/* Right: Mode Switcher, Notifications & User Profile */}
-          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
+          <div className="flex items-center gap-1 sm:gap-2.5 shrink-0">
             {/* Mode Switcher Pill (Desktop/Tablet) */}
             <div className="hidden sm:flex items-center gap-0.5 bg-slate-900/90 p-1 rounded-2xl border border-white/[0.08] shadow-inner">
               <button
@@ -126,7 +126,7 @@ export const Header: React.FC<HeaderProps> = ({
             </div>
 
             {/* Mobile Cloud Status Indicator Pill */}
-            <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900/90 border border-white/[0.08] text-[10px] font-bold">
+            <div className="sm:hidden flex items-center gap-1 px-1.5 py-1 rounded-lg bg-slate-900/90 border border-white/[0.08] text-[9px] font-bold shrink-0">
               <span className={`w-1.5 h-1.5 rounded-full ${isReal ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
               <span className="text-slate-300">{isReal ? 'VPS' : 'Demo'}</span>
             </div>
@@ -136,12 +136,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenNotifikasi}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] text-amber-400 flex items-center justify-center transition-all active:scale-95 relative shrink-0"
+                className="w-8 h-8 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] text-amber-400 flex items-center justify-center transition-all active:scale-95 relative shrink-0"
                 title="Pengingat Jam Panen Peternakan"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping absolute top-1.5 right-1.5" />
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1.5 right-1.5" />
-                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
+                <Bell className="w-3.5 h-3.5 text-amber-400" />
               </button>
             )}
 
@@ -150,10 +150,10 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="flex items-center gap-1.5 p-1 sm:py-1 sm:px-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/25 text-xs text-slate-200 transition-all active:scale-95 shadow-md group shrink-0"
+                className="flex items-center gap-1.5 p-0.5 sm:py-1 sm:px-2.5 rounded-xl sm:rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/25 text-xs text-slate-200 transition-all active:scale-95 shadow-md group shrink-0"
                 title="Profil Peternak & Sinkronisasi Database"
               >
-                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm overflow-hidden shrink-0">
+                <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm overflow-hidden shrink-0">
                   {activeUser?.avatarUrl ? (
                     <img
                       src={activeUser.avatarUrl}
@@ -163,7 +163,7 @@ export const Header: React.FC<HeaderProps> = ({
                   ) : activeUser ? (
                     activeUser.name.charAt(0).toUpperCase()
                   ) : (
-                    <UserIcon className="w-4 h-4" />
+                    <UserIcon className="w-3.5 h-3.5" />
                   )}
                 </div>
 

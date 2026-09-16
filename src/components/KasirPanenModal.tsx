@@ -330,8 +330,8 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
   const info = KOMODITAS_LIST[activeCommodity];
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-2.5 sm:p-6 flex flex-col justify-start sm:justify-center items-center">
-      <div className="glass-panel-glow w-full max-w-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 relative my-auto mb-24 sm:mb-auto max-h-[88vh] sm:max-h-[90vh] overflow-y-auto animate-toast border border-amber-500/30 shadow-2xl">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/85 backdrop-blur-md p-2 sm:p-6 flex flex-col justify-center items-center">
+      <div className="glass-panel-glow w-full max-w-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 relative my-auto max-h-[92vh] overflow-y-auto animate-toast border border-amber-500/30 shadow-2xl">
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
@@ -554,20 +554,20 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 w-full sm:w-auto">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors"
+                className="flex-1 sm:flex-initial px-4 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors text-center"
               >
                 Batal
               </button>
               <button
                 type="submit"
-                className="px-6 py-2.5 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center gap-2"
+                className="flex-1 sm:flex-initial px-6 py-3 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black text-sm shadow-lg shadow-amber-500/20 active:scale-95 transition-all flex items-center justify-center gap-2"
               >
                 <CheckCircle2 className="w-4 h-4" />
-                Simpan & Catat
+                <span>Simpan & Catat</span>
               </button>
             </div>
           </div>

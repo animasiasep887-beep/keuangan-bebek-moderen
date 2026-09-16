@@ -4,6 +4,11 @@ param(
 
 $ErrorActionPreference = "Continue"
 
+# Sanitize ProjectDir parameter (trim any trailing quotes or backslashes caused by batch argument escaping)
+if ($ProjectDir) {
+    $ProjectDir = $ProjectDir.Trim().Trim('"', "'").TrimEnd('\')
+}
+
 Write-Host "=========================================================" -ForegroundColor Cyan
 Write-Host "   🦆 BEBEKJAYA PRO - AUTO DEPLOYMENT KE VPS RDP         " -ForegroundColor Yellow
 Write-Host "=========================================================" -ForegroundColor Cyan
@@ -13,6 +18,8 @@ if ($ProjectDir -and (Test-Path $ProjectDir)) {
     $PROJECT_DIR = (Resolve-Path $ProjectDir).Path
 } elseif ($env:APP_DIR -and (Test-Path $env:APP_DIR)) {
     $PROJECT_DIR = (Resolve-Path $env:APP_DIR).Path
+} elseif (Test-Path (Join-Path (Get-Location) "package.json")) {
+    $PROJECT_DIR = (Get-Location).Path
 } else {
     $PROJECT_DIR = Split-Path -Parent $PSScriptRoot
 }

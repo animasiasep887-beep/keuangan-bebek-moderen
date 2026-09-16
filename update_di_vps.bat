@@ -4,7 +4,7 @@ title BebekJaya PRO - Update Otomatis di VPS
 color 0A
 
 echo =========================================================
-echo    BEBEKJAYA PRO - AUTO UPDATE & RESTART DI VPS
+echo    BEBEKJAYA PRO - AUTO UPDATE DAN RESTART DI VPS
 echo =========================================================
 echo  [1] Mem-backup database dan file .env produksi
 echo  [2] Menarik kode terbaru dari GitHub (origin/main)

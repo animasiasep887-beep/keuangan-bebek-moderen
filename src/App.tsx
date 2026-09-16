@@ -313,6 +313,8 @@ export function AppContent() {
         onOpenProyeksi={() => setIsProyeksiOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
+        activeCommodity={activeCommodity}
+        onChangeCommodity={handleCommodityChange}
       />
     </div>
   );

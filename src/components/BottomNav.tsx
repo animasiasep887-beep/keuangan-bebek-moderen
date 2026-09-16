@@ -14,7 +14,8 @@ import {
   X,
   User as UserIcon,
 } from 'lucide-react';
-import type { User } from '../types';
+import type { User, KomoditasTernak } from '../types';
+import { KOMODITAS_LIST } from '../types';
 
 interface BottomNavProps {
   activeTab: string;
@@ -24,6 +25,8 @@ interface BottomNavProps {
   onOpenProyeksi: () => void;
   onLogout: () => void;
   currentUser: User | null;
+  activeCommodity?: KomoditasTernak;
+  onChangeCommodity?: (commodity: KomoditasTernak) => void;
 }
 
 export const BottomNav: React.FC<BottomNavProps> = ({
@@ -34,6 +37,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onOpenProyeksi,
   onLogout,
   currentUser,
+  activeCommodity,
+  onChangeCommodity,
 }) => {
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
 
@@ -152,6 +157,44 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                 <X className="w-5 h-5" />
               </button>
             </div>
+
+            {/* Quick Commodity Selector inside Drawer */}
+            {activeCommodity && onChangeCommodity && (
+              <div className="p-3 rounded-2xl bg-slate-950/70 border border-slate-800 space-y-2">
+                <div className="flex items-center justify-between text-xs">
+                  <span className="text-slate-400 font-bold flex items-center gap-1.5">
+                    <span>🌾</span> <span>Sektor Ternak:</span>
+                  </span>
+                  <span className="font-extrabold text-amber-400">
+                    {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama}
+                  </span>
+                </div>
+                <div className="grid grid-cols-5 gap-1.5">
+                  {(Object.keys(KOMODITAS_LIST) as KomoditasTernak[]).map((key) => {
+                    const item = KOMODITAS_LIST[key];
+                    const isSelected = key === activeCommodity;
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          onChangeCommodity(key);
+                        }}
+                        className={`p-2 rounded-xl flex flex-col items-center justify-center transition-all ${
+                          isSelected
+                            ? 'bg-amber-500 text-slate-950 font-black shadow-md'
+                            : 'bg-slate-900 border border-slate-800 text-slate-300 hover:text-white'
+                        }`}
+                        title={item.nama}
+                      >
+                        <span className="text-base">{item.icon}</span>
+                        <span className="text-[9px] mt-0.5 truncate w-full text-center">{item.nama.split(' ')[0]}</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Quick Menu Grid */}
             <div className="grid grid-cols-3 gap-2.5 pt-1">

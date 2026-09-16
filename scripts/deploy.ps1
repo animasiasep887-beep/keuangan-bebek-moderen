@@ -73,8 +73,30 @@ npm install --no-audit --no-fund
 npm run build
 Write-Host "      Build selesai!" -ForegroundColor Green
 
-# 6. Restart Server via PM2
-Write-Host "[6/6] Memulai ulang proses server..." -ForegroundColor Cyan
+# 6. Menyiapkan Cloudflare Tunnel & Restart Server via PM2
+Write-Host "[6/6] Menyiapkan Cloudflare Tunnel & Memulai ulang proses server..." -ForegroundColor Cyan
+
+# Hapus caddy-proxy lama jika pernah ada
+try {
+    pm2 delete caddy-proxy 2>$null | Out-Null
+} catch {}
+
+# Pastikan cloudflared.exe tersedia di folder
+$CLOUDFLARED_EXE = Join-Path $PROJECT_DIR "cloudflared.exe"
+if (-not (Test-Path $CLOUDFLARED_EXE)) {
+    Write-Host "      Mencari binary Cloudflare Tunnel..." -ForegroundColor Yellow
+    $parentDir = Split-Path -Parent $PROJECT_DIR
+    $foundCf = Get-ChildItem -Path $parentDir -Filter "cloudflared.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($foundCf) {
+        Copy-Item $foundCf.FullName $CLOUDFLARED_EXE -Force
+        Write-Host "      Cloudflare Tunnel disalin dari: $($foundCf.FullName)" -ForegroundColor Green
+    } else {
+        Write-Host "      Mengunduh Cloudflare Tunnel binary..." -ForegroundColor Yellow
+        $ProgressPreference = 'SilentlyContinue'
+        Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $CLOUDFLARED_EXE
+        Write-Host "      Cloudflare Tunnel berhasil diunduh!" -ForegroundColor Green
+    }
+}
 
 $pm2Exists = Get-Command pm2 -ErrorAction SilentlyContinue
 
@@ -90,7 +112,7 @@ if (-not $pm2Exists) {
 
 if ($pm2Exists) {
     if (Test-Path "ecosystem.config.cjs") {
-        Write-Host "      Me-reload service ternak-fun via ecosystem.config.cjs..." -ForegroundColor Green
+        Write-Host "      Me-reload service ternak-fun & ternak-tunnel via ecosystem.config.cjs..." -ForegroundColor Green
         pm2 startOrReload ecosystem.config.cjs --update-env
         pm2 save
     } else {

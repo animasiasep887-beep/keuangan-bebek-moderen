@@ -27,4 +27,7 @@ dist-ssr
 server/data/backups/
 *.backup.json
 caddy.exe
+Caddyfile
+cloudflared.exe
+
 

@@ -22,14 +22,14 @@ const apps = [
   },
 ];
 
-const caddyExe = path.join(__dirname, 'caddy.exe');
-const caddyConfig = path.join(__dirname, 'Caddyfile');
+const cloudflaredExe = path.join(__dirname, 'cloudflared.exe');
+const tunnelJson = path.join(__dirname, 'tunnel.json');
 
-if (fs.existsSync(caddyExe) && fs.existsSync(caddyConfig)) {
+if (fs.existsSync(cloudflaredExe) && fs.existsSync(tunnelJson)) {
   apps.push({
-    name: 'caddy-proxy',
-    script: caddyExe,
-    args: `run --config "${caddyConfig}"`,
+    name: 'ternak-tunnel',
+    script: cloudflaredExe,
+    args: `tunnel --credentials-file "${tunnelJson}" run --url http://127.0.0.1:3001 0def092e-cd92-4db7-9eba-9bbfd69c75a8`,
     autorestart: true,
     watch: false,
     restart_delay: 3000,
@@ -38,3 +38,4 @@ if (fs.existsSync(caddyExe) && fs.existsSync(caddyConfig)) {
 }
 
 module.exports = { apps };
+

@@ -1,25 +1,26 @@
 @echo off
 cd /d "%~dp0"
-title Cek Status dan Log Caddy di VPS
-color 0E
+title Cek Status BebekJaya dan Cloudflare Tunnel (ternak.fun)
+color 0A
 
 echo =========================================================
-echo    DIAGNOSTIK KONEKSI DAN LOG CADDY DI VPS
+echo    STATUS BEBEKJAYA PRO & CLOUDFLARE TUNNEL (ternak.fun)
 echo =========================================================
 echo.
 
-echo [1] Status PM2:
+echo [1] Status Layanan PM2 di VPS:
 call pm2 status
 
 echo.
-echo [2] Memeriksa apakah Port 80, 443, dan 3001 sedang aktif:
-netstat -ano | findstr ":80 :443 :3001"
+echo [2] Memeriksa Port 3001 (Server BebekJaya):
+netstat -ano | findstr ":3001"
 
 echo.
-echo [3] Log Terakhir Caddy Web Server:
-call pm2 logs caddy-proxy --lines 20 --nostream
+echo [3] Log Cloudflare Tunnel (ternak-tunnel):
+call pm2 logs ternak-tunnel --lines 15 --nostream
 
 echo.
 echo =========================================================
 echo Selesai. Tekan tombol apa saja untuk menutup...
 pause >nul
+

@@ -6,12 +6,9 @@ color 0A
 echo =========================================================
 echo    BEBEKJAYA PRO - AUTO UPDATE DAN RESTART DI VPS
 echo =========================================================
-echo  [1] Mem-backup database dan file .env produksi
-echo  [2] Menarik kode terbaru dari GitHub (origin/main)
-echo  [3] Memulihkan database transaksi dan token produksi
-echo  [4] Menginstall dependensi dan build web application
-echo  [5] Me-reload service PM2 (ternak-fun) tanpa downtime
-echo =========================================================
+echo  [1] Memperbarui script dari GitHub (Self-Healing)...
+git fetch origin main
+git reset --hard origin/main
 echo.
 
 powershell -NoProfile -ExecutionPolicy Bypass -File "%~dp0scripts\deploy.ps1"

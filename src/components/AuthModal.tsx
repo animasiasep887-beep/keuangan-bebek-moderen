@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
 import { BrandLogo } from './BrandLogo';
+import { GoogleConnectModal } from './GoogleConnectModal';
 import type { User } from '../types';
 
 interface AuthModalProps {
@@ -28,6 +29,7 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserChanged }) => {
   const [tab, setTab] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>('LOGIN');
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   // Form states
   const [loginEmail, setLoginEmail] = useState('');
@@ -175,34 +177,23 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
   };
 
   const handleGoogleClick = async () => {
-    setLoading(true);
     setErrorMessage(null);
 
-    const fallbackDirectLogin = async () => {
-      try {
-        const res = await AuthService.loginWithGoogle({
-          name: 'Peternak Google',
-          email: 'peternak.modern@gmail.com',
-          farmName: 'Peternakan Google Utama',
-        });
-        setSuccessMessage(`Berhasil terhubung dengan Akun Google: ${res.user.name}`);
-        setTimeout(() => {
-          onUserChanged(res.user);
-          onClose();
-        }, 600);
-      } catch {
-        setErrorMessage('Gagal melakukan otentikasi dengan Google.');
-      } finally {
-        setLoading(false);
-      }
-    };
+    const envClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const hasRealGoogleClientId = Boolean(
+      envClientId &&
+      envClientId !== '517621415951-googleauth.apps.googleusercontent.com' &&
+      envClientId.includes('.apps.googleusercontent.com')
+    );
 
-    try {
-      // @ts-expect-error - Google GIS dynamic API
-      if (window.google?.accounts?.id) {
+    // If real Google Client ID exists, invoke GIS
+    // @ts-expect-error - Google GIS dynamic API
+    if (hasRealGoogleClientId && window.google?.accounts?.id) {
+      setLoading(true);
+      try {
         // @ts-expect-error - Google GIS dynamic API
         window.google.accounts.id.initialize({
-          client_id: '517621415951-googleauth.apps.googleusercontent.com',
+          client_id: envClientId,
           callback: async (response: { credential?: string }) => {
             if (response.credential) {
               const res = await AuthService.loginWithGoogle({
@@ -216,7 +207,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 onClose();
               }, 600);
             } else {
-              fallbackDirectLogin();
+              setIsGoogleModalOpen(true);
             }
           },
           auto_select: false,
@@ -226,14 +217,17 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
         // @ts-expect-error - Google GIS prompt
         window.google.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            fallbackDirectLogin();
+            setIsGoogleModalOpen(true);
           }
         });
-      } else {
-        await fallbackDirectLogin();
+      } catch {
+        setIsGoogleModalOpen(true);
+      } finally {
+        setLoading(false);
       }
-    } catch {
-      await fallbackDirectLogin();
+    } else {
+      // Direct Connect modal: avoids Google 401 invalid_client popup error
+      setIsGoogleModalOpen(true);
     }
   };
 
@@ -632,6 +626,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
           <span className="text-[10px] text-slate-500">BebekJaya PRO SaaS v2.5</span>
         </div>
       </div>
+
+      {/* Direct Google Connect Modal */}
+      <GoogleConnectModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={(user) => {
+          setIsGoogleModalOpen(false);
+          setSuccessMessage(`Berhasil terhubung dengan Google: ${user.name}`);
+          setTimeout(() => {
+            onUserChanged(user);
+            onClose();
+          }, 400);
+        }}
+        initialEmail="animasiasep887@gmail.com"
+      />
     </div>
   );
 };

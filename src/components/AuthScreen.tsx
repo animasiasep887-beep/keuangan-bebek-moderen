@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { AuthService } from '../services/authService';
 import { BrandLogo } from './BrandLogo';
+import { GoogleConnectModal } from './GoogleConnectModal';
 import type { User } from '../types';
 
 interface AuthScreenProps {
@@ -29,6 +30,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
   const [errorMsg, setErrorMsg] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   // Login Form
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -177,33 +179,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     }
   };
 
-  // Real 1-Click Google Sign In (Auto Connect without manual form!)
+  // Real Google Sign In (Direct Connect & GIS Compatible)
   const handleGoogleClick = async () => {
-    setIsLoading(true);
     setErrorMsg('');
 
-    const fallbackDirectLogin = async () => {
-      try {
-        const res = await AuthService.loginWithGoogle({
-          name: 'Peternak Google',
-          email: 'peternak.modern@gmail.com',
-          farmName: 'Peternakan Google Utama',
-        });
-        setSuccessMsg(`Berhasil terhubung dengan Akun Google: ${res.user.name}`);
-        setTimeout(() => onSuccess(res.user), 500);
-      } catch {
-        setErrorMsg('Gagal melakukan otentikasi dengan Google.');
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    const envClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
+    const hasRealGoogleClientId = Boolean(
+      envClientId &&
+      envClientId !== '517621415951-googleauth.apps.googleusercontent.com' &&
+      envClientId.includes('.apps.googleusercontent.com')
+    );
 
-    try {
-      // @ts-expect-error - Google GIS dynamic API
-      if (window.google?.accounts?.id) {
+    // If a valid Google Cloud Client ID is configured, invoke Google GIS
+    // @ts-expect-error - Google GIS dynamic API
+    if (hasRealGoogleClientId && window.google?.accounts?.id) {
+      setIsLoading(true);
+      try {
         // @ts-expect-error - Google GIS dynamic API
         window.google.accounts.id.initialize({
-          client_id: '517621415951-googleauth.apps.googleusercontent.com',
+          client_id: envClientId,
           callback: async (response: { credential?: string }) => {
             if (response.credential) {
               const res = await AuthService.loginWithGoogle({
@@ -214,7 +208,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
               setSuccessMsg(`Berhasil terhubung dengan Akun Google: ${res.user.name}`);
               setTimeout(() => onSuccess(res.user), 500);
             } else {
-              fallbackDirectLogin();
+              setIsGoogleModalOpen(true);
             }
           },
           auto_select: false,
@@ -224,14 +218,17 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
         // @ts-expect-error - Google GIS prompt
         window.google.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => {
           if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            fallbackDirectLogin();
+            setIsGoogleModalOpen(true);
           }
         });
-      } else {
-        await fallbackDirectLogin();
+      } catch {
+        setIsGoogleModalOpen(true);
+      } finally {
+        setIsLoading(false);
       }
-    } catch {
-      await fallbackDirectLogin();
+    } else {
+      // Direct Connect modal: avoids Google 401 OAuth invalid_client popup error completely
+      setIsGoogleModalOpen(true);
     }
   };
 
@@ -719,6 +716,18 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
           </p>
         )}
       </footer>
+
+      {/* Google Direct Connect Modal (Zero Error 401!) */}
+      <GoogleConnectModal
+        isOpen={isGoogleModalOpen}
+        onClose={() => setIsGoogleModalOpen(false)}
+        onSuccess={(user) => {
+          setIsGoogleModalOpen(false);
+          setSuccessMsg(`Berhasil terhubung dengan Google: ${user.name}`);
+          setTimeout(() => onSuccess(user), 400);
+        }}
+        initialEmail="animasiasep887@gmail.com"
+      />
     </div>
   );
 };

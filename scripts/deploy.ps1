@@ -1,17 +1,18 @@
-# ==============================================================================
-# BebekJaya PRO - Windows Deployment Script (PowerShell)
-# Alur: Backup DB -> Git Pull -> Restore Live DB -> npm install -> Build -> PM2 Restart
-# ==============================================================================
+param(
+    [string]$ProjectDir = ""
+)
 
-$ErrorActionPreference = "Stop"
+$ErrorActionPreference = "Continue"
 
 Write-Host "=========================================================" -ForegroundColor Cyan
 Write-Host "   🦆 BEBEKJAYA PRO - AUTO DEPLOYMENT KE VPS RDP         " -ForegroundColor Yellow
 Write-Host "=========================================================" -ForegroundColor Cyan
 
-# 1. Tentukan direktori kerja proyek (bisa via env APP_DIR atau folder script)
-if ($env:APP_DIR -and (Test-Path $env:APP_DIR)) {
-    $PROJECT_DIR = $env:APP_DIR
+# 1. Tentukan direktori kerja proyek
+if ($ProjectDir -and (Test-Path $ProjectDir)) {
+    $PROJECT_DIR = (Resolve-Path $ProjectDir).Path
+} elseif ($env:APP_DIR -and (Test-Path $env:APP_DIR)) {
+    $PROJECT_DIR = (Resolve-Path $env:APP_DIR).Path
 } else {
     $PROJECT_DIR = Split-Path -Parent $PSScriptRoot
 }
@@ -44,6 +45,12 @@ if (Test-Path $ENV_FILE) {
 
 # 3. Ambil kode terbaru dari GitHub
 Write-Host "[3/6] Menarik pembaruan kode dari GitHub (origin/main)..." -ForegroundColor Cyan
+
+# Hentikan server Node/PM2 sementara agar tidak ada file lock di server.js atau dist
+try {
+    pm2 stop ternak-fun 2>$null | Out-Null
+} catch {}
+
 try {
     # Stash perubahan lokal jika ada agar git pull lancar
     git stash | Out-Null

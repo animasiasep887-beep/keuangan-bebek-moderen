@@ -8,6 +8,7 @@ import type {
   AsetTetap,
   HutangPiutang,
   FarmMetricsSummary,
+  KomoditasTernak,
 } from '../types';
 
 import { AuthService } from './authService';
@@ -769,12 +770,16 @@ export const StorageService = {
     return created;
   },
 
-  // Calculate High-level Dashboard Metrics
-  calculateMetrics: (): FarmMetricsSummary => {
+  // Calculate High-level Dashboard Metrics with Multi-Commodity Adaptation
+  calculateMetrics: (commodity?: KomoditasTernak): FarmMetricsSummary => {
     const trxs = StorageService.getTransaksi();
     const logs = StorageService.getPencatatanHarian();
     const populasi = StorageService.getPopulasi();
     const hpList = StorageService.getHutangPiutang();
+
+    const activeCommodity: KomoditasTernak = commodity ||
+      (typeof localStorage !== 'undefined' ? (localStorage.getItem('bebek_active_commodity') as KomoditasTernak) : undefined) ||
+      'BEBEK_PETELUR';
 
     let revenueSum = 0;
     let expenseSum = 0;
@@ -800,7 +805,7 @@ export const StorageService = {
     const totalPakanKgHariIni = latestLog ? latestLog.pakanKg : 0;
 
     const fcrAverage = logs.length > 0
-      ? Number((logs.reduce((acc, l) => acc + l.fcr, 0) / logs.length).toFixed(2))
+      ? Number((logs.reduce((acc, l) => acc + (l.fcr || 0), 0) / logs.length).toFixed(2))
       : 0;
 
     const totalPiutang = hpList
@@ -810,6 +815,65 @@ export const StorageService = {
     const totalHutang = hpList
       .filter((hp) => hp.jenis === 'HUTANG' && hp.status === 'BELUM_LUNAS')
       .reduce((acc, hp) => acc + hp.sisaNominal, 0);
+
+    // Multi-Commodity specific derivations
+    let labelProduksiUtama = 'Produksi Telur Hari Ini';
+    let nilaiProduksiHariIni: string | number = `${totalTelurHariIni.toLocaleString('id-ID')} Butir`;
+    let satuanProduksiUtama = 'Butir';
+    let labelEfisiensi = 'Hen-Day Production (HDP)';
+    let nilaiEfisiensi: string | number = `${hdpHariIni}%`;
+    let labelPopulasi = 'Bebek Produktif';
+    let labelKandang = 'Kandang Bebek';
+
+    // Broiler
+    const rataBobotBroilerKg = latestLog?.bobotRataEkorGram ? Number((latestLog.bobotRataEkorGram / 1000).toFixed(2)) : 1.95;
+    const indeksPerformaRata = latestLog?.indeksPerforma || (fcrAverage > 0 ? Math.round(365 / Math.max(1, fcrAverage)) : 380);
+    const dayaHidupPersen = 97.5;
+
+    // Sapi
+    const totalSusuHariIniLiter = latestLog?.totalSusuLiter || 48;
+    const rataBobotSapiKg = latestLog?.bobotSapiKg || 435;
+    const totalPakanHijauanKg = latestLog?.pakanHijauanKg || 350;
+    const totalPakanKonsentratKg = latestLog?.pakanKonsentratKg || 80;
+
+    // Lele
+    const biomassaIkanKg = latestLog?.bobotPanenIkanKg || 420;
+    const survivalRateRata = latestLog?.survivalRate || 89;
+    const samplingIsiPerKgRata = latestLog?.samplingIsiPerKg || 8;
+
+    if (activeCommodity === 'AYAM_PETELUR') {
+      labelProduksiUtama = 'Produksi Telur Layer';
+      nilaiProduksiHariIni = `${totalTelurHariIni.toLocaleString('id-ID')} Butir`;
+      satuanProduksiUtama = 'Butir';
+      labelEfisiensi = 'HDP Layer';
+      nilaiEfisiensi = `${hdpHariIni}%`;
+      labelPopulasi = 'Ayam Layer';
+      labelKandang = 'Kandang Baterai Layer';
+    } else if (activeCommodity === 'AYAM_PEDAGING') {
+      labelProduksiUtama = 'Bobot Rata-rata Broiler';
+      nilaiProduksiHariIni = `${rataBobotBroilerKg} Kg / Ekor`;
+      satuanProduksiUtama = 'Kg';
+      labelEfisiensi = 'Indeks Performa (IP)';
+      nilaiEfisiensi = `${indeksPerformaRata} (Standar Industri)`;
+      labelPopulasi = 'Populasi Broiler';
+      labelKandang = 'Kandang Postal / Tunnel';
+    } else if (activeCommodity === 'SAPI') {
+      labelProduksiUtama = 'Produksi Susu Harian';
+      nilaiProduksiHariIni = `${totalSusuHariIniLiter} Liter`;
+      satuanProduksiUtama = 'Liter';
+      labelEfisiensi = 'Rata-rata Liter/Ekor';
+      nilaiEfisiensi = totalPopulasiHidup > 0 ? `${(totalSusuHariIniLiter / Math.max(1, totalPopulasiHidup)).toFixed(1)} L / ekor` : '16 L / ekor';
+      labelPopulasi = 'Ekor Sapi';
+      labelKandang = 'Kandang Sapi';
+    } else if (activeCommodity === 'LELE') {
+      labelProduksiUtama = 'Biomassa / Panen Ikan';
+      nilaiProduksiHariIni = `${biomassaIkanKg} Kg`;
+      satuanProduksiUtama = 'Kg';
+      labelEfisiensi = 'Survival Rate (SR)';
+      nilaiEfisiensi = `${survivalRateRata}% (Ukuran isi ${samplingIsiPerKgRata}/kg)`;
+      labelPopulasi = 'Ikan Tebar';
+      labelKandang = 'Kolam Bioflok / Terpal';
+    }
 
     return {
       saldoKas,
@@ -821,22 +885,44 @@ export const StorageService = {
       fcrAverage,
       totalPiutang,
       totalHutang,
+
+      activeCommodity,
+      labelProduksiUtama,
+      nilaiProduksiHariIni,
+      satuanProduksiUtama,
+      labelEfisiensi,
+      nilaiEfisiensi,
+      labelPopulasi,
+      labelKandang,
+
+      rataBobotBroilerKg,
+      indeksPerformaRata,
+      dayaHidupPersen,
+      totalSusuHariIniLiter,
+      rataBobotSapiKg,
+      totalPakanHijauanKg,
+      totalPakanKonsentratKg,
+      biomassaIkanKg,
+      survivalRateRata,
+      samplingIsiPerKgRata,
     };
   },
 
-  // Record Quick Egg Sale (POS)
+  // Record Quick Egg / Commodity Sale (POS)
   recordEggSalePOS: (params: {
     tanggal: string;
     namaPembeli: string;
     noHp?: string;
-    kategori: 'TELUR_GRADE_A' | 'TELUR_GRADE_B' | 'BEBEK_AFKIR' | 'PUPUK_KANDANG';
-    jumlahQty: number; // e.g. 10 rak / 300 butir / 50 kg
-    satuan: 'BUTIR' | 'RAK' | 'KG' | 'EKOR' | 'KARUNG';
+    kategori: string;
+    kategoriLabel?: string;
+    jumlahQty: number;
+    satuan: string;
     hargaPerSatuan: number;
     totalNominal: number;
     metodeBayar: 'TUNAI' | 'TRANSFER' | 'TEMPO'; // TEMPO creates Piutang
     tglJatuhTempo?: string;
     catatan?: string;
+    komoditas?: KomoditasTernak;
   }) => {
     const {
       tanggal,
@@ -852,12 +938,8 @@ export const StorageService = {
       catatan,
     } = params;
 
-    const kategoriLabel =
-      kategori === 'TELUR_GRADE_A' ? 'Telur Grade A (Utuh)' :
-      kategori === 'TELUR_GRADE_B' ? 'Telur Grade B (Retak)' :
-      kategori === 'BEBEK_AFKIR' ? 'Bebek Afkir' : 'Pupuk Kandang';
-
-    const deskripsi = `Penjualan ${jumlahQty} ${satuan} ${kategoriLabel} @Rp ${hargaPerSatuan.toLocaleString('id-ID')} kpd ${namaPembeli} (${metodeBayar})${catatan ? ` - ${catatan}` : ''}`;
+    const labelProduk = params.kategoriLabel || kategori;
+    const deskripsi = `Penjualan ${jumlahQty} ${satuan} ${labelProduk} @Rp ${hargaPerSatuan.toLocaleString('id-ID')} kpd ${namaPembeli} (${metodeBayar})${catatan ? ` - ${catatan}` : ''}`;
 
     if (metodeBayar === 'TEMPO') {
       // 1. Catat Piutang
@@ -865,7 +947,7 @@ export const StorageService = {
         jenis: 'PIUTANG',
         namaKontak: namaPembeli,
         noHp,
-        deskripsi: `Penjualan ${jumlahQty} ${satuan} ${kategoriLabel}`,
+        deskripsi: `Penjualan ${jumlahQty} ${satuan} ${labelProduk}`,
         nominalTotal: totalNominal,
         tglJatuhTempo: tglJatuhTempo || tanggal,
       });

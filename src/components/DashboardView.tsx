@@ -12,8 +12,11 @@ import {
   ArrowUpRight,
   ArrowDownRight,
   Sparkles,
+  Activity,
+  Award,
 } from 'lucide-react';
-import type { FarmMetricsSummary, PencatatanHarian, TransaksiKeuangan, PakanItem } from '../types';
+import type { FarmMetricsSummary, PencatatanHarian, TransaksiKeuangan, PakanItem, KomoditasTernak } from '../types';
+import { KOMODITAS_LIST } from '../types';
 import { formatIDR } from '../utils/exportUtils';
 import { GrafikProduksiTelur } from './GrafikProduksiTelur';
 
@@ -26,6 +29,7 @@ interface DashboardViewProps {
   onOpenKalkulator?: () => void;
   onOpenKasir?: () => void;
   onOpenProyeksi?: () => void;
+  activeCommodity?: KomoditasTernak;
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({
@@ -37,6 +41,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   onOpenKalkulator,
   onOpenKasir,
   onOpenProyeksi,
+  activeCommodity = 'BEBEK_PETELUR',
 }) => {
   const isProfit = metrics.labaRugiMtd >= 0;
 
@@ -80,17 +85,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <div>
             <div className="flex items-center gap-2">
               <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> BEBEKJAYA PRO ENTERPRISE • MONITORING REALTIME
+                <Sparkles className="w-3.5 h-3.5" /> {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama.toUpperCase()} • MONITORING REALTIME
               </span>
               <span className="text-xs text-slate-400 font-medium hidden sm:inline">
                 {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
             <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2.5">
-              Dashboard Operasional & Keuangan Peternakan Bebek
+              Dashboard Operasional & Keuangan {KOMODITAS_LIST[activeCommodity].nama}
             </h1>
             <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Pantau arus kas, produktivitas telur (HDP %), efisiensi pakan (FCR), dan status piutang panen secara akurat.
+              Pantau arus kas, {metrics.labelProduksiUtama || 'produktivitas'}, efisiensi pakan, dan performa peternakan secara akurat.
             </p>
           </div>
 
@@ -101,7 +106,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 onClick={onOpenKasir}
                 className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95"
               >
-                <span>🛒 Kasir Jual Telur</span>
+                <span>🛒 Kasir Jual Panen</span>
               </button>
             )}
 
@@ -155,18 +160,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
           {/* Quick Metrics */}
           <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-              <span className="text-[10px] text-slate-400 block">Status HDP:</span>
-              <span className={`text-xs font-black ${hdpStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
-                {metrics.hdpHariIni}%
-              </span>
-            </div>
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-              <span className="text-[10px] text-slate-400 block">Rasio FCR:</span>
-              <span className={`text-xs font-black ${fcrStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
-                {fcrVal}
-              </span>
-            </div>
+            {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR' ? (
+              <>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Status HDP:</span>
+                  <span className={`text-xs font-black ${hdpStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
+                    {metrics.hdpHariIni}%
+                  </span>
+                </div>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Rasio FCR:</span>
+                  <span className={`text-xs font-black ${fcrStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
+                    {fcrVal}
+                  </span>
+                </div>
+              </>
+            ) : activeCommodity === 'AYAM_PEDAGING' ? (
+              <>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Indeks Performa (IP):</span>
+                  <span className="text-xs font-black text-amber-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.indeksPerformaRata || 0}
+                  </span>
+                </div>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Rata-rata Bobot:</span>
+                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.rataBobotBroilerKg ? `${metrics.rataBobotBroilerKg} Kg` : '-'}
+                  </span>
+                </div>
+              </>
+            ) : activeCommodity === 'SAPI' ? (
+              <>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Total Susu Hari Ini:</span>
+                  <span className="text-xs font-black text-sky-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.totalSusuHariIniLiter ? `${metrics.totalSusuHariIniLiter} Liter` : '0 L'}
+                  </span>
+                </div>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Rata Bobot Sapi:</span>
+                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.rataBobotSapiKg ? `${metrics.rataBobotSapiKg} Kg` : '-'}
+                  </span>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Survival Rate (SR):</span>
+                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.survivalRateRata || 100}%
+                  </span>
+                </div>
+                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
+                  <span className="text-[10px] text-slate-400 block">Est. Biomassa:</span>
+                  <span className="text-xs font-black text-sky-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
+                    {metrics.biomassaIkanKg ? `${metrics.biomassaIkanKg.toLocaleString('id-ID')} Kg` : '0 Kg'}
+                  </span>
+                </div>
+              </>
+            )}
             <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
               <span className="text-[10px] text-slate-400 block">Piutang Panen:</span>
               <span className="text-xs font-black text-emerald-400 block mt-0.5">
@@ -246,41 +300,67 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
 
-        {/* Card 3: Productivity % (HDP) */}
+        {/* Card 3: Dynamic Commodity Production / Primary Metric */}
         <div className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-slate-700 transition-all">
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Hen-Day Production (HDP)</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {metrics.labelProduksiUtama || 'Produksi Harian'}
+            </p>
             <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
-              <Egg className="w-5 h-5" />
+              {activeCommodity === 'SAPI' ? (
+                <Activity className="w-5 h-5" />
+              ) : activeCommodity === 'LELE' ? (
+                <Award className="w-5 h-5" />
+              ) : activeCommodity === 'AYAM_PEDAGING' ? (
+                <Scale className="w-5 h-5" />
+              ) : (
+                <Egg className="w-5 h-5" />
+              )}
             </div>
           </div>
           <div className="mt-3">
             <h3 className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
-              {metrics.hdpHariIni}%
+              {metrics.nilaiProduksiHariIni || (metrics.hdpHariIni + '%')}
             </h3>
             <div className="flex items-center justify-between mt-2 text-xs font-semibold text-slate-400">
-              <span>Hasil Panen: {metrics.totalTelurHariIni.toLocaleString('id-ID')} butir</span>
+              {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR' ? (
+                <span>Hasil Panen: {metrics.totalTelurHariIni.toLocaleString('id-ID')} butir</span>
+              ) : activeCommodity === 'AYAM_PEDAGING' ? (
+                <span>Panen: {metrics.rataBobotBroilerKg ? `${metrics.rataBobotBroilerKg} Kg/ekor` : 'Belum panen'}</span>
+              ) : activeCommodity === 'SAPI' ? (
+                <span>Perahan: {metrics.totalSusuHariIniLiter || 0} Liter susu murni</span>
+              ) : (
+                <span>Biomassa: {metrics.biomassaIkanKg ? `${metrics.biomassaIkanKg.toLocaleString('id-ID')} Kg` : '0 Kg'}</span>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Card 4: Duck Population & Health */}
+        {/* Card 4: Dynamic Population & Health */}
         <div
           onClick={() => setActiveTab('pengaturan')}
           className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-amber-500/50 cursor-pointer transition-all"
         >
           <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Populasi Bebek Hidup</p>
+            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+              {metrics.labelPopulasi || 'Populasi Ternak'}
+            </p>
             <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 group-hover:bg-amber-500/20 group-hover:text-amber-400 transition-colors">
               <Users className="w-5 h-5" />
             </div>
           </div>
           <div className="mt-3">
             <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-              {metrics.totalPopulasiHidup.toLocaleString('id-ID')} <span className="text-sm font-normal text-slate-400">ekor</span>
+              {metrics.totalPopulasiHidup.toLocaleString('id-ID')}{' '}
+              <span className="text-sm font-normal text-slate-400">
+                {activeCommodity === 'SAPI' ? 'ekor sapi' : activeCommodity === 'LELE' ? 'ekor ikan' : 'ekor'}
+              </span>
             </h3>
             <div className="flex items-center justify-between mt-2 text-xs font-semibold text-amber-400 group-hover:underline">
-              <span>Rata-rata FCR: <strong className="text-sky-400">{metrics.fcrAverage}</strong></span>
+              <span>
+                {metrics.labelEfisiensi || 'Efisiensi'}:{' '}
+                <strong className="text-sky-400">{metrics.nilaiEfisiensi || metrics.fcrAverage}</strong>
+              </span>
               <span>+ Kelola / Tambah →</span>
             </div>
           </div>
@@ -288,7 +368,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       </div>
 
       {/* Main Egg Production & HDP Interactive Chart */}
-      <GrafikProduksiTelur logs={logs} />
+      <GrafikProduksiTelur logs={logs} activeCommodity={activeCommodity} />
 
       {/* Secondary Row: Recent Financial Transactions & Feed Stats */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">

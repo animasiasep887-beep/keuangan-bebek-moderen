@@ -39,16 +39,50 @@ export interface PencatatanHarian {
   tanggal: string; // YYYY-MM-DD
   kandangId: string;
   populasiId: string;
+  komoditas?: KomoditasTernak;
+
+  // Bebek & Ayam Petelur fields
   telurUtuh: number; // Grade A
   telurRetak: number; // Grade B
   telurRusak: number;
   totalBeratTelurKg: number;
-  bebekMati: number;
+  bebekMati: number; // Mortalitas harian ekor
   bebekAfkir: number;
+  hdpPercentage: number; // Hen-Day Production %
+  bobotRataTelurGram?: number;
+
+  // Pakan umum
   pakanKg: number;
   pakanId: string;
-  hdpPercentage: number; // Calculated Hen-Day Production %
   fcr: number; // Feed Conversion Ratio
+
+  // Broiler (Ayam Pedaging) fields
+  umurHari?: number; // Hari ke-1 s/d ke-35
+  mortalitasDoc?: number;
+  bobotRataEkorGram?: number;
+  totalBobotPanenKg?: number;
+  indeksPerforma?: number; // IP Broiler: (Daya Hidup % x Bobot Rata-rata kg) / (FCR x Umur hari) * 100
+  adgGram?: number; // Average Daily Gain
+
+  // Sapi (Perah & Potong) fields
+  susuPagiLiter?: number;
+  susuSoreLiter?: number;
+  totalSusuLiter?: number;
+  bobotSapiKg?: number;
+  adgSapiKg?: number;
+  pakanHijauanKg?: number;
+  pakanKonsentratKg?: number;
+  catatanKesehatan?: string; // Vaksin / IB / Calving / Laktasi
+
+  // Lele (Akuakultur) fields
+  tebarBenihEkor?: number;
+  ukuranSamplingGram?: number;
+  samplingIsiPerKg?: number; // misal isi 8-10 ekor/kg
+  bobotPanenIkanKg?: number;
+  survivalRate?: number; // SR %
+  pakanPeletKg?: number;
+  kondisiAir?: string; // Normal / Hijau / Keruh / Kuras
+
   catatan?: string;
   createdBy: string;
 }
@@ -74,8 +108,8 @@ export interface TransaksiKeuangan {
   deskripsi: string;
   totalNominal: number;
   tipeTransaksi: 'PENDAPATAN' | 'PENGELUARAN' | 'JURNAL_UMUM';
-  kategoriPendapatan?: 'TELUR_GRADE_A' | 'TELUR_GRADE_B' | 'BEBEK_AFKIR' | 'PUPUK_KANDANG' | 'LAINNYA';
-  kategoriPengeluaran?: 'PAKAN' | 'OBAT_VAKSIN' | 'GAJI' | 'OPERASIONAL_KANDANG' | 'LISTRIK_AIR' | 'LAINNYA';
+  kategoriPendapatan?: string;
+  kategoriPengeluaran?: string;
   pencatatanHarianId?: string;
   items: JurnalItem[];
   createdBy: string;
@@ -219,6 +253,31 @@ export interface FarmMetricsSummary {
   fcrAverage: number;
   totalPiutang: number;
   totalHutang: number;
+
+  // Multi-Commodity Adaptations
+  activeCommodity?: KomoditasTernak;
+  labelProduksiUtama?: string;
+  nilaiProduksiHariIni?: number | string;
+  satuanProduksiUtama?: string;
+  labelEfisiensi?: string;
+  nilaiEfisiensi?: number | string;
+  labelPopulasi?: string;
+  labelKandang?: string;
+
+  // Specific Sector Indicators
+  // Broiler
+  rataBobotBroilerKg?: number;
+  indeksPerformaRata?: number;
+  dayaHidupPersen?: number;
+  // Sapi
+  totalSusuHariIniLiter?: number;
+  rataBobotSapiKg?: number;
+  totalPakanHijauanKg?: number;
+  totalPakanKonsentratKg?: number;
+  // Lele
+  biomassaIkanKg?: number;
+  survivalRateRata?: number;
+  samplingIsiPerKgRata?: number;
 }
 
 

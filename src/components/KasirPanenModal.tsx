@@ -1,8 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
-  ShoppingBag,
   X,
-  Egg,
   User,
   Phone,
   Clock,
@@ -14,27 +12,208 @@ import { formatIDR } from '../utils/exportUtils';
 import { useToast } from './ToastContainer';
 import { NotaStrukModal } from './NotaStrukModal';
 import type { NotaData } from './NotaStrukModal';
+import type { KomoditasTernak } from '../types';
+import { KOMODITAS_LIST } from '../types';
+
+interface ProductConfig {
+  id: string;
+  label: string;
+  defaultSatuan: string;
+  satuanOptions: { value: string; label: string; defaultHarga: number }[];
+}
+
+const COMMODITY_PRODUCTS: Record<KomoditasTernak, ProductConfig[]> = {
+  BEBEK_PETELUR: [
+    {
+      id: 'TELUR_GRADE_A',
+      label: 'Telur Bebek Grade A (Utuh)',
+      defaultSatuan: 'RAK',
+      satuanOptions: [
+        { value: 'RAK', label: 'Rak (30 Butir)', defaultHarga: 72000 },
+        { value: 'BUTIR', label: 'Butir Eceran', defaultHarga: 2400 },
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 38000 },
+      ],
+    },
+    {
+      id: 'TELUR_GRADE_B',
+      label: 'Telur Bebek Grade B (Retak)',
+      defaultSatuan: 'BUTIR',
+      satuanOptions: [
+        { value: 'BUTIR', label: 'Butir Eceran', defaultHarga: 1800 },
+        { value: 'RAK', label: 'Rak (30 Butir)', defaultHarga: 54000 },
+      ],
+    },
+    {
+      id: 'BEBEK_AFKIR',
+      label: 'Bebek Afkir',
+      defaultSatuan: 'EKOR',
+      satuanOptions: [
+        { value: 'EKOR', label: 'Ekor Bebek', defaultHarga: 55000 },
+      ],
+    },
+    {
+      id: 'PUPUK_KANDANG',
+      label: 'Pupuk Kandang Bebek',
+      defaultSatuan: 'KARUNG',
+      satuanOptions: [
+        { value: 'KARUNG', label: 'Karung Pupuk', defaultHarga: 15000 },
+      ],
+    },
+  ],
+  AYAM_PETELUR: [
+    {
+      id: 'TELUR_AYAM_A',
+      label: 'Telur Ayam Grade A',
+      defaultSatuan: 'KG',
+      satuanOptions: [
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 28000 },
+        { value: 'RAK', label: 'Rak (30 Butir)', defaultHarga: 55000 },
+        { value: 'BUTIR', label: 'Butir Eceran', defaultHarga: 1800 },
+      ],
+    },
+    {
+      id: 'TELUR_AYAM_B',
+      label: 'Telur Layer Retak / BS',
+      defaultSatuan: 'BUTIR',
+      satuanOptions: [
+        { value: 'BUTIR', label: 'Butir Eceran', defaultHarga: 1400 },
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 22000 },
+      ],
+    },
+    {
+      id: 'AYAM_AFKIR',
+      label: 'Ayam Layer Afkir',
+      defaultSatuan: 'EKOR',
+      satuanOptions: [
+        { value: 'EKOR', label: 'Ekor Ayam', defaultHarga: 42000 },
+      ],
+    },
+    {
+      id: 'PUPUK_KOHE_AYAM',
+      label: 'Pupuk Kohe Kering',
+      defaultSatuan: 'KARUNG',
+      satuanOptions: [
+        { value: 'KARUNG', label: 'Karung', defaultHarga: 12000 },
+      ],
+    },
+  ],
+  AYAM_PEDAGING: [
+    {
+      id: 'BROILER_HIDUP',
+      label: 'Ayam Broiler Panen (Hidup)',
+      defaultSatuan: 'KG',
+      satuanOptions: [
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 22500 },
+        { value: 'EKOR', label: 'Ekor Ayam', defaultHarga: 45000 },
+      ],
+    },
+    {
+      id: 'BROILER_BS',
+      label: 'Ayam BS / Culling',
+      defaultSatuan: 'KG',
+      satuanOptions: [
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 16000 },
+        { value: 'EKOR', label: 'Ekor Ayam', defaultHarga: 25000 },
+      ],
+    },
+    {
+      id: 'PUPUK_SEKAM_BROILER',
+      label: 'Pupuk Sekam & Kohe Broiler',
+      defaultSatuan: 'KARUNG',
+      satuanOptions: [
+        { value: 'KARUNG', label: 'Karung', defaultHarga: 10000 },
+      ],
+    },
+  ],
+  SAPI: [
+    {
+      id: 'SUSU_MURNI',
+      label: 'Susu Murni Segar',
+      defaultSatuan: 'LITER',
+      satuanOptions: [
+        { value: 'LITER', label: 'Liter Susu Murni', defaultHarga: 12000 },
+      ],
+    },
+    {
+      id: 'SAPI_POTONG',
+      label: 'Sapi Penggemukan / Siap Potong',
+      defaultSatuan: 'EKOR',
+      satuanOptions: [
+        { value: 'EKOR', label: 'Ekor Sapi', defaultHarga: 19000000 },
+        { value: 'KG', label: 'Kilogram Bobot Hidup', defaultHarga: 52000 },
+      ],
+    },
+    {
+      id: 'BAKALAN_PEDET',
+      label: 'Bakalan / Pedet Sapi',
+      defaultSatuan: 'EKOR',
+      satuanOptions: [
+        { value: 'EKOR', label: 'Ekor Sapi', defaultHarga: 9500000 },
+      ],
+    },
+    {
+      id: 'PUPUK_KOMPOS_SAPI',
+      label: 'Pupuk Kompos Fermentasi',
+      defaultSatuan: 'KARUNG',
+      satuanOptions: [
+        { value: 'KARUNG', label: 'Karung', defaultHarga: 20000 },
+      ],
+    },
+  ],
+  LELE: [
+    {
+      id: 'LELE_KONSUMSI',
+      label: 'Ikan Lele Konsumsi (Panen)',
+      defaultSatuan: 'KG',
+      satuanOptions: [
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 23000 },
+      ],
+    },
+    {
+      id: 'BENIH_LELE',
+      label: 'Bibit / Benih Lele Unggul',
+      defaultSatuan: 'EKOR',
+      satuanOptions: [
+        { value: 'EKOR', label: 'Ekor Bibit', defaultHarga: 250 },
+      ],
+    },
+    {
+      id: 'LELE_BS_SORTIR',
+      label: 'Lele Sortiran / BS',
+      defaultSatuan: 'KG',
+      satuanOptions: [
+        { value: 'KG', label: 'Kilogram (Kg)', defaultHarga: 16000 },
+      ],
+    },
+  ],
+};
 
 interface KasirPanenModalProps {
   isOpen: boolean;
   onClose: () => void;
   onRefreshData: () => void;
+  activeCommodity?: KomoditasTernak;
 }
 
 export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
   isOpen,
   onClose,
   onRefreshData,
+  activeCommodity = 'BEBEK_PETELUR',
 }) => {
   const { showToast } = useToast();
 
+  const productList = COMMODITY_PRODUCTS[activeCommodity] || COMMODITY_PRODUCTS.BEBEK_PETELUR;
+
   const [tanggal, setTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [namaPembeli, setNamaPembeli] = useState<string>('Pengepul / Toko');
+  const [namaPembeli, setNamaPembeli] = useState<string>('Pengepul / Pelanggan');
   const [noHp, setNoHp] = useState<string>('');
-  const [kategori, setKategori] = useState<'TELUR_GRADE_A' | 'TELUR_GRADE_B' | 'BEBEK_AFKIR' | 'PUPUK_KANDANG'>('TELUR_GRADE_A');
-  const [satuan, setSatuan] = useState<'RAK' | 'BUTIR' | 'KG' | 'EKOR' | 'KARUNG'>('RAK');
+  const [selectedProductId, setSelectedProductId] = useState<string>(productList[0].id);
+  const [satuan, setSatuan] = useState<string>(productList[0].defaultSatuan);
   const [jumlahQty, setJumlahQty] = useState<number>(10);
-  const [hargaPerSatuan, setHargaPerSatuan] = useState<number>(72000); // Rp 72.000 per rak (Rp 2.400 / butir)
+  const [hargaPerSatuan, setHargaPerSatuan] = useState<number>(
+    productList[0].satuanOptions[0]?.defaultHarga || 72000
+  );
   const [metodeBayar, setMetodeBayar] = useState<'TUNAI' | 'TRANSFER' | 'TEMPO'>('TUNAI');
   const [tglJatuhTempo, setTglJatuhTempo] = useState<string>(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -45,33 +224,43 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
   const [notaData, setNotaData] = useState<NotaData | null>(null);
   const [isNotaOpen, setIsNotaOpen] = useState<boolean>(false);
 
+  // When activeCommodity changes, reset product selection
+  useEffect(() => {
+    const list = COMMODITY_PRODUCTS[activeCommodity] || COMMODITY_PRODUCTS.BEBEK_PETELUR;
+    if (list && list.length > 0) {
+      setSelectedProductId(list[0].id);
+      setSatuan(list[0].defaultSatuan);
+      setHargaPerSatuan(list[0].satuanOptions[0]?.defaultHarga || 50000);
+      if (list[0].defaultSatuan === 'EKOR' && activeCommodity === 'SAPI') {
+        setJumlahQty(1);
+      }
+    }
+  }, [activeCommodity]);
+
+  const currentProduct = productList.find((p) => p.id === selectedProductId) || productList[0];
+
   // Auto total calculation
   const totalNominal = jumlahQty * hargaPerSatuan;
 
-  // Handle category change default prices
-  const handleKategoriChange = (newCat: any) => {
-    setKategori(newCat);
-    if (newCat === 'TELUR_GRADE_A') {
-      setSatuan('RAK');
-      setHargaPerSatuan(72000); // 30 butir x 2400
-    } else if (newCat === 'TELUR_GRADE_B') {
-      setSatuan('BUTIR');
-      setHargaPerSatuan(1800);
-    } else if (newCat === 'BEBEK_AFKIR') {
-      setSatuan('EKOR');
-      setHargaPerSatuan(55000);
-    } else if (newCat === 'PUPUK_KANDANG') {
-      setSatuan('KARUNG');
-      setHargaPerSatuan(15000);
+  // Handle product change
+  const handleProductChange = (productId: string) => {
+    setSelectedProductId(productId);
+    const prod = productList.find((p) => p.id === productId);
+    if (prod) {
+      setSatuan(prod.defaultSatuan);
+      const opt = prod.satuanOptions.find((o) => o.value === prod.defaultSatuan) || prod.satuanOptions[0];
+      if (opt) setHargaPerSatuan(opt.defaultHarga);
+      if (prod.defaultSatuan === 'EKOR' && activeCommodity === 'SAPI') {
+        setJumlahQty(1);
+      }
     }
   };
 
-  const handleSatuanChange = (newSatuan: any) => {
+  const handleSatuanChange = (newSatuan: string) => {
     setSatuan(newSatuan);
-    if (kategori === 'TELUR_GRADE_A') {
-      if (newSatuan === 'RAK') setHargaPerSatuan(72000);
-      else if (newSatuan === 'BUTIR') setHargaPerSatuan(2400);
-      else if (newSatuan === 'KG') setHargaPerSatuan(38000);
+    const opt = currentProduct.satuanOptions.find((o) => o.value === newSatuan);
+    if (opt) {
+      setHargaPerSatuan(opt.defaultHarga);
     }
   };
 
@@ -88,11 +277,7 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     }
 
     try {
-      const kategoriLabel =
-        kategori === 'TELUR_GRADE_A' ? 'Telur Grade A (Utuh)' :
-        kategori === 'TELUR_GRADE_B' ? 'Telur Grade B (Retak)' :
-        kategori === 'BEBEK_AFKIR' ? 'Bebek Afkir' : 'Pupuk Kandang';
-
+      const kategoriLabel = currentProduct.label;
       const noRef = `TRX-${new Date().toISOString().slice(0, 10).replace(/-/g, '')}-${Math.floor(
         100 + Math.random() * 900
       )}`;
@@ -101,7 +286,8 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
         tanggal,
         namaPembeli,
         noHp: noHp || undefined,
-        kategori,
+        kategori: currentProduct.id,
+        kategoriLabel,
         jumlahQty,
         satuan,
         hargaPerSatuan,
@@ -109,6 +295,7 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
         metodeBayar,
         tglJatuhTempo: metodeBayar === 'TEMPO' ? tglJatuhTempo : undefined,
         catatan: catatan || undefined,
+        komoditas: activeCommodity,
       });
 
       setNotaData({
@@ -140,6 +327,7 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
 
   if (!isOpen) return null;
 
+  const info = KOMODITAS_LIST[activeCommodity];
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto">
@@ -147,15 +335,15 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
         {/* Modal Header */}
         <div className="flex items-center justify-between pb-4 border-b border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10">
-              <ShoppingBag className="w-6 h-6" />
+            <div className="w-11 h-11 rounded-2xl bg-amber-500/20 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-lg shadow-amber-500/10 text-xl">
+              {info.icon}
             </div>
             <div>
               <h2 className="text-xl sm:text-2xl font-black text-white flex items-center gap-2">
                 Kasir Jual Cepat (POS Panen) <Sparkles className="w-4 h-4 text-amber-400" />
               </h2>
               <p className="text-xs text-slate-400">
-                Jual hasil panen telur & otomatis catat ke Jurnal Kas / Piutang dengan 1 klik.
+                Jual panen {info.nama} & otomatis catat ke Jurnal Kas / Piutang dengan 1 klik.
               </p>
             </div>
           </div>
@@ -171,21 +359,16 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
           {/* Komoditas / Kategori Produk */}
           <div>
             <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-2">
-              Pilih Komoditas Dijual:
+              Pilih Produk {info.nama} Dijual:
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-              {[
-                { id: 'TELUR_GRADE_A', label: 'Telur Grade A (Utuh)', icon: Egg, color: 'text-amber-400' },
-                { id: 'TELUR_GRADE_B', label: 'Telur Grade B (Retak)', icon: Egg, color: 'text-amber-200' },
-                { id: 'BEBEK_AFKIR', label: 'Bebek Afkir', icon: User, color: 'text-rose-400' },
-                { id: 'PUPUK_KANDANG', label: 'Pupuk Kandang', icon: Sparkles, color: 'text-emerald-400' },
-              ].map((item) => {
-                const isSelected = kategori === item.id;
+              {productList.map((item) => {
+                const isSelected = selectedProductId === item.id;
                 return (
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => handleKategoriChange(item.id)}
+                    onClick={() => handleProductChange(item.id)}
                     className={`p-3 rounded-2xl border text-left transition-all flex flex-col justify-between ${
                       isSelected
                         ? 'bg-amber-500/15 border-amber-500/50 text-white shadow-md shadow-amber-500/10'
@@ -209,11 +392,11 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
                 onChange={(e) => handleSatuanChange(e.target.value)}
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm outline-none focus:border-amber-400"
               >
-                <option value="RAK">Rak (Isi 30 Butir)</option>
-                <option value="BUTIR">Butir Eceran</option>
-                <option value="KG">Kilogram (Kg)</option>
-                <option value="EKOR">Ekor (Bebek)</option>
-                <option value="KARUNG">Karung (Pupuk)</option>
+                {currentProduct.satuanOptions.map((opt) => (
+                  <option key={opt.value} value={opt.value}>
+                    {opt.label}
+                  </option>
+                ))}
               </select>
             </div>
 
@@ -240,9 +423,12 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
             </div>
 
             {/* Quick Presets for Qty */}
-            <div className="sm:col-span-3 flex items-center gap-2 pt-1">
+            <div className="sm:col-span-3 flex items-center gap-2 pt-1 flex-wrap">
               <span className="text-[11px] text-slate-400">Pilih Cepat:</span>
-              {[5, 10, 20, 50, 100].map((q) => (
+              {(activeCommodity === 'SAPI' && satuan === 'EKOR'
+                ? [1, 2, 5, 10]
+                : [5, 10, 20, 50, 100]
+              ).map((q) => (
                 <button
                   key={q}
                   type="button"
@@ -265,7 +451,7 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
                   type="text"
                   value={namaPembeli}
                   onChange={(e) => setNamaPembeli(e.target.value)}
-                  placeholder="Contoh: Toko Berkah / Mas Agus"
+                  placeholder="Contoh: Toko Berkah / Pengepul"
                   className="w-full bg-transparent text-sm text-white font-semibold outline-none"
                 />
               </div>
@@ -303,7 +489,7 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
                 type="text"
                 value={catatan}
                 onChange={(e) => setCatatan(e.target.value)}
-                placeholder="Contoh: Titip ke pengepul sore hari"
+                placeholder="Contoh: Kirim via armada pickup"
                 className="w-full bg-slate-900 border border-slate-800 rounded-xl px-3 py-2 text-xs text-white outline-none"
               />
             </div>
@@ -400,4 +586,3 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     </div>
   );
 };
-

@@ -48,6 +48,7 @@ export function AppContent() {
       setCurrentUser(updatedUser);
       localStorage.setItem('bebek_current_user', JSON.stringify(updatedUser));
     }
+    refreshAllData(newCommodity);
   };
 
   // Modal tools state
@@ -57,7 +58,7 @@ export function AppContent() {
   const [isProyeksiOpen, setIsProyeksiOpen] = useState<boolean>(false);
 
   // Application Data States
-  const [metrics, setMetrics] = useState(StorageService.calculateMetrics());
+  const [metrics, setMetrics] = useState(StorageService.calculateMetrics(activeCommodity));
   const [logs, setLogs] = useState(StorageService.getPencatatanHarian());
   const [transactions, setTransactions] = useState(StorageService.getTransaksi());
   const [kandangList, setKandangList] = useState(StorageService.getKandang());
@@ -67,8 +68,9 @@ export function AppContent() {
   const [asetList, setAsetList] = useState(StorageService.getAset());
   const [hpList, setHpList] = useState(StorageService.getHutangPiutang());
 
-  const refreshAllData = () => {
-    setMetrics(StorageService.calculateMetrics());
+  const refreshAllData = (commOverride?: KomoditasTernak) => {
+    const targetComm = commOverride || activeCommodity;
+    setMetrics(StorageService.calculateMetrics(targetComm));
     setLogs(StorageService.getPencatatanHarian());
     setTransactions(StorageService.getTransaksi());
     setKandangList(StorageService.getKandang());
@@ -239,8 +241,8 @@ export function AppContent() {
             onOpenKalkulator={() => setIsKalkulatorOpen(true)}
             onOpenKasir={() => setIsKasirOpen(true)}
             onOpenProyeksi={() => setIsProyeksiOpen(true)}
+            activeCommodity={activeCommodity}
           />
-
         )}
 
         {activeTab === 'operasional' && (
@@ -253,6 +255,7 @@ export function AppContent() {
             setActiveTab={setActiveTab}
             onOpenKasir={() => setIsKasirOpen(true)}
             onOpenKalkulator={() => setIsKalkulatorOpen(true)}
+            activeCommodity={activeCommodity}
           />
         )}
 
@@ -313,6 +316,7 @@ export function AppContent() {
         isOpen={isKalkulatorOpen}
         onClose={() => setIsKalkulatorOpen(false)}
         populasiDefault={metrics.totalPopulasiHidup || 1000}
+        activeCommodity={activeCommodity}
       />
 
       <ProyeksiBisnisModal
@@ -325,6 +329,7 @@ export function AppContent() {
         isOpen={isKasirOpen}
         onClose={() => setIsKasirOpen(false)}
         onRefreshData={refreshAllData}
+        activeCommodity={activeCommodity}
       />
 
       <NotifikasiPengaturanModal
@@ -338,7 +343,7 @@ export function AppContent() {
       {/* Footer Desktop */}
       <footer className="hidden lg:block border-t border-slate-800/80 bg-slate-950/60 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4">
-          <p>© 2026 PRATAMA BISNIS GRUP — Sistem Informasi Manajemen Peternakan Bebek Petelur Terpadu.</p>
+          <p>© 2026 TERNAK.FUN — Platform Terpadu Manajemen Peternakan Bebek, Ayam, Sapi & Budidaya Perikanan.</p>
         </div>
       </footer>
 

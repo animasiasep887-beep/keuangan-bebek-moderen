@@ -105,6 +105,90 @@ export interface HutangPiutang {
   status: StatusHutangPiutang;
 }
 
+export type KomoditasTernak = 'BEBEK_PETELUR' | 'AYAM_PETELUR' | 'AYAM_PEDAGING' | 'SAPI' | 'LELE';
+
+export interface KomoditasConfig {
+  id: KomoditasTernak;
+  nama: string;
+  subjudul: string;
+  icon: string;
+  satuanProduksiUtama: string;
+  labelProduksiUtama: string;
+  labelPopulasi: string;
+  satuanPopulasi: string;
+  labelKandang: string;
+  deskripsi: string;
+  warnaTema: string;
+}
+
+export const KOMODITAS_LIST: Record<KomoditasTernak, KomoditasConfig> = {
+  BEBEK_PETELUR: {
+    id: 'BEBEK_PETELUR',
+    nama: 'Bebek Petelur',
+    subjudul: 'Produksi Telur & Akuntansi',
+    icon: '🦆',
+    satuanProduksiUtama: 'Butir',
+    labelProduksiUtama: 'Produksi Telur',
+    labelPopulasi: 'Bebek Produktif',
+    satuanPopulasi: 'Ekor',
+    labelKandang: 'Kandang Bebek',
+    deskripsi: 'Manajemen Hen-Day Production (HDP), FCR pakan, telur grade A/B, dan bebek afkir.',
+    warnaTema: 'amber',
+  },
+  AYAM_PETELUR: {
+    id: 'AYAM_PETELUR',
+    nama: 'Ayam Petelur (Layer)',
+    subjudul: 'Telur Ayam Ras / Kampung',
+    icon: '🐔',
+    satuanProduksiUtama: 'Butir',
+    labelProduksiUtama: 'Produksi Telur',
+    labelPopulasi: 'Ayam Layer',
+    satuanPopulasi: 'Ekor',
+    labelKandang: 'Kandang Baterai / Closed House',
+    deskripsi: 'Monitoring puncak produksi layer, pakan konsentrat, vaksinasi, dan rasio sortasi.',
+    warnaTema: 'orange',
+  },
+  AYAM_PEDAGING: {
+    id: 'AYAM_PEDAGING',
+    nama: 'Ayam Pedaging (Broiler)',
+    subjudul: 'Penggemukan & Panen Daging',
+    icon: '🍗',
+    satuanProduksiUtama: 'Kg',
+    labelProduksiUtama: 'Bobot Panen Daging',
+    labelPopulasi: 'Populasi Broiler',
+    satuanPopulasi: 'Ekor',
+    labelKandang: 'Kandang Postal / Tunnel',
+    deskripsi: 'Pencatatan siklus panen (30-35 hari), mortalitas DOC, pertambahan bobot harian (ADG), dan indeks performa.',
+    warnaTema: 'red',
+  },
+  SAPI: {
+    id: 'SAPI',
+    nama: 'Sapi (Perah & Potong)',
+    subjudul: 'Susu Segar & Penggemukan',
+    icon: '🐄',
+    satuanProduksiUtama: 'Liter / Kg',
+    labelProduksiUtama: 'Produksi Susu / Bobot',
+    labelPopulasi: 'Ekor Sapi',
+    satuanPopulasi: 'Ekor',
+    labelKandang: 'Kandang Sapi',
+    deskripsi: 'Pencatatan produksi liter susu per hari, calving date, siklus pakan hijauan/konsentrat, dan bobot timbang.',
+    warnaTema: 'emerald',
+  },
+  LELE: {
+    id: 'LELE',
+    nama: 'Budidaya Ikan Lele',
+    subjudul: 'Akuakultur & Kolam Bioflok',
+    icon: '🐟',
+    satuanProduksiUtama: 'Kg',
+    labelProduksiUtama: 'Hasil Panen Ikan',
+    labelPopulasi: 'Bibit / Ikan Tebar',
+    satuanPopulasi: 'Ekor',
+    labelKandang: 'Kolam Terpal / Bioflok',
+    deskripsi: 'Manajemen tebar benih, sampling ukuran per kg, pemberian pelet, dan panen total.',
+    warnaTema: 'cyan',
+  },
+};
+
 export interface User {
   id: string;
   name: string;
@@ -116,6 +200,8 @@ export interface User {
   createdAt: string;
   avatarUrl?: string;
   isGoogleAuth?: boolean;
+  activeCommodity?: KomoditasTernak;
+  enabledCommodities?: KomoditasTernak[];
 }
 
 export interface AuthState {
@@ -134,4 +220,5 @@ export interface FarmMetricsSummary {
   totalPiutang: number;
   totalHutang: number;
 }
+
 

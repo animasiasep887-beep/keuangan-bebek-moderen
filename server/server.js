@@ -60,6 +60,36 @@ app.post('/api/auth/login', (req, res) => {
   res.json({ success: true, user: userWithoutPass });
 });
 
+// Google One-Click Auth Endpoint
+app.post('/api/auth/google', (req, res) => {
+  const result = db.registerOrUpdateGoogleUser(req.body);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Reset Password / Pulihkan Akun Endpoint
+app.post('/api/auth/reset-password', (req, res) => {
+  const result = db.resetPassword(req.body);
+  if (!result.success) {
+    return res.status(400).json(result);
+  }
+  res.json(result);
+});
+
+// Download Complete Farm Database Backup (JSON)
+app.get('/api/backup/download', (req, res) => {
+  const dbFile = path.join(__dirname, 'data', 'farm_database.json');
+  if (fs.existsSync(dbFile)) {
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+    res.download(dbFile, `bebekjaya_backup_${timestamp}.json`);
+  } else {
+    res.status(404).json({ success: false, message: 'File database belum tersedia.' });
+  }
+});
+
+
 // Get all farm data
 app.get('/api/data', (req, res) => {
   const mode = req.query.mode || 'REAL';

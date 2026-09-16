@@ -2,10 +2,11 @@ import React from 'react';
 import { Egg, Wallet, TrendingUp, Layers, ShieldCheck, Feather, CheckCircle2, TestTube2, Settings, Sparkles, User as UserIcon, LogOut, Bell } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 
-import type { FarmMetricsSummary, User } from '../types';
+import type { FarmMetricsSummary, User, KomoditasTernak } from '../types';
 import type { AppMode } from '../services/storage';
 import { AuthService } from '../services/authService';
 import { formatIDR } from '../utils/exportUtils';
+import { KomoditasSelector } from './KomoditasSelector';
 
 interface HeaderProps {
   activeTab: string;
@@ -19,6 +20,8 @@ interface HeaderProps {
   onOpenAuth?: () => void;
   onLogout?: () => void;
   currentUser?: User | null;
+  activeCommodity?: KomoditasTernak;
+  onChangeCommodity?: (commodity: KomoditasTernak) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -33,6 +36,8 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenAuth,
   onLogout,
   currentUser,
+  activeCommodity = 'BEBEK_PETELUR',
+  onChangeCommodity,
 }) => {
   const isReal = appMode === 'REAL';
   const activeUser = currentUser || AuthService.getCurrentUser();
@@ -61,6 +66,14 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Quick Tools & Mode Switcher & User Profile */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Multi-Commodity Selector */}
+            {onChangeCommodity && (
+              <KomoditasSelector
+                activeCommodity={activeCommodity}
+                onChangeCommodity={onChangeCommodity}
+              />
+            )}
+
             {/* User Account Button / Avatar */}
             {onOpenAuth && (
               <button

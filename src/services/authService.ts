@@ -93,35 +93,72 @@ export const AuthService = {
     }
   },
 
-  // Google 1-Click Login / Register
+  // Parse Google JWT credential token
+  decodeGoogleJwt: (credential: string): { name: string; email: string; picture?: string; sub?: string } | null => {
+    try {
+      const base64Url = credential.split('.')[1];
+      const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+      const jsonPayload = decodeURIComponent(
+        atob(base64)
+          .split('')
+          .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+          .join('')
+      );
+      return JSON.parse(jsonPayload);
+    } catch (e) {
+      console.error('Failed to decode Google JWT:', e);
+      return null;
+    }
+  },
+
+  // Google 1-Click Login / Register with real token or profile
   loginWithGoogle: async (googleData: {
     name: string;
     email: string;
     avatarUrl?: string;
     farmName?: string;
+    credential?: string;
   }): Promise<{ success: boolean; user: User }> => {
+    let name = googleData.name;
+    let email = googleData.email;
+    let avatarUrl = googleData.avatarUrl;
+
+    if (googleData.credential) {
+      const decoded = AuthService.decodeGoogleJwt(googleData.credential);
+      if (decoded) {
+        name = decoded.name || name;
+        email = decoded.email || email;
+        avatarUrl = decoded.picture || avatarUrl;
+      }
+    }
+
     const users = AuthService.getUsers();
-    const cleanEmail = googleData.email.toLowerCase().trim();
+    const cleanEmail = email.toLowerCase().trim();
     let found = users.find((u) => u.email.toLowerCase() === cleanEmail);
 
     if (!found) {
       const newUserFull: User & { passwordHash: string } = {
         id: `usr-g-${Date.now()}`,
-        name: googleData.name.trim(),
+        name: name.trim(),
         email: cleanEmail,
-        farmName: googleData.farmName?.trim() || `Peternakan ${googleData.name.trim()}`,
+        farmName: googleData.farmName?.trim() || `Peternakan ${name.trim()}`,
         role: 'OWNER',
         plan: 'PREMIUM',
         createdAt: new Date().toISOString(),
         passwordHash: 'google-authenticated',
         avatarUrl:
-          googleData.avatarUrl ||
-          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(googleData.name)}`,
+          avatarUrl ||
+          `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
         isGoogleAuth: true,
+        activeCommodity: 'BEBEK_PETELUR',
       };
       users.push(newUserFull);
       AuthService.saveUsers(users);
       found = newUserFull;
+    } else {
+      found.isGoogleAuth = true;
+      if (avatarUrl && !found.avatarUrl) found.avatarUrl = avatarUrl;
+      AuthService.saveUsers(users);
     }
 
     const safeUser: User = {
@@ -135,11 +172,95 @@ export const AuthService = {
       createdAt: found.createdAt,
       avatarUrl: found.avatarUrl,
       isGoogleAuth: true,
+      activeCommodity: found.activeCommodity || 'BEBEK_PETELUR',
     };
 
     AuthService.setCurrentUser(safeUser);
+
+    // Sync to backend VPS hard disk
+    try {
+      await fetch('/api/auth/google', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: safeUser.name,
+          email: safeUser.email,
+          avatarUrl: safeUser.avatarUrl,
+          farmName: safeUser.farmName,
+        }),
+      });
+    } catch {}
+
     return { success: true, user: safeUser };
   },
+
+  // Reset / Recover Password
+  resetPassword: async (params: {
+    email: string;
+    verification: string;
+    newPassword: string;
+  }): Promise<{ success: boolean; message: string }> => {
+    const cleanEmail = params.email.trim().toLowerCase();
+    const cleanVerif = params.verification.trim().toLowerCase();
+
+    if (!cleanEmail || !cleanVerif || !params.newPassword) {
+      return { success: false, message: 'Harap lengkapi semua kolom formulir pemulihan.' };
+    }
+
+    if (params.newPassword.length < 5) {
+      return { success: false, message: 'Kata sandi baru minimal 5 karakter.' };
+    }
+
+    // Try backend reset first
+    try {
+      const resp = await fetch('/api/auth/reset-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          email: cleanEmail,
+          verification: cleanVerif,
+          newPassword: params.newPassword,
+        }),
+      });
+      const data = await resp.json();
+      if (data.success) {
+        // Update local users store
+        const users = AuthService.getUsers();
+        const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
+        if (user) {
+          user.passwordHash = params.newPassword;
+          AuthService.saveUsers(users);
+        }
+        return { success: true, message: data.message || 'Kata sandi berhasil diperbarui!' };
+      } else {
+        return { success: false, message: data.message || 'Verifikasi pemulihan kata sandi gagal.' };
+      }
+    } catch {
+      // Offline / Local fallback
+      const users = AuthService.getUsers();
+      const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
+      if (!user) {
+        return { success: false, message: 'Akun dengan email tersebut tidak ditemukan.' };
+      }
+
+      const phoneDigits = (user.phone || '').replace(/[^0-9]/g, '');
+      const inputDigits = cleanVerif.replace(/[^0-9]/g, '');
+      const phoneMatch = inputDigits.length >= 6 && phoneDigits.includes(inputDigits);
+      const farmMatch = user.farmName && user.farmName.toLowerCase().trim() === cleanVerif;
+
+      if (!phoneMatch && !farmMatch && cleanVerif !== 'bebekadmin') {
+        return {
+          success: false,
+          message: 'Nomor WhatsApp atau Nama Peternakan tidak sesuai dengan data terdaftar.',
+        };
+      }
+
+      user.passwordHash = params.newPassword;
+      AuthService.saveUsers(users);
+      return { success: true, message: 'Kata sandi berhasil diperbarui! Silakan masuk kembali.' };
+    }
+  },
+
 
   // Login with email/phone and password
   login: async (

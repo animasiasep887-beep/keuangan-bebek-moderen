@@ -25,6 +25,7 @@ dist-ssr
 
 # Database backups & local temporary files
 server/data/backups/
+backups_vps_safe/
 *.backup.json
 caddy.exe
 Caddyfile

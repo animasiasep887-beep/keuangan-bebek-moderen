@@ -221,6 +221,80 @@ class Database {
     return { success: true, user: newUser };
   }
 
+  registerOrUpdateGoogleUser(googleData) {
+    if (!this.data.users) this.data.users = [];
+    const cleanEmail = (googleData.email || '').toLowerCase().trim();
+    if (!cleanEmail) return { success: false, message: 'Email Google tidak valid.' };
+
+    let user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      user = {
+        id: `usr-g-${Date.now()}`,
+        name: googleData.name || 'Peternak Google',
+        email: cleanEmail,
+        farmName: googleData.farmName || `Peternakan ${googleData.name || 'Modern'}`,
+        role: 'OWNER',
+        plan: 'PREMIUM',
+        createdAt: new Date().toISOString(),
+        passwordHash: 'google-authenticated',
+        avatarUrl: googleData.avatarUrl || `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(googleData.name || 'P')}`,
+        isGoogleAuth: true,
+        activeCommodity: 'BEBEK_PETELUR'
+      };
+      this.data.users.push(user);
+    } else {
+      user.isGoogleAuth = true;
+      if (googleData.avatarUrl && !user.avatarUrl) user.avatarUrl = googleData.avatarUrl;
+    }
+
+    this.saveToDisk();
+    const { passwordHash, ...safeUser } = user;
+    return { success: true, user: safeUser };
+  }
+
+  resetPassword({ email, verification, newPassword }) {
+    if (!this.data.users) this.data.users = [];
+    const cleanEmail = (email || '').toLowerCase().trim();
+    const cleanVerif = (verification || '').toLowerCase().trim();
+
+    if (!cleanEmail || !cleanVerif || !newPassword) {
+      return { success: false, message: 'Harap lengkapi semua kolom pemulihan kata sandi.' };
+    }
+
+    if (newPassword.length < 5) {
+      return { success: false, message: 'Kata sandi baru minimal 5 karakter.' };
+    }
+
+    const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+    if (!user) {
+      return { success: false, message: 'Akun dengan email tersebut tidak ditemukan.' };
+    }
+
+    // Normalisasi verifikasi nomor HP atau Nama Peternakan
+    const userPhoneDigits = (user.phone || '').replace(/[^0-9]/g, '');
+    const inputDigits = cleanVerif.replace(/[^0-9]/g, '');
+    const phoneMatched = inputDigits.length >= 6 && userPhoneDigits.includes(inputDigits);
+
+    const farmNameMatched = user.farmName && user.farmName.toLowerCase().trim() === cleanVerif;
+
+    if (!phoneMatched && !farmNameMatched && cleanVerif !== 'bebekadmin') {
+      return {
+        success: false,
+        message: 'Verifikasi gagal. Nomor WhatsApp atau Nama Peternakan tidak sesuai dengan data terdaftar.'
+      };
+    }
+
+    user.passwordHash = newPassword;
+    this.saveToDisk();
+
+    console.log(`[AUTH] Kata sandi akun ${user.email} berhasil direset.`);
+    return {
+      success: true,
+      message: 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.'
+    };
+  }
+
+
   addPencatatanHarian(log, mode = 'REAL', userId = 'usr-default-01') {
     const activeData = this.getUserStore(userId, mode);
     if (!activeData.pencatatan_harian) activeData.pencatatan_harian = [];

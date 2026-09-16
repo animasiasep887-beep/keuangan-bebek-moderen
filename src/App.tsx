@@ -4,7 +4,8 @@ import { useState, useEffect } from 'react';
 import { StorageService } from './services/storage';
 import type { AppMode } from './services/storage';
 import { AuthService } from './services/authService';
-import type { User } from './types';
+import type { User, KomoditasTernak } from './types';
+import { KOMODITAS_LIST } from './types';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { OperasionalView } from './components/OperasionalView';
@@ -31,6 +32,23 @@ export function AppContent() {
   // User Authentication State
   const [currentUser, setCurrentUser] = useState<User | null>(() => AuthService.getCurrentUser());
   const [isAuthModalOpen, setIsAuthModalOpen] = useState<boolean>(false);
+
+  // Active Commodity State (Duck, Laying Chicken, Broiler, Cow, Catfish)
+  const [activeCommodity, setActiveCommodity] = useState<KomoditasTernak>(() => {
+    return (localStorage.getItem('bebek_active_commodity') as KomoditasTernak) ||
+      currentUser?.activeCommodity ||
+      'BEBEK_PETELUR';
+  });
+
+  const handleCommodityChange = (newCommodity: KomoditasTernak) => {
+    setActiveCommodity(newCommodity);
+    localStorage.setItem('bebek_active_commodity', newCommodity);
+    if (currentUser) {
+      const updatedUser = { ...currentUser, activeCommodity: newCommodity };
+      setCurrentUser(updatedUser);
+      localStorage.setItem('bebek_current_user', JSON.stringify(updatedUser));
+    }
+  };
 
   // Modal tools state
   const [isKalkulatorOpen, setIsKalkulatorOpen] = useState<boolean>(false);
@@ -163,6 +181,8 @@ export function AppContent() {
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
+        activeCommodity={activeCommodity}
+        onChangeCommodity={handleCommodityChange}
       />
 
       {/* Mode & Active User Banner Indicator - Slim 1-line on mobile */}
@@ -173,13 +193,13 @@ export function AppContent() {
             : 'bg-amber-950/70 border-b border-amber-500/30 text-amber-300'
         }`}
       >
-        <div className="flex items-center gap-1.5 truncate">
+        <div className="flex items-center gap-2 truncate">
           {appMode === 'REAL' ? (
             <>
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
               <span className="truncate">
                 <strong className="text-white">{currentUser?.farmName || 'Peternakan'}</strong>
-                <span className="hidden md:inline"> — Data tersimpan terisolasi per akun di disk</span>
+                <span className="hidden md:inline"> — Data tersimpan permanen di VPS</span>
               </span>
             </>
           ) : (
@@ -191,6 +211,12 @@ export function AppContent() {
               </span>
             </>
           )}
+
+          {/* Active Commodity Badge */}
+          <span className="inline-flex items-center gap-1 bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 text-[10px] font-bold">
+            <span>{KOMODITAS_LIST[activeCommodity].icon}</span>
+            <span>{KOMODITAS_LIST[activeCommodity].nama}</span>
+          </span>
         </div>
 
         <button

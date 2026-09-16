@@ -360,7 +360,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                 </div>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                 <button
                   onClick={handleForceSync}
                   className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all"
@@ -375,6 +375,16 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                   <Download className="w-3.5 h-3.5" />
                   Export Backup (.JSON)
                 </button>
+                <a
+                  href="/api/backup/download"
+                  target="_blank"
+                  rel="noreferrer"
+                  className="py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs flex items-center justify-center gap-2 border border-slate-700 transition-all text-center"
+                  title="Download file farm_database.json asli dari hard disk VPS"
+                >
+                  <HardDrive className="w-3.5 h-3.5 text-emerald-400" />
+                  Backup VPS File
+                </a>
               </div>
 
               {/* Restore JSON File Uploader */}

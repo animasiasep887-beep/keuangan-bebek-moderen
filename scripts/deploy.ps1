@@ -76,25 +76,47 @@ Write-Host "      Build selesai!" -ForegroundColor Green
 # 6. Menyiapkan Cloudflare Tunnel & Restart Server via PM2
 Write-Host "[6/6] Menyiapkan Cloudflare Tunnel & Memulai ulang proses server..." -ForegroundColor Cyan
 
-# Hapus caddy-proxy lama jika pernah ada
+# Hapus caddy-proxy lama jika pernah ada di PM2
 try {
     pm2 delete caddy-proxy 2>$null | Out-Null
 } catch {}
 
 # Pastikan cloudflared.exe tersedia di folder
 $CLOUDFLARED_EXE = Join-Path $PROJECT_DIR "cloudflared.exe"
+$TUNNEL_JSON = Join-Path $PROJECT_DIR "tunnel.json"
+
 if (-not (Test-Path $CLOUDFLARED_EXE)) {
-    Write-Host "      Mencari binary Cloudflare Tunnel..." -ForegroundColor Yellow
-    $parentDir = Split-Path -Parent $PROJECT_DIR
-    $foundCf = Get-ChildItem -Path $parentDir -Filter "cloudflared.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
-    if ($foundCf) {
-        Copy-Item $foundCf.FullName $CLOUDFLARED_EXE -Force
-        Write-Host "      Cloudflare Tunnel disalin dari: $($foundCf.FullName)" -ForegroundColor Green
-    } else {
-        Write-Host "      Mengunduh Cloudflare Tunnel binary..." -ForegroundColor Yellow
-        $ProgressPreference = 'SilentlyContinue'
-        Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $CLOUDFLARED_EXE
-        Write-Host "      Cloudflare Tunnel berhasil diunduh!" -ForegroundColor Green
+    Write-Host "      Mencari binary Cloudflare Tunnel di sistem..." -ForegroundColor Yellow
+    $searchLocations = @(
+        (Split-Path -Parent $PROJECT_DIR),
+        "C:\Users\admin\Downloads",
+        "C:\Users\admin",
+        "C:\Users\USER\Downloads"
+    )
+    $found = $false
+    foreach ($loc in $searchLocations) {
+        if (Test-Path $loc) {
+            $foundCf = Get-ChildItem -Path $loc -Filter "cloudflared.exe" -Recurse -ErrorAction SilentlyContinue | Select-Object -First 1
+            if ($foundCf) {
+                Copy-Item $foundCf.FullName $CLOUDFLARED_EXE -Force
+                Write-Host "      Cloudflare Tunnel disalin dari: $($foundCf.FullName)" -ForegroundColor Green
+                $found = $true
+                break
+            }
+        }
+    }
+
+    if (-not $found) {
+        Write-Host "      Mengunduh Cloudflare Tunnel binary resmi..." -ForegroundColor Yellow
+        $curlExists = Get-Command curl.exe -ErrorAction SilentlyContinue
+        if ($curlExists) {
+            & curl.exe -sL -o $CLOUDFLARED_EXE "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe"
+        } else {
+            [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
+            $ProgressPreference = 'SilentlyContinue'
+            Invoke-WebRequest -Uri "https://github.com/cloudflare/cloudflared/releases/latest/download/cloudflared-windows-amd64.exe" -OutFile $CLOUDFLARED_EXE -UseBasicParsing
+        }
+        Write-Host "      Cloudflare Tunnel binary berhasil disiapkan!" -ForegroundColor Green
     }
 }
 
@@ -111,11 +133,33 @@ if (-not $pm2Exists) {
 }
 
 if ($pm2Exists) {
+    # 1. Pastikan ternak-fun aktif
     if (Test-Path "ecosystem.config.cjs") {
-        Write-Host "      Me-reload service ternak-fun & ternak-tunnel via ecosystem.config.cjs..." -ForegroundColor Green
+        Write-Host "      Me-reload aplikasi ternak-fun..." -ForegroundColor Green
         pm2 startOrReload ecosystem.config.cjs --update-env
-        pm2 save
     } else {
+        pm2 restart ternak-fun 2>$null
+        if ($LASTEXITCODE -ne 0) {
+            pm2 start server/server.js --name "ternak-fun"
+        }
+    }
+
+    # 2. Pastikan ternak-tunnel aktif menghubungkan ternak.fun ke port 3001
+    if ((Test-Path $CLOUDFLARED_EXE) -and (Test-Path $TUNNEL_JSON)) {
+        $pm2List = pm2 jlist | ConvertFrom-Json
+        $tunnelRunning = $pm2List | Where-Object { $_.name -eq "ternak-tunnel" }
+        if ($tunnelRunning) {
+            Write-Host "      Me-restart service ternak-tunnel..." -ForegroundColor Green
+            pm2 restart ternak-tunnel
+        } else {
+            Write-Host "      Mendaftarkan service ternak-tunnel ke PM2..." -ForegroundColor Green
+            pm2 start "$CLOUDFLARED_EXE" --name "ternak-tunnel" -- tunnel --credentials-file "$TUNNEL_JSON" run --url http://127.0.0.1:3001 0def092e-cd92-4db7-9eba-9bbfd69c75a8
+        }
+    }
+
+    pm2 save
+    Write-Host "      Semua service PM2 tersimpan aman!" -ForegroundColor Green
+} else {
         $pm2List = pm2 jlist | ConvertFrom-Json
         $appRunning = $pm2List | Where-Object { $_.name -eq "ternak-fun" -or $_.name -eq "bebekjaya" }
 

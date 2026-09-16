@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  Egg,
   PlusCircle,
   Trash2,
   AlertTriangle,
@@ -356,23 +355,34 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Sub Header Navigation */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-panel p-4 rounded-2xl border border-slate-800">
-        <div>
-          <h2 className="text-xl font-bold text-white flex items-center gap-2">
-            <Egg className="w-6 h-6 text-amber-400" />
-            Modul Pencatatan Operasional Kandang
-          </h2>
-          <p className="text-xs text-slate-400">
-            Formulir panen harian, mortalitas bebek, dan pemantauan rasio pakan (FCR).
-          </p>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card-luxury p-5 sm:p-6 rounded-3xl border border-white/[0.08] relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex items-center gap-3.5 relative z-10">
+          <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-2xl shadow-inner shrink-0">
+            {KOMODITAS_LIST[activeCommodity].icon}
+          </div>
+          <div>
+            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight flex items-center gap-2">
+              Pencatatan Operasional {KOMODITAS_LIST[activeCommodity].nama}
+            </h2>
+            <p className="text-xs text-slate-400 mt-0.5">
+              {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR'
+                ? 'Input panen telur Grade A/B harian, mortalitas, pakan konsentrat, dan rasio HDP/FCR.'
+                : activeCommodity === 'AYAM_PEDAGING'
+                ? 'Sampling bobot panen broiler harian, mortalitas DOC, dan rasio Indeks Performa.'
+                : activeCommodity === 'SAPI'
+                ? 'Pencatatan perahan susu pagi/sore, penimbangan bobot ternak, dan pakan ransum.'
+                : 'Pencatatan pakan pelet lele, sampling isi/kg, dan pemantauan survival rate kolam.'}
+            </p>
+          </div>
         </div>
 
         {/* Tab Buttons & Quick Tools */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 relative z-10">
           {onOpenKasir && (
             <button
               onClick={onOpenKasir}
-              className="hidden sm:flex px-3 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all items-center gap-1.5"
+              className="hidden sm:flex px-3.5 py-2 text-xs font-black rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 shadow-md shadow-amber-500/20 active:scale-95 transition-all items-center gap-1.5"
             >
               <ShoppingBag className="w-4 h-4" />
               Kasir Jual Telur
@@ -382,20 +392,20 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
           {onOpenKalkulator && (
             <button
               onClick={onOpenKalkulator}
-              className="hidden sm:flex px-3 py-2 text-xs font-bold rounded-xl bg-slate-900 hover:bg-slate-800 text-amber-300 border border-slate-700 transition-all items-center gap-1.5"
+              className="hidden sm:flex px-3.5 py-2 text-xs font-bold rounded-xl bg-slate-900/80 hover:bg-slate-800 text-amber-300 border border-white/[0.08] transition-all items-center gap-1.5"
             >
               <Calculator className="w-4 h-4" />
               Kalkulator Ransum
             </button>
           )}
 
-          <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800 w-full sm:w-auto justify-between sm:justify-start">
+          <div className="flex items-center bg-slate-950/80 p-1 rounded-2xl border border-white/[0.08] w-full sm:w-auto justify-between sm:justify-start shadow-inner">
             <button
               onClick={() => setActiveTabLocal('form')}
-              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3.5 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'form'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               <PlusCircle className="w-4 h-4" />
@@ -403,10 +413,10 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTabLocal('table')}
-              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3.5 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'table'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               <Layers className="w-4 h-4" />
@@ -414,10 +424,10 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             </button>
             <button
               onClick={() => setActiveTabLocal('pakan')}
-              className={`flex-1 sm:flex-initial px-3 py-2 text-xs font-bold rounded-lg transition-all flex items-center justify-center gap-1.5 ${
+              className={`flex-1 sm:flex-initial px-3.5 py-2 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-1.5 ${
                 activeTab === 'pakan'
-                  ? 'bg-amber-500 text-slate-950 shadow-md'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                  : 'text-slate-400 hover:text-white'
               }`}
             >
               <Scale className="w-4 h-4" />
@@ -489,7 +499,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             )}
           </div>
 
-          <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+          <form onSubmit={handleSubmit} className="glass-card-luxury p-6 sm:p-7 rounded-3xl border border-white/[0.08] space-y-6 relative overflow-hidden">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1">
@@ -505,7 +515,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
             </div>
 
             <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">Kandang</label>
+              <label className="block text-xs font-bold text-slate-300 mb-1">{KOMODITAS_LIST[activeCommodity].labelKandang}</label>
               <select
                 value={kandangId}
                 onChange={(e) => setKandangId(e.target.value)}
@@ -521,14 +531,14 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
 
             <div>
               <div className="flex items-center justify-between mb-1">
-                <label className="block text-xs font-bold text-slate-300">Batch Populasi Bebek</label>
+                <label className="block text-xs font-bold text-slate-300">Batch {KOMODITAS_LIST[activeCommodity].labelPopulasi}</label>
                 {setActiveTab && (
                   <button
                     type="button"
                     onClick={() => setActiveTab('pengaturan')}
                     className="text-[11px] text-amber-400 hover:underline font-bold"
                   >
-                    + Tambah Populasi
+                    + Kelola Populasi
                   </button>
                 )}
               </div>
@@ -646,7 +656,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
           {(activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR') && (
             <div className="space-y-4">
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-amber-500/30">
                   <label className="block text-xs font-bold text-amber-400 mb-1">
                     Telur Utuh / Grade A (Butir)
                   </label>
@@ -655,12 +665,43 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     min="0"
                     value={telurUtuh}
                     onChange={(e) => setTelurUtuh(parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-950 border border-amber-500/30 rounded-lg px-3 py-2 text-lg font-bold text-amber-300 focus:outline-none focus:border-amber-400"
+                    className="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-3 py-2 text-lg font-bold text-amber-300 focus:outline-none focus:border-amber-400 shadow-inner"
                     required
                   />
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                    <span className="text-[10px] text-slate-400 font-bold">Cepat:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTelurUtuh((prev) => prev + 10)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/30 active:scale-95 transition-all"
+                    >
+                      +10
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurUtuh((prev) => prev + 30)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/30 active:scale-95 transition-all"
+                    >
+                      +30 (1 Rak)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurUtuh((prev) => prev + 150)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-amber-500/15 text-amber-300 border border-amber-500/25 hover:bg-amber-500/30 active:scale-95 transition-all"
+                    >
+                      +150 (5 Rak)
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurUtuh(0)}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
 
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-orange-500/30">
                   <label className="block text-xs font-bold text-orange-400 mb-1">
                     Telur Retak / Grade B (Butir)
                   </label>
@@ -669,11 +710,35 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     min="0"
                     value={telurRetak}
                     onChange={(e) => setTelurRetak(parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-950 border border-orange-500/30 rounded-lg px-3 py-2 text-lg font-bold text-orange-300 focus:outline-none focus:border-orange-400"
+                    className="w-full bg-slate-950 border border-orange-500/40 rounded-xl px-3 py-2 text-lg font-bold text-orange-300 focus:outline-none focus:border-orange-400 shadow-inner"
                   />
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                    <span className="text-[10px] text-slate-400 font-bold">Cepat:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTelurRetak((prev) => prev + 5)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-orange-500/15 text-orange-300 border border-orange-500/25 hover:bg-orange-500/30 active:scale-95 transition-all"
+                    >
+                      +5
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurRetak((prev) => prev + 10)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-orange-500/15 text-orange-300 border border-orange-500/25 hover:bg-orange-500/30 active:scale-95 transition-all"
+                    >
+                      +10
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurRetak(0)}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
 
-                <div className="bg-slate-900/60 p-4 rounded-xl border border-slate-800">
+                <div className="bg-slate-900/60 p-4 rounded-2xl border border-rose-500/30">
                   <label className="block text-xs font-bold text-rose-400 mb-1">
                     Telur Rusak / Pecah (Butir)
                   </label>
@@ -682,8 +747,25 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     min="0"
                     value={telurRusak}
                     onChange={(e) => setTelurRusak(parseInt(e.target.value) || 0)}
-                    className="w-full bg-slate-950 border border-rose-500/30 rounded-lg px-3 py-2 text-lg font-bold text-rose-300 focus:outline-none focus:border-rose-400"
+                    className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-3 py-2 text-lg font-bold text-rose-300 focus:outline-none focus:border-rose-400 shadow-inner"
                   />
+                  <div className="flex flex-wrap items-center gap-1.5 mt-2.5">
+                    <span className="text-[10px] text-slate-400 font-bold">Cepat:</span>
+                    <button
+                      type="button"
+                      onClick={() => setTelurRusak((prev) => prev + 1)}
+                      className="px-2 py-0.5 text-[10px] font-bold rounded-lg bg-rose-500/15 text-rose-300 border border-rose-500/25 hover:bg-rose-500/30 active:scale-95 transition-all"
+                    >
+                      +1
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setTelurRusak(0)}
+                      className="px-2 py-0.5 text-[10px] font-semibold rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-all"
+                    >
+                      Reset
+                    </button>
+                  </div>
                 </div>
               </div>
 
@@ -1019,6 +1101,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
               type="submit"
               className="w-full sm:w-auto px-8 py-3.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-sm shadow-xl shadow-amber-500/25 active:scale-[0.98] transition-all flex items-center justify-center gap-2"
             >
+              <CheckCircle2 className="w-4 h-4" />
               <span>Simpan Pencatatan Harian</span>
             </button>
           </div>
@@ -1028,7 +1111,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
 
       {/* VIEW 2: Tabel History Panen / Operasional */}
       {activeTab === 'table' && (
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-4">
+        <div className="glass-card-luxury p-6 rounded-3xl border border-white/[0.08] space-y-4">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
             <div>
               <h3 className="text-base font-bold text-white flex items-center gap-2">
@@ -1263,7 +1346,7 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
 
       {/* VIEW 3: Stok Pakan & Nutrisi */}
       {activeTab === 'pakan' && (
-        <div className="glass-panel p-6 rounded-2xl border border-slate-800 space-y-6">
+        <div className="glass-card-luxury p-6 rounded-3xl border border-white/[0.08] space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h3 className="text-base font-bold text-white">Inventaris Pakan & Nutrisi Kandang</h3>

@@ -70,12 +70,13 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
   const info = KOMODITAS_LIST[activeCommodity];
 
   return (
-    <div className="w-full glass-panel rounded-2xl p-4 sm:p-6 shadow-2xl border border-slate-800">
+    <div className="w-full glass-card-luxury rounded-3xl p-5 sm:p-7 shadow-2xl border border-white/[0.08] relative overflow-hidden group">
+      <div className="absolute top-0 right-0 w-48 h-48 bg-amber-500/10 rounded-full blur-3xl pointer-events-none group-hover:bg-amber-500/15 transition-all" />
       {/* Header & Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 relative z-10">
         <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+          <div className="flex items-center gap-2.5">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
               {activeCommodity === 'SAPI' ? (
                 <Activity className="w-5 h-5" />
               ) : activeCommodity === 'LELE' ? (
@@ -86,7 +87,7 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                 <Egg className="w-5 h-5" />
               )}
             </div>
-            <h2 className="text-lg sm:text-xl font-bold text-white tracking-tight">
+            <h2 className="text-lg sm:text-xl font-black text-white tracking-tight">
               {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR'
                 ? `Grafik Produksi Telur & Produktivitas HDP (${info.nama})`
                 : activeCommodity === 'AYAM_PEDAGING'
@@ -96,7 +97,7 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                 : `Grafik Pakan & Survival Rate Ikan Lele`}
             </h2>
           </div>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-slate-400 mt-1 pl-12">
             {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR'
               ? 'Visualisasi tren panen telur Grade A, Grade B, dan rasio produktivitas Hen-Day Production.'
               : activeCommodity === 'AYAM_PEDAGING'
@@ -108,33 +109,36 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
         </div>
 
         {/* Range Filter Buttons */}
-        <div className="flex items-center bg-slate-900/90 p-1 rounded-xl border border-slate-800 self-start sm:self-auto">
+        <div className="flex items-center bg-slate-950/90 p-1 rounded-2xl border border-white/[0.08] self-start sm:self-auto shadow-inner">
           <button
+            type="button"
             onClick={() => setTimeRange('7d')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all ${
               timeRange === '7d'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             7 Hari
           </button>
           <button
+            type="button"
             onClick={() => setTimeRange('30d')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all ${
               timeRange === '30d'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             30 Hari
           </button>
           <button
+            type="button"
             onClick={() => setTimeRange('all')}
-            className={`px-3 py-1.5 text-xs font-semibold rounded-lg transition-all ${
+            className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all ${
               timeRange === 'all'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                : 'text-slate-400 hover:text-slate-200'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
+                : 'text-slate-400 hover:text-white'
             }`}
           >
             Semua
@@ -305,6 +309,24 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
       <div className="w-full h-72 sm:h-96 pt-2">
         <ResponsiveContainer width="100%" height="100%">
           <ComposedChart data={filteredLogs} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <defs>
+              <linearGradient id="chartGradeA" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fbbf24" stopOpacity={0.95} />
+                <stop offset="100%" stopColor="#d97706" stopOpacity={0.65} />
+              </linearGradient>
+              <linearGradient id="chartGradeB" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#fb923c" stopOpacity={0.95} />
+                <stop offset="100%" stopColor="#ea580c" stopOpacity={0.65} />
+              </linearGradient>
+              <linearGradient id="chartSky" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#38bdf8" stopOpacity={0.95} />
+                <stop offset="100%" stopColor="#0284c7" stopOpacity={0.65} />
+              </linearGradient>
+              <linearGradient id="chartIndigo" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stopColor="#a5b4fc" stopOpacity={0.95} />
+                <stop offset="100%" stopColor="#6366f1" stopOpacity={0.65} />
+              </linearGradient>
+            </defs>
             <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
             <XAxis
               dataKey="tanggal"
@@ -337,12 +359,14 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
 
             <Tooltip
               contentStyle={{
-                backgroundColor: '#0f172a',
-                borderColor: '#334155',
-                borderRadius: '0.75rem',
+                backgroundColor: 'rgba(15, 23, 42, 0.92)',
+                backdropFilter: 'blur(12px)',
+                borderColor: 'rgba(255, 255, 255, 0.12)',
+                borderRadius: '1rem',
                 color: '#f8fafc',
-                fontSize: '0.875rem',
-                boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.5)',
+                fontSize: '0.825rem',
+                padding: '10px 14px',
+                boxShadow: '0 20px 30px -10px rgba(0, 0, 0, 0.7), 0 0 15px rgba(245, 158, 11, 0.15)',
               }}
               formatter={(value: any, name: any) => {
                 const n = String(name);
@@ -363,16 +387,16 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                   yAxisId="left"
                   dataKey="telurUtuh"
                   name="Telur Utuh (Grade A)"
-                  fill="#f59e0b"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartGradeA)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="telurRetak"
                   name="Telur Retak (Grade B)"
-                  fill="#f97316"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartGradeB)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Line
@@ -392,16 +416,16 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                   yAxisId="left"
                   dataKey="bobotRataEkorGram"
                   name="Bobot Sampling (Gram)"
-                  fill="#38bdf8"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartSky)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="totalBobotPanenKg"
                   name="Panen Daging (Kg)"
-                  fill="#f59e0b"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartGradeA)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Line
@@ -421,16 +445,16 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                   yAxisId="left"
                   dataKey="susuPagiLiter"
                   name="Susu Pagi (Liter)"
-                  fill="#38bdf8"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartSky)"
+                  radius={[6, 6, 0, 0]}
                   barSize={18}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="susuSoreLiter"
                   name="Susu Sore (Liter)"
-                  fill="#818cf8"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartIndigo)"
+                  radius={[6, 6, 0, 0]}
                   barSize={18}
                 />
                 <Line
@@ -450,16 +474,16 @@ export const GrafikProduksiTelur: React.FC<GrafikProduksiTelurProps> = ({
                   yAxisId="left"
                   dataKey="pakanPeletKg"
                   name="Pakan Pelet (Kg)"
-                  fill="#f59e0b"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartGradeA)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Bar
                   yAxisId="left"
                   dataKey="bobotPanenIkanKg"
                   name="Panen Lele (Kg)"
-                  fill="#38bdf8"
-                  radius={[4, 4, 0, 0]}
+                  fill="url(#chartSky)"
+                  radius={[6, 6, 0, 0]}
                   barSize={20}
                 />
                 <Line

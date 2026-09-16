@@ -47,6 +47,9 @@ ternak.fun, www.ternak.fun {
 Write-Host ""
 Write-Host "[3/3] Mendaftarkan Caddy ke PM2 (Auto-Restart dan SSL Otomatis)..." -ForegroundColor Cyan
 
+$projectRoot = Split-Path -Parent $PSScriptRoot
+Set-Location $projectRoot
+
 $pm2Exists = Get-Command pm2 -ErrorAction SilentlyContinue
 
 if ($pm2Exists) {
@@ -54,14 +57,13 @@ if ($pm2Exists) {
         pm2 delete caddy-proxy 2>$null | Out-Null
     } catch {}
     
-    $projectRoot = Split-Path -Parent $PSScriptRoot
-    Set-Location $projectRoot
-    pm2 start caddy.exe --name "caddy-proxy" -- run
+    # Reload ekosistem PM2 (otomatis menyalakan ternak-fun dan caddy-proxy)
+    pm2 startOrReload ecosystem.config.cjs --update-env
     pm2 save
-    Write-Host "      Caddy berhasil didaftarkan ke PM2!" -ForegroundColor Green
+    Write-Host "      Caddy berhasil didaftarkan dan aktif di PM2!" -ForegroundColor Green
 } else {
     Write-Host "      PM2 belum terpasang. Menjalankan Caddy langsung..." -ForegroundColor Yellow
-    Start-Process -FilePath $caddyPath -ArgumentList "run" -WindowStyle Hidden
+    Start-Process -FilePath $caddyPath -ArgumentList "run --config Caddyfile" -WindowStyle Hidden
 }
 
 Write-Host ""

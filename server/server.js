@@ -193,9 +193,10 @@ app.post('/api/reset-real', (req, res) => {
 });
 
 
-// Serve frontend static build files directly on http://localhost:3001
+// Serve frontend static build files directly on http://localhost:3001 and /keuangan-bebek-moderen
 const distPath = path.join(__dirname, '..', 'dist');
 app.use(express.static(distPath));
+app.use('/keuangan-bebek-moderen', express.static(distPath));
 
 // Fallback all non-API routes to index.html (Express 5 compatible)
 app.use((req, res, next) => {

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Wallet,
   TrendingUp,
@@ -14,10 +14,15 @@ import {
   Sparkles,
   Activity,
   Award,
+  CheckCircle2,
+  ChevronRight,
+  X,
+  Calendar,
 } from 'lucide-react';
 import type { FarmMetricsSummary, PencatatanHarian, TransaksiKeuangan, PakanItem, KomoditasTernak } from '../types';
 import { KOMODITAS_LIST } from '../types';
 import { formatIDR } from '../utils/exportUtils';
+import { AuthService } from '../services/authService';
 import { GrafikProduksiTelur } from './GrafikProduksiTelur';
 
 interface DashboardViewProps {
@@ -62,6 +67,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     hdpVal >= 65 ? { label: 'Produksi Normal', color: 'text-amber-400 bg-amber-500/10' } :
     { label: 'Produksi Rendah', color: 'text-rose-400 bg-rose-500/10' };
 
+  const isNewData = logs.length <= 1;
+
+  const [showOnboarding, setShowOnboarding] = useState<boolean>(() => {
+    return localStorage.getItem('hide_onboarding_v1') !== 'true';
+  });
+
+  const activeUser = AuthService.getCurrentUser();
+
   // Business Health Scorecard (0 - 100)
   const hdpScore = Math.min(35, Math.round((hdpVal / 85) * 35));
   const fcrScore = fcrVal <= 3.2 ? 25 : fcrVal <= 3.8 ? 20 : 12;
@@ -69,170 +82,194 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const piutangScore = metrics.totalPiutang < Math.max(1, metrics.saldoKas * 1.5) ? 15 : 8;
   const totalHealthScore = Math.min(100, Math.max(15, hdpScore + fcrScore + cashflowScore + piutangScore));
 
-  const healthStatus =
-    totalHealthScore >= 85
-      ? { label: 'PERFORMA PRIMA', desc: 'Peternakan sangat produktif & arus kas sehat.', color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10' }
-      : totalHealthScore >= 70
-      ? { label: 'PERFORMA BAIK', desc: 'Operasional stabil, terus jaga efisiensi pakan.', color: 'text-amber-400 border-amber-500/30 bg-amber-500/10' }
-      : { label: 'PERLU EVALUASI', desc: 'Tingkatkan HDP dan evaluasi ransum pakan.', color: 'text-rose-400 border-rose-500/30 bg-rose-500/10' };
+  const healthStatus = isNewData
+    ? {
+        label: 'DATA AWAL DIMULAI',
+        desc: 'Mulai catat panen & pakan harian Anda untuk mengaktifkan analisa otomatis AI.',
+        color: 'text-sky-300 border-sky-500/30 bg-sky-500/10',
+      }
+    : totalHealthScore >= 85
+    ? {
+        label: 'PERFORMA PRIMA',
+        desc: 'Peternakan sangat produktif & arus kas sehat.',
+        color: 'text-emerald-400 border-emerald-500/30 bg-emerald-500/10',
+      }
+    : totalHealthScore >= 70
+    ? {
+        label: 'PERFORMA BAIK',
+        desc: 'Operasional stabil, terus jaga efisiensi pakan.',
+        color: 'text-amber-400 border-amber-500/30 bg-amber-500/10',
+      }
+    : {
+        label: 'PERLU EVALUASI',
+        desc: 'Tingkatkan HDP dan evaluasi ransum pakan.',
+        color: 'text-rose-400 border-rose-500/30 bg-rose-500/10',
+      };
 
   return (
     <div className="space-y-6">
-      {/* Banner / Welcome Bar */}
-      <div className="glass-panel-glow rounded-3xl p-6 relative overflow-hidden border border-amber-500/20">
-        <div className="absolute -right-10 -bottom-10 w-80 h-80 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-5 relative z-10">
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5" /> {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama.toUpperCase()} • MONITORING REALTIME
+      {/* Onboarding Quick-Start Guide for Beginner Peternak */}
+      {isNewData && showOnboarding && (
+        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-emerald-500/10 border border-amber-500/30 relative overflow-hidden shadow-xl animate-toast">
+          <div className="flex items-center justify-between gap-4 pb-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2.5">
+              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="text-sm font-black text-white flex items-center gap-2">
+                  Panduan Cepat Peternak Baru (Mulai dalam 2 Menit)
+                </h3>
+                <p className="text-[11px] text-slate-400">
+                  Selesaikan 3 langkah mudah ini untuk memulai pencatatan peternakan profesional Anda.
+                </p>
+              </div>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setShowOnboarding(false);
+                localStorage.setItem('hide_onboarding_v1', 'true');
+              }}
+              className="text-xs text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/[0.06] transition-colors"
+              title="Tutup Panduan"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3.5">
+            <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-500/30 flex items-start gap-3">
+              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
+              <div>
+                <h4 className="text-xs font-black text-emerald-300">1. Akun Tersinkron</h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Database riil terhubung aman di Cloud VPS.</p>
+              </div>
+            </div>
+
+            <div
+              onClick={() => setActiveTab('pengaturan')}
+              className="p-3 rounded-2xl bg-slate-950/60 border border-white/[0.08] hover:border-amber-500/40 cursor-pointer transition-all flex items-start gap-3 group"
+            >
+              <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                2
               </span>
-              <span className="text-xs text-slate-400 font-medium hidden sm:inline">
+              <div>
+                <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors flex items-center gap-1">
+                  Atur Populasi Kandang <ChevronRight className="w-3 h-3 text-amber-400" />
+                </h4>
+                <p className="text-[11px] text-slate-400 mt-0.5">Saat ini: {metrics.totalPopulasiHidup} ekor. Klik untuk ubah.</p>
+              </div>
+            </div>
+
+            <div
+              onClick={() => setActiveTab('operasional')}
+              className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 cursor-pointer transition-all flex items-start gap-3 group"
+            >
+              <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+                3
+              </span>
+              <div>
+                <h4 className="text-xs font-black text-amber-300 group-hover:text-amber-200 transition-colors flex items-center gap-1">
+                  Catat Panen Hari Ini <ChevronRight className="w-3 h-3 text-amber-400" />
+                </h4>
+                <p className="text-[11px] text-slate-300 mt-0.5">Mulai input panen perdana Anda sekarang.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Welcome Hero Card */}
+      <div className="glass-panel-glow rounded-3xl p-5 sm:p-7 relative overflow-hidden border border-amber-500/20 shadow-2xl">
+        <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+          <div>
+            <div className="flex flex-wrap items-center gap-2">
+              <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama.toUpperCase()} • MONITORING AKTIF
+              </span>
+              <span className="text-xs text-slate-400 font-medium hidden sm:inline flex items-center gap-1">
+                <Calendar className="w-3 h-3" />
                 {new Date().toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
               </span>
             </div>
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-2.5">
-              Dashboard Operasional & Keuangan {KOMODITAS_LIST[activeCommodity].nama}
+
+            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-3">
+              Selamat Datang, {activeUser?.name || 'Peternak Modern'}! 👋
             </h1>
-            <p className="text-xs sm:text-sm text-slate-400 mt-1 max-w-2xl leading-relaxed">
-              Pantau arus kas, {metrics.labelProduksiUtama || 'produktivitas'}, efisiensi pakan, dan performa peternakan secara akurat.
+            <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
+              Ringkasan operasional harian & keuangan untuk <strong className="text-amber-300">{activeUser?.farmName || 'Peternakan Anda'}</strong>.
             </p>
           </div>
 
-          {/* Quick Action Group */}
+          {/* Action Group with clear, prominent Primary CTA */}
           <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+            <button
+              type="button"
+              onClick={() => setActiveTab('operasional')}
+              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 active:scale-95 transition-all"
+            >
+              <PlusCircle className="w-4 h-4 text-slate-950" />
+              <span>+ Catat Panen Hari Ini</span>
+            </button>
+
             {onOpenKasir && (
               <button
+                type="button"
                 onClick={onOpenKasir}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-amber-500/25 transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm border border-amber-500/30 shadow-md active:scale-95 transition-all"
               >
-                <span>🛒 Kasir Jual Panen</span>
-              </button>
-            )}
-
-            {onOpenProyeksi && (
-              <button
-                onClick={onOpenProyeksi}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-              >
-                <span>📈 Proyeksi 12 Bulan</span>
+                <span>🛒 Kasir POS</span>
               </button>
             )}
 
             {onOpenKalkulator && (
               <button
+                type="button"
                 onClick={onOpenKalkulator}
-                className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-slate-900 hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm border border-slate-700 shadow-md transition-all active:scale-95"
+                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white font-extrabold text-xs sm:text-sm border border-white/[0.08] shadow-md active:scale-95 transition-all"
               >
                 <span>🧮 Kalkulator</span>
               </button>
             )}
 
-            <button
-              onClick={() => setActiveTab('operasional')}
-              className="flex items-center gap-2 px-3.5 py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-xs sm:text-sm border border-slate-700 transition-all active:scale-95"
-            >
-              <PlusCircle className="w-4 h-4 text-amber-400" />
-              Catat Panen
-            </button>
+            {onOpenProyeksi && (
+              <button
+                type="button"
+                onClick={onOpenProyeksi}
+                className="hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-emerald-300 font-extrabold text-xs sm:text-sm border border-emerald-500/30 shadow-md active:scale-95 transition-all"
+              >
+                <span>📈 Proyeksi</span>
+              </button>
+            )}
           </div>
         </div>
 
-        {/* Business Health Scorecard Bar */}
-        <div className="mt-5 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
-          {/* Health Score Pill */}
-          <div className="md:col-span-4 bg-slate-950/70 p-3 rounded-2xl border border-slate-800 flex items-center gap-3">
-            <div className="w-12 h-12 rounded-xl bg-gradient-to-tr from-amber-500 to-emerald-400 text-slate-950 font-black flex items-center justify-center text-lg shadow-md">
-              {totalHealthScore}
+        {/* Operational Status Bar */}
+        <div className="mt-6 pt-5 border-t border-white/[0.08] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-center gap-3.5">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-amber-500/20 to-emerald-500/20 border border-amber-500/30 text-amber-300 font-black flex items-center justify-center text-lg shadow-inner shrink-0">
+              {isNewData ? '🌱' : totalHealthScore}
             </div>
             <div>
-              <div className="flex items-center gap-1.5">
-                <span className="text-[10px] text-slate-400 uppercase font-extrabold">Health Scorecard:</span>
-                <span className={`text-[10px] font-black px-1.5 py-0.2 rounded border ${healthStatus.color}`}>
+              <div className="flex items-center gap-2">
+                <span className="text-[11px] text-slate-400 uppercase font-extrabold tracking-wider">Status Peternakan:</span>
+                <span className={`text-[10px] font-black px-2 py-0.5 rounded-full border ${healthStatus.color}`}>
                   {healthStatus.label}
                 </span>
               </div>
-              <p className="text-[11px] text-slate-300 font-medium leading-tight mt-0.5">
+              <p className="text-xs text-slate-300 font-medium leading-tight mt-0.5">
                 {healthStatus.desc}
               </p>
             </div>
           </div>
 
-          {/* Quick Metrics */}
-          <div className="md:col-span-8 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs">
-            {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR' ? (
-              <>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Status HDP:</span>
-                  <span className={`text-xs font-black ${hdpStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
-                    {metrics.hdpHariIni}%
-                  </span>
-                </div>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Rasio FCR:</span>
-                  <span className={`text-xs font-black ${fcrStatus.color} px-1.5 py-0.2 rounded inline-block mt-0.5`}>
-                    {fcrVal}
-                  </span>
-                </div>
-              </>
-            ) : activeCommodity === 'AYAM_PEDAGING' ? (
-              <>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Indeks Performa (IP):</span>
-                  <span className="text-xs font-black text-amber-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.indeksPerformaRata || 0}
-                  </span>
-                </div>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Rata-rata Bobot:</span>
-                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.rataBobotBroilerKg ? `${metrics.rataBobotBroilerKg} Kg` : '-'}
-                  </span>
-                </div>
-              </>
-            ) : activeCommodity === 'SAPI' ? (
-              <>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Total Susu Hari Ini:</span>
-                  <span className="text-xs font-black text-sky-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.totalSusuHariIniLiter ? `${metrics.totalSusuHariIniLiter} Liter` : '0 L'}
-                  </span>
-                </div>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Rata Bobot Sapi:</span>
-                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.rataBobotSapiKg ? `${metrics.rataBobotSapiKg} Kg` : '-'}
-                  </span>
-                </div>
-              </>
-            ) : (
-              <>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Survival Rate (SR):</span>
-                  <span className="text-xs font-black text-emerald-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.survivalRateRata || 100}%
-                  </span>
-                </div>
-                <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-                  <span className="text-[10px] text-slate-400 block">Est. Biomassa:</span>
-                  <span className="text-xs font-black text-sky-400 px-1.5 py-0.2 rounded inline-block mt-0.5">
-                    {metrics.biomassaIkanKg ? `${metrics.biomassaIkanKg.toLocaleString('id-ID')} Kg` : '0 Kg'}
-                  </span>
-                </div>
-              </>
-            )}
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-              <span className="text-[10px] text-slate-400 block">Piutang Panen:</span>
-              <span className="text-xs font-black text-emerald-400 block mt-0.5">
-                {formatIDR(metrics.totalPiutang)}
-              </span>
-            </div>
-            <div className="bg-slate-950/50 p-2.5 rounded-xl border border-slate-800/80">
-              <span className="text-[10px] text-slate-400 block">Hutang Pakan/Ops:</span>
-              <span className="text-xs font-black text-rose-400 block mt-0.5">
-                {formatIDR(metrics.totalHutang)}
-              </span>
-            </div>
+          <div className="flex items-center gap-2 self-end sm:self-auto text-xs">
+            <span className="text-slate-400">Total Hari Dicatat:</span>
+            <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/[0.08] font-black text-amber-300">
+              {logs.length} Hari
+            </span>
           </div>
         </div>
       </div>
@@ -261,52 +298,55 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
       )}
 
-      {/* 4 Main High-Level Metric KPI Cards */}
+      {/* 4 Main High-Level Metric KPI Cards (Fintech Luxury Style) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Card 1: Saldo Kas */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-slate-700 transition-all">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Kas Saat Ini</p>
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+        <div className="glass-card-luxury glass-card-hover rounded-3xl p-5 border border-white/[0.08] relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-emerald-500/20 transition-all" />
+          <div className="flex items-center justify-between relative z-10">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Saldo Kas Saat Ini</p>
+            <div className="w-10 h-10 rounded-2xl bg-emerald-500/15 text-emerald-400 border border-emerald-500/25 flex items-center justify-center shadow-sm">
               <Wallet className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3.5 relative z-10">
             <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               {formatIDR(metrics.saldoKas)}
             </h3>
             <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-emerald-400">
-              <ArrowUpRight className="w-3.5 h-3.5" />
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
               <span>Arus kas operasional aktif</span>
             </div>
           </div>
         </div>
 
         {/* Card 2: Laba / Rugi MTD */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-slate-700 transition-all">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Laba / Rugi Bulan Ini</p>
-            <div className={`p-2.5 rounded-xl ${isProfit ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 'bg-rose-500/10 text-rose-400 border border-rose-500/20'}`}>
+        <div className="glass-card-luxury glass-card-hover rounded-3xl p-5 border border-white/[0.08] relative overflow-hidden group">
+          <div className={`absolute top-0 right-0 w-28 h-28 ${isProfit ? 'bg-emerald-500/10 group-hover:bg-emerald-500/20' : 'bg-rose-500/10 group-hover:bg-rose-500/20'} rounded-full blur-2xl pointer-events-none transition-all`} />
+          <div className="flex items-center justify-between relative z-10">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">Laba / Rugi Bulan Ini</p>
+            <div className={`w-10 h-10 rounded-2xl ${isProfit ? 'bg-emerald-500/15 text-emerald-400 border border-emerald-500/25' : 'bg-rose-500/15 text-rose-400 border border-rose-500/25'} flex items-center justify-center shadow-sm`}>
               {isProfit ? <TrendingUp className="w-5 h-5" /> : <TrendingDown className="w-5 h-5" />}
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3.5 relative z-10">
             <h3 className={`text-2xl sm:text-3xl font-black tracking-tight ${isProfit ? 'text-emerald-400' : 'text-rose-400'}`}>
               {formatIDR(metrics.labaRugiMtd)}
             </h3>
             <div className="flex items-center gap-1.5 mt-2 text-xs font-semibold text-slate-400">
-              <span>{isProfit ? 'Est. Keuntungan Bersih' : 'Est. Kerugian Bersih'}</span>
+              <span>{isProfit ? 'Est. Keuntungan Bersih (MTD)' : 'Est. Kerugian Bersih (MTD)'}</span>
             </div>
           </div>
         </div>
 
         {/* Card 3: Dynamic Commodity Production / Primary Metric */}
-        <div className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-slate-700 transition-all">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+        <div className="glass-card-luxury glass-card-hover rounded-3xl p-5 border border-amber-500/20 relative overflow-hidden group">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-amber-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-all" />
+          <div className="flex items-center justify-between relative z-10">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               {metrics.labelProduksiUtama || 'Produksi Harian'}
             </p>
-            <div className="p-2.5 rounded-xl bg-amber-500/10 text-amber-400 border border-amber-500/20">
+            <div className="w-10 h-10 rounded-2xl bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center justify-center shadow-sm">
               {activeCommodity === 'SAPI' ? (
                 <Activity className="w-5 h-5" />
               ) : activeCommodity === 'LELE' ? (
@@ -318,17 +358,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               )}
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3.5 relative z-10">
             <h3 className="text-2xl sm:text-3xl font-black text-amber-400 tracking-tight">
               {metrics.nilaiProduksiHariIni || (metrics.hdpHariIni + '%')}
             </h3>
             <div className="flex items-center justify-between mt-2 text-xs font-semibold text-slate-400">
               {activeCommodity === 'BEBEK_PETELUR' || activeCommodity === 'AYAM_PETELUR' ? (
-                <span>Hasil Panen: {metrics.totalTelurHariIni.toLocaleString('id-ID')} butir</span>
+                <span>Hasil: {metrics.totalTelurHariIni.toLocaleString('id-ID')} butir ({hdpStatus.label})</span>
               ) : activeCommodity === 'AYAM_PEDAGING' ? (
                 <span>Panen: {metrics.rataBobotBroilerKg ? `${metrics.rataBobotBroilerKg} Kg/ekor` : 'Belum panen'}</span>
               ) : activeCommodity === 'SAPI' ? (
-                <span>Perahan: {metrics.totalSusuHariIniLiter || 0} Liter susu murni</span>
+                <span>Perahan: {metrics.totalSusuHariIniLiter || 0} Liter susu</span>
               ) : (
                 <span>Biomassa: {metrics.biomassaIkanKg ? `${metrics.biomassaIkanKg.toLocaleString('id-ID')} Kg` : '0 Kg'}</span>
               )}
@@ -339,29 +379,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         {/* Card 4: Dynamic Population & Health */}
         <div
           onClick={() => setActiveTab('pengaturan')}
-          className="glass-panel rounded-2xl p-5 border border-slate-800 relative overflow-hidden group hover:border-amber-500/50 cursor-pointer transition-all"
+          className="glass-card-luxury glass-card-hover rounded-3xl p-5 border border-white/[0.08] relative overflow-hidden group hover:border-amber-500/40 cursor-pointer transition-all"
         >
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+          <div className="absolute top-0 right-0 w-28 h-28 bg-sky-500/10 rounded-full blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-all" />
+          <div className="flex items-center justify-between relative z-10">
+            <p className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
               {metrics.labelPopulasi || 'Populasi Ternak'}
             </p>
-            <div className="p-2.5 rounded-xl bg-sky-500/10 text-sky-400 border border-sky-500/20 group-hover:bg-amber-500/20 group-hover:text-amber-400 transition-colors">
+            <div className="w-10 h-10 rounded-2xl bg-sky-500/15 text-sky-400 border border-sky-500/25 group-hover:bg-amber-500/20 group-hover:text-amber-400 group-hover:border-amber-500/30 transition-all flex items-center justify-center shadow-sm">
               <Users className="w-5 h-5" />
             </div>
           </div>
-          <div className="mt-3">
+          <div className="mt-3.5 relative z-10">
             <h3 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
               {metrics.totalPopulasiHidup.toLocaleString('id-ID')}{' '}
-              <span className="text-sm font-normal text-slate-400">
+              <span className="text-sm font-medium text-slate-400">
                 {activeCommodity === 'SAPI' ? 'ekor sapi' : activeCommodity === 'LELE' ? 'ekor ikan' : 'ekor'}
               </span>
             </h3>
             <div className="flex items-center justify-between mt-2 text-xs font-semibold text-amber-400 group-hover:underline">
               <span>
                 {metrics.labelEfisiensi || 'Efisiensi'}:{' '}
-                <strong className="text-sky-400">{metrics.nilaiEfisiensi || metrics.fcrAverage}</strong>
+                <strong className="text-sky-300">{metrics.nilaiEfisiensi || metrics.fcrAverage}</strong>{' '}
+                <span className="text-[10px] text-slate-400 font-normal">({fcrStatus.label})</span>
               </span>
-              <span>+ Kelola / Tambah →</span>
+              <span>Kelola →</span>
             </div>
           </div>
         </div>

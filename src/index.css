@@ -36,22 +36,46 @@ body {
 
 /* Glassmorphism & High-End Card Styles */
 .glass-panel {
-  background: rgba(13, 20, 36, 0.78);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  background: rgba(11, 17, 30, 0.82);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
   border: 1px solid rgba(255, 255, 255, 0.08);
 }
 
 .glass-panel-glow {
-  background: rgba(13, 20, 36, 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
+  background: linear-gradient(135deg, rgba(17, 24, 43, 0.88) 0%, rgba(11, 16, 28, 0.94) 100%);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border: 1px solid rgba(251, 191, 36, 0.16);
+  box-shadow: 0 16px 36px -12px rgba(0, 0, 0, 0.6), 0 0 24px -6px rgba(251, 191, 36, 0.08);
+}
+
+.glass-card-luxury {
+  background: linear-gradient(145deg, rgba(19, 28, 49, 0.7) 0%, rgba(13, 19, 34, 0.85) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(255, 255, 255, 0.07);
+  box-shadow: 0 8px 24px -6px rgba(0, 0, 0, 0.45);
+}
+
+.glass-card-amber {
+  background: linear-gradient(145deg, rgba(30, 25, 18, 0.6) 0%, rgba(18, 16, 14, 0.85) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
   border: 1px solid rgba(251, 191, 36, 0.18);
-  box-shadow: 0 10px 30px -10px rgba(251, 191, 36, 0.1);
+  box-shadow: 0 8px 24px -6px rgba(251, 191, 36, 0.06);
+}
+
+.glass-card-emerald {
+  background: linear-gradient(145deg, rgba(16, 32, 28, 0.6) 0%, rgba(12, 22, 20, 0.85) 100%);
+  backdrop-filter: blur(14px);
+  -webkit-backdrop-filter: blur(14px);
+  border: 1px solid rgba(16, 185, 129, 0.18);
+  box-shadow: 0 8px 24px -6px rgba(16, 185, 129, 0.06);
 }
 
 .glass-card {
-  background: rgba(22, 32, 54, 0.65);
+  background: rgba(18, 26, 44, 0.65);
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.07);
@@ -62,8 +86,8 @@ body {
 }
 .glass-card-hover:hover {
   transform: translateY(-2px);
-  border-color: rgba(251, 191, 36, 0.3);
-  box-shadow: 0 12px 28px -8px rgba(0, 0, 0, 0.5);
+  border-color: rgba(251, 191, 36, 0.35);
+  box-shadow: 0 14px 30px -8px rgba(0, 0, 0, 0.6), 0 0 20px -5px rgba(251, 191, 36, 0.12);
 }
 
 /* Gradients */

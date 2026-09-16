@@ -5,7 +5,6 @@ import { StorageService } from './services/storage';
 import type { AppMode } from './services/storage';
 import { AuthService } from './services/authService';
 import type { User, KomoditasTernak } from './types';
-import { KOMODITAS_LIST } from './types';
 import { Header } from './components/Header';
 import { DashboardView } from './components/DashboardView';
 import { OperasionalView } from './components/OperasionalView';
@@ -186,48 +185,6 @@ export function AppContent() {
         activeCommodity={activeCommodity}
         onChangeCommodity={handleCommodityChange}
       />
-
-      {/* Mode & Active User Banner Indicator - Slim 1-line on mobile */}
-      <div
-        className={`w-full py-1 sm:py-1.5 px-3 sm:px-4 text-[11px] sm:text-xs font-bold transition-all flex items-center justify-between sm:justify-center gap-2 ${
-          appMode === 'REAL'
-            ? 'bg-emerald-950/70 border-b border-emerald-500/30 text-emerald-300'
-            : 'bg-amber-950/70 border-b border-amber-500/30 text-amber-300'
-        }`}
-      >
-        <div className="flex items-center gap-2 truncate">
-          {appMode === 'REAL' ? (
-            <>
-              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse shrink-0" />
-              <span className="truncate">
-                <strong className="text-white">{currentUser?.farmName || 'Peternakan'}</strong>
-                <span className="hidden md:inline"> — Data tersimpan permanen di VPS</span>
-              </span>
-            </>
-          ) : (
-            <>
-              <span className="shrink-0">🧪</span>
-              <span className="truncate">
-                <strong className="text-white">MODE DEMO</strong>
-                <span className="hidden md:inline"> (SIMULASI 30 HARI) — Menggunakan data contoh simulasi</span>
-              </span>
-            </>
-          )}
-
-          {/* Active Commodity Badge */}
-          <span className="inline-flex items-center gap-1 bg-slate-900/90 text-amber-300 px-2 py-0.5 rounded-full border border-amber-500/30 text-[10px] font-bold">
-            <span>{KOMODITAS_LIST[activeCommodity].icon}</span>
-            <span>{KOMODITAS_LIST[activeCommodity].nama}</span>
-          </span>
-        </div>
-
-        <button
-          onClick={() => setIsAuthModalOpen(true)}
-          className="shrink-0 text-[10px] sm:text-[11px] font-extrabold bg-slate-900/80 hover:bg-slate-800 text-amber-300 px-2 py-0.5 rounded-lg border border-slate-700/80 transition-colors"
-        >
-          👤 {currentUser?.name || 'Akun'}
-        </button>
-      </div>
 
       {/* Main Content Body with generous bottom clearance for BottomNav on mobile */}
       <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6 pb-36 sm:pb-32 lg:pb-12">

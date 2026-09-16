@@ -90,8 +90,8 @@ _Kalkulasi Proyeksi Cerdas BebekJaya PRO Enterprise_`;
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="glass-panel-glow w-full max-w-4xl rounded-3xl p-6 sm:p-8 relative max-h-[92vh] overflow-y-auto my-auto border border-amber-500/30">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-black/80 backdrop-blur-md p-2.5 sm:p-6 flex flex-col justify-start sm:justify-center items-center animate-in fade-in duration-200">
+      <div className="glass-panel-glow w-full max-w-4xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 relative my-auto mb-24 sm:mb-auto max-h-[88vh] sm:max-h-[92vh] overflow-y-auto border border-amber-500/30 shadow-2xl">
         {/* Header */}
         <div className="flex items-center justify-between pb-5 border-b border-slate-800">
           <div className="flex items-center gap-3">

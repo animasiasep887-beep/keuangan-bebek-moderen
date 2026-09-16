@@ -110,18 +110,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     <div className="space-y-6">
       {/* Onboarding Quick-Start Guide for Beginner Peternak */}
       {isNewData && showOnboarding && (
-        <div className="p-4 sm:p-5 rounded-3xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-emerald-500/10 border border-amber-500/30 relative overflow-hidden shadow-xl animate-toast">
-          <div className="flex items-center justify-between gap-4 pb-3 border-b border-white/[0.06]">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold">
-                <Sparkles className="w-4 h-4" />
+        <div className="p-3.5 sm:p-5 rounded-2xl sm:rounded-3xl bg-gradient-to-r from-amber-500/10 via-slate-900/90 to-emerald-500/10 border border-amber-500/30 relative overflow-hidden shadow-xl animate-toast">
+          <div className="flex items-center justify-between gap-3 pb-2.5 sm:pb-3 border-b border-white/[0.06]">
+            <div className="flex items-center gap-2 sm:gap-2.5 min-w-0">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-amber-500/20 text-amber-400 flex items-center justify-center font-bold shrink-0">
+                <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
               </div>
-              <div>
-                <h3 className="text-sm font-black text-white flex items-center gap-2">
-                  Panduan Cepat Peternak Baru (Mulai dalam 2 Menit)
+              <div className="min-w-0">
+                <h3 className="text-xs sm:text-sm font-black text-white truncate">
+                  Panduan Cepat Peternak Baru
                 </h3>
-                <p className="text-[11px] text-slate-400">
-                  Selesaikan 3 langkah mudah ini untuk memulai pencatatan peternakan profesional Anda.
+                <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">
+                  3 langkah mudah untuk memulai pencatatan Anda.
                 </p>
               </div>
             </div>
@@ -131,49 +131,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 setShowOnboarding(false);
                 localStorage.setItem('hide_onboarding_v1', 'true');
               }}
-              className="text-xs text-slate-400 hover:text-white p-1 rounded-lg hover:bg-white/[0.06] transition-colors"
+              className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-slate-800/80 hover:bg-slate-700 text-slate-400 hover:text-white flex items-center justify-center shrink-0 border border-white/[0.06] transition-colors"
               title="Tutup Panduan"
             >
               <X className="w-4 h-4" />
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mt-3.5">
-            <div className="p-3 rounded-2xl bg-slate-950/60 border border-emerald-500/30 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0 mt-0.5" />
-              <div>
-                <h4 className="text-xs font-black text-emerald-300">1. Akun Tersinkron</h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Database riil terhubung aman di Cloud VPS.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3 mt-2.5 sm:mt-3.5">
+            <div className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-950/60 border border-emerald-500/30 flex items-center sm:items-start gap-2.5">
+              <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5 text-emerald-400 shrink-0" />
+              <div className="min-w-0">
+                <h4 className="text-xs font-bold text-emerald-300">1. Akun Tersinkron</h4>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">Database aman di Cloud VPS.</p>
               </div>
             </div>
 
             <div
               onClick={() => setActiveTab('pengaturan')}
-              className="p-3 rounded-2xl bg-slate-950/60 border border-white/[0.08] hover:border-amber-500/40 cursor-pointer transition-all flex items-start gap-3 group"
+              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-slate-950/60 border border-white/[0.08] hover:border-amber-500/40 cursor-pointer transition-all flex items-center sm:items-start gap-2.5 group"
             >
-              <span className="w-5 h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0">
                 2
               </span>
-              <div>
-                <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors flex items-center gap-1">
-                  Atur Populasi Kandang <ChevronRight className="w-3 h-3 text-amber-400" />
+              <div className="min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-white group-hover:text-amber-300 transition-colors flex items-center justify-between">
+                  <span>Atur Populasi</span> <ChevronRight className="w-3 h-3 text-amber-400" />
                 </h4>
-                <p className="text-[11px] text-slate-400 mt-0.5">Saat ini: {metrics.totalPopulasiHidup} ekor. Klik untuk ubah.</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-400 truncate">{metrics.totalPopulasiHidup} ekor kandang.</p>
               </div>
             </div>
 
             <div
               onClick={() => setActiveTab('operasional')}
-              className="p-3 rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 cursor-pointer transition-all flex items-start gap-3 group"
+              className="p-2.5 sm:p-3 rounded-xl sm:rounded-2xl bg-gradient-to-r from-amber-500/20 to-amber-600/20 border border-amber-500/40 hover:border-amber-400 cursor-pointer transition-all flex items-center sm:items-start gap-2.5 group"
             >
-              <span className="w-5 h-5 rounded-full bg-amber-500 text-slate-950 font-black text-xs flex items-center justify-center shrink-0 mt-0.5">
+              <span className="w-4 h-4 sm:w-5 sm:h-5 rounded-full bg-amber-500 text-slate-950 font-black text-[10px] sm:text-xs flex items-center justify-center shrink-0">
                 3
               </span>
-              <div>
-                <h4 className="text-xs font-black text-amber-300 group-hover:text-amber-200 transition-colors flex items-center gap-1">
-                  Catat Panen Hari Ini <ChevronRight className="w-3 h-3 text-amber-400" />
+              <div className="min-w-0 flex-1">
+                <h4 className="text-xs font-bold text-amber-300 group-hover:text-amber-200 transition-colors flex items-center justify-between">
+                  <span>Catat Panen</span> <ChevronRight className="w-3 h-3 text-amber-400" />
                 </h4>
-                <p className="text-[11px] text-slate-300 mt-0.5">Mulai input panen perdana Anda sekarang.</p>
+                <p className="text-[10px] sm:text-[11px] text-slate-300 truncate">Mulai input panen perdana.</p>
               </div>
             </div>
           </div>
@@ -183,11 +183,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* Main Welcome Hero Card */}
       <div className="glass-panel-glow rounded-3xl p-5 sm:p-7 relative overflow-hidden border border-amber-500/20 shadow-2xl">
         <div className="absolute -right-10 -bottom-10 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 relative z-10">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5 relative z-10">
           <div>
             <div className="flex flex-wrap items-center gap-2">
-              <span className="px-3 py-1 rounded-full text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
-                <Sparkles className="w-3.5 h-3.5 text-amber-400" /> {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama.toUpperCase()} • MONITORING AKTIF
+              <span className="px-2.5 py-0.5 sm:px-3 sm:py-1 rounded-full text-[10px] sm:text-xs font-black bg-amber-500/15 text-amber-400 border border-amber-500/30 flex items-center gap-1.5 shadow-sm">
+                <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-amber-400" /> {KOMODITAS_LIST[activeCommodity].icon} {KOMODITAS_LIST[activeCommodity].nama.toUpperCase()} • MONITORING
               </span>
               <span className="text-xs text-slate-400 font-medium hidden sm:inline flex items-center gap-1">
                 <Calendar className="w-3 h-3" />
@@ -195,7 +195,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </span>
             </div>
 
-            <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight mt-3">
+            <h1 className="text-xl sm:text-3xl font-black text-white tracking-tight mt-2.5 sm:mt-3">
               Selamat Datang, {activeUser?.name || 'Peternak Modern'}! 👋
             </h1>
             <p className="text-xs sm:text-sm text-slate-300 mt-1 max-w-2xl leading-relaxed">
@@ -204,45 +204,47 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
 
           {/* Action Group with clear, prominent Primary CTA */}
-          <div className="flex flex-wrap items-center gap-2.5 shrink-0">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 shrink-0 w-full lg:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('operasional')}
-              className="flex items-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 active:scale-95 transition-all"
+              className="w-full sm:w-auto flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-gradient-to-r from-amber-500 via-amber-400 to-amber-500 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-amber-500/25 active:scale-95 transition-all"
             >
               <PlusCircle className="w-4 h-4 text-slate-950" />
               <span>+ Catat Panen Hari Ini</span>
             </button>
 
-            {onOpenKasir && (
-              <button
-                type="button"
-                onClick={onOpenKasir}
-                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 font-extrabold text-xs sm:text-sm border border-amber-500/30 shadow-md active:scale-95 transition-all"
-              >
-                <span>🛒 Kasir POS</span>
-              </button>
-            )}
+            <div className="grid grid-cols-2 sm:flex sm:items-center gap-2 w-full sm:w-auto">
+              {onOpenKasir && (
+                <button
+                  type="button"
+                  onClick={onOpenKasir}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-amber-300 font-bold text-xs sm:text-sm border border-amber-500/30 shadow-md active:scale-95 transition-all"
+                >
+                  <span>🛒 Kasir POS</span>
+                </button>
+              )}
 
-            {onOpenKalkulator && (
-              <button
-                type="button"
-                onClick={onOpenKalkulator}
-                className="flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white font-extrabold text-xs sm:text-sm border border-white/[0.08] shadow-md active:scale-95 transition-all"
-              >
-                <span>🧮 Kalkulator</span>
-              </button>
-            )}
+              {onOpenKalkulator && (
+                <button
+                  type="button"
+                  onClick={onOpenKalkulator}
+                  className="flex items-center justify-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-slate-200 hover:text-white font-bold text-xs sm:text-sm border border-white/[0.08] shadow-md active:scale-95 transition-all"
+                >
+                  <span>🧮 Kalkulator</span>
+                </button>
+              )}
 
-            {onOpenProyeksi && (
-              <button
-                type="button"
-                onClick={onOpenProyeksi}
-                className="hidden sm:flex items-center gap-2 px-4 py-3 rounded-2xl bg-slate-900/90 hover:bg-slate-800 text-emerald-300 font-extrabold text-xs sm:text-sm border border-emerald-500/30 shadow-md active:scale-95 transition-all"
-              >
-                <span>📈 Proyeksi</span>
-              </button>
-            )}
+              {onOpenProyeksi && (
+                <button
+                  type="button"
+                  onClick={onOpenProyeksi}
+                  className="hidden sm:flex items-center gap-1.5 px-3.5 py-2.5 rounded-xl bg-slate-900/90 hover:bg-slate-800 text-emerald-300 font-bold text-xs sm:text-sm border border-emerald-500/30 shadow-md active:scale-95 transition-all"
+                >
+                  <span>📈 Proyeksi</span>
+                </button>
+              )}
+            </div>
           </div>
         </div>
 

@@ -75,13 +75,13 @@ export const BottomNav: React.FC<BottomNavProps> = ({
           </button>
 
           {/* 3. Kasir Telur - Center Prominent Action Button */}
-          <div className="relative -top-3">
+          <div className="relative -top-3.5">
             <button
               type="button"
               onClick={onOpenKasir}
-              className="w-13 h-13 rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-600 text-slate-950 flex flex-col items-center justify-center shadow-lg shadow-amber-500/40 border-2 border-slate-950 active:scale-90 transition-transform"
+              className="w-12 h-12 rounded-full bg-gradient-to-tr from-amber-500 via-amber-400 to-amber-600 text-slate-950 flex flex-col items-center justify-center shadow-lg shadow-amber-500/40 border-2 border-slate-950 active:scale-90 transition-transform"
             >
-              <ShoppingCart className="w-6 h-6 stroke-[2.5]" />
+              <ShoppingCart className="w-5 h-5 stroke-[2.5]" />
             </button>
             <span className="block text-[9px] font-black text-amber-400 text-center mt-0.5">
               Kasir

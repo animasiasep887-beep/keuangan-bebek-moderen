@@ -36,8 +36,9 @@ export const KomoditasSelector: React.FC<KomoditasSelectorProps> = ({
         title="Ganti Sektor Peternakan / Budidaya"
       >
         <span className="text-base leading-none">{currentConfig.icon}</span>
-        <span className="font-extrabold truncate max-w-[110px] sm:max-w-[140px] text-amber-300">
-          {currentConfig.nama.split(' ')[0]} {currentConfig.nama.split(' ')[1] || ''}
+        <span className="font-extrabold truncate text-amber-300 text-xs">
+          <span className="sm:hidden">{currentConfig.nama.split(' ')[0]}</span>
+          <span className="hidden sm:inline">{currentConfig.nama.split(' ')[0]} {currentConfig.nama.split(' ')[1] || ''}</span>
         </span>
         <ChevronDown className={`w-3.5 h-3.5 text-slate-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
       </button>

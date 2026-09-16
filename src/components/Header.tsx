@@ -62,22 +62,20 @@ export const Header: React.FC<HeaderProps> = ({
 
   return (
     <header className="sticky top-0 z-40 w-full glass-panel border-b border-white/[0.08] shadow-2xl backdrop-blur-xl">
-      <div className="max-w-7xl mx-auto px-3 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between h-16 sm:h-20 gap-2 sm:gap-4">
+      <div className="max-w-7xl mx-auto px-2.5 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-14 sm:h-20 gap-1.5 sm:gap-4">
           {/* Left: Brand & Commodity Selector */}
-          <div className="flex items-center gap-2 sm:gap-3.5 shrink-0">
+          <div className="flex items-center gap-1.5 sm:gap-3 shrink-0">
             <div
-              className="flex items-center gap-2.5 cursor-pointer select-none group"
+              className="flex items-center gap-1.5 sm:gap-2.5 cursor-pointer select-none group"
               onClick={() => setActiveTab('dashboard')}
             >
-              <BrandLogo size="md" />
+              <BrandLogo size="sm" />
               <div>
-                <div className="flex items-center gap-1.5">
-                  <h1 className="text-sm sm:text-lg font-black tracking-tight text-white flex items-center gap-1">
-                    PRATAMA <span className="gradient-text-gold">BISNIS GRUP</span>
-                  </h1>
-                </div>
-                <p className="text-[10px] sm:text-[11px] text-slate-400 font-medium hidden sm:block">
+                <h1 className="text-xs sm:text-base font-black tracking-tight text-white flex items-center gap-1">
+                  PRATAMA <span className="gradient-text-gold hidden sm:inline">BISNIS GRUP</span>
+                </h1>
+                <p className="text-[10px] text-slate-400 font-medium hidden md:block">
                   Sistem Manajemen Peternakan Modern
                 </p>
               </div>
@@ -96,35 +94,41 @@ export const Header: React.FC<HeaderProps> = ({
 
           {/* Right: Mode Switcher, Notifications & User Profile */}
           <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
-            {/* Mode Switcher Pill (Akun Real vs Mode Demo) */}
-            <div className="flex items-center gap-0.5 bg-slate-900/90 p-1 rounded-2xl border border-white/[0.08] shadow-inner">
+            {/* Mode Switcher Pill (Desktop/Tablet) */}
+            <div className="hidden sm:flex items-center gap-0.5 bg-slate-900/90 p-1 rounded-2xl border border-white/[0.08] shadow-inner">
               <button
                 type="button"
                 onClick={() => onToggleMode('REAL')}
-                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all ${
                   isReal
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/25'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Menggunakan database riil tersimpan di VPS"
               >
-                <CheckCircle2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Real</span>
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>Real</span>
               </button>
 
               <button
                 type="button"
                 onClick={() => onToggleMode('DEMO')}
-                className={`flex items-center gap-1 px-2 sm:px-2.5 py-1 sm:py-1.5 rounded-xl text-[11px] sm:text-xs font-black transition-all ${
+                className={`flex items-center gap-1 px-2.5 py-1.5 rounded-xl text-xs font-black transition-all ${
                   !isReal
                     ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/25'
                     : 'text-slate-400 hover:text-slate-200'
                 }`}
                 title="Menggunakan data simulasi 30 hari"
               >
-                <TestTube2 className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
-                <span className="hidden sm:inline">Demo</span>
+                <TestTube2 className="w-3.5 h-3.5" />
+                <span>Demo</span>
               </button>
+            </div>
+
+            {/* Mobile Cloud Status Indicator Pill */}
+            <div className="sm:hidden flex items-center gap-1 px-2 py-1 rounded-xl bg-slate-900/90 border border-white/[0.08] text-[10px] font-bold">
+              <span className={`w-1.5 h-1.5 rounded-full ${isReal ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
+              <span className="text-slate-300">{isReal ? 'VPS' : 'Demo'}</span>
             </div>
 
             {/* Notification Bell */}
@@ -132,12 +136,12 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenNotifikasi}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] text-amber-400 flex items-center justify-center transition-all active:scale-95 relative"
+                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-slate-800 border border-white/[0.08] text-amber-400 flex items-center justify-center transition-all active:scale-95 relative shrink-0"
                 title="Pengingat Jam Panen Peternakan"
               >
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-ping absolute top-1.5 right-1.5" />
                 <span className="w-1.5 h-1.5 rounded-full bg-amber-400 absolute top-1.5 right-1.5" />
-                <Bell className="w-4 h-4 text-amber-400" />
+                <Bell className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-amber-400" />
               </button>
             )}
 
@@ -146,7 +150,7 @@ export const Header: React.FC<HeaderProps> = ({
               <button
                 type="button"
                 onClick={onOpenAuth}
-                className="flex items-center gap-2 p-1 sm:py-1 sm:px-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/25 text-xs text-slate-200 transition-all active:scale-95 shadow-md group"
+                className="flex items-center gap-1.5 p-1 sm:py-1 sm:px-2.5 rounded-2xl bg-slate-900/90 hover:bg-slate-800/90 border border-amber-500/25 text-xs text-slate-200 transition-all active:scale-95 shadow-md group shrink-0"
                 title="Profil Peternak & Sinkronisasi Database"
               >
                 <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-xl bg-gradient-to-tr from-amber-500 to-amber-300 text-slate-950 font-black flex items-center justify-center text-xs shadow-sm overflow-hidden shrink-0">
@@ -177,12 +181,12 @@ export const Header: React.FC<HeaderProps> = ({
               </button>
             )}
 
-            {/* Logout Button */}
+            {/* Logout Button (Desktop only, mobile has it in BottomNav Menu) */}
             {onLogout && activeUser && (
               <button
                 type="button"
                 onClick={onLogout}
-                className="w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-rose-950/50 border border-white/[0.08] hover:border-rose-500/40 text-slate-400 hover:text-rose-300 flex items-center justify-center transition-all active:scale-95 shrink-0"
+                className="hidden md:flex w-8 h-8 sm:w-9 sm:h-9 rounded-xl bg-slate-900/80 hover:bg-rose-950/50 border border-white/[0.08] hover:border-rose-500/40 text-slate-400 hover:text-rose-300 items-center justify-center transition-all active:scale-95 shrink-0"
                 title="Keluar dari Akun"
               >
                 <LogOut className="w-3.5 h-3.5" />

@@ -218,3 +218,13 @@ app.listen(PORT, async () => {
   await telegramBot.start();
 });
 
+// Safeguard server from crashing on unhandled external errors or network drops
+process.on('uncaughtException', (err) => {
+  console.error('[SERVER] Uncaught Exception caught (process preserved):', err.message);
+});
+
+process.on('unhandledRejection', (reason) => {
+  console.error('[SERVER] Unhandled Rejection caught (process preserved):', reason);
+});
+
+

@@ -79,17 +79,23 @@ Write-Host "[6/6] Memulai ulang proses server..." -ForegroundColor Cyan
 $pm2Exists = Get-Command pm2 -ErrorAction SilentlyContinue
 
 if ($pm2Exists) {
-    # Cek apakah service bebekjaya sudah terdaftar di PM2
-    $pm2List = pm2 jlist | ConvertFrom-Json
-    $appRunning = $pm2List | Where-Object { $_.name -eq "bebekjaya" }
-
-    if ($appRunning) {
-        Write-Host "      Me-restart service bebekjaya di PM2..." -ForegroundColor Green
-        pm2 restart bebekjaya
-    } else {
-        Write-Host "      Mendaftarkan service bebekjaya ke PM2..." -ForegroundColor Green
-        pm2 start server/server.js --name "bebekjaya"
+    if (Test-Path "ecosystem.config.cjs") {
+        Write-Host "      Me-reload service ternak-fun via ecosystem.config.cjs..." -ForegroundColor Green
+        pm2 startOrReload ecosystem.config.cjs --update-env
         pm2 save
+    } else {
+        $pm2List = pm2 jlist | ConvertFrom-Json
+        $appRunning = $pm2List | Where-Object { $_.name -eq "ternak-fun" -or $_.name -eq "bebekjaya" }
+
+        if ($appRunning) {
+            Write-Host "      Me-restart service $($appRunning.name) di PM2..." -ForegroundColor Green
+            pm2 restart $appRunning.name
+            pm2 save
+        } else {
+            Write-Host "      Mendaftarkan service ternak-fun ke PM2..." -ForegroundColor Green
+            pm2 start server/server.js --name "ternak-fun"
+            pm2 save
+        }
     }
 } else {
     Write-Host "      [INFO] PM2 belum terpasang secara global. Disarankan pasang PM2 (npm i -g pm2)." -ForegroundColor Yellow

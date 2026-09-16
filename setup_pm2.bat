@@ -19,9 +19,14 @@ if %errorlevel% neq 0 (
     echo [1/3] PM2 sudah terpasang di sistem.
 )
 
-echo [2/3] Mendaftarkan BebekJaya PRO ke PM2...
+echo [2/3] Mendaftarkan BebekJaya (ternak-fun) ke PM2...
 call pm2 delete bebekjaya >nul 2>nul
-call pm2 start server/server.js --name "bebekjaya"
+call pm2 delete ternak-fun >nul 2>nul
+if exist ecosystem.config.cjs (
+    call pm2 start ecosystem.config.cjs
+) else (
+    call pm2 start server/server.js --name "ternak-fun"
+)
 call pm2 save
 
 echo [3/3] Mengonfigurasi auto-start saat Windows booting...
@@ -29,12 +34,12 @@ call pm2-startup install >nul 2>nul
 
 echo.
 echo =========================================================
-echo    ✅ SETUP SELESAI! BEBEKJAYA PRO AKTIF DI BACKGROUND
+echo    ✅ SETUP SELESAI! TERNAK.FUN AKTIF DI BACKGROUND
 echo =========================================================
 echo Perintah berguna:
-echo  - pm2 status            : Cek status server
-echo  - pm2 logs bebekjaya    : Lihat log server & bot Telegram
-echo  - pm2 restart bebekjaya : Restart manual server
+echo  - pm2 status            : Cek status semua website di VPS
+echo  - pm2 logs ternak-fun   : Lihat log server ternak.fun
+echo  - pm2 restart ternak-fun: Restart hanya website ternak.fun
 echo =========================================================
 echo.
 pause

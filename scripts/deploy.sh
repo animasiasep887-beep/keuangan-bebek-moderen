@@ -70,12 +70,17 @@ echo "      Build selesai!"
 # 6. Restart Server via PM2
 echo "[6/6] Memulai ulang proses server..."
 if command -v pm2 &> /dev/null; then
-    if pm2 list | grep -q "bebekjaya"; then
-        echo "      Me-restart service bebekjaya di PM2..."
-        pm2 restart bebekjaya
+    if [ -f "ecosystem.config.cjs" ]; then
+        echo "      Me-reload service ternak-fun di PM2 via ecosystem.config.cjs..."
+        pm2 startOrReload ecosystem.config.cjs --update-env
+        pm2 save
+    elif pm2 list | grep -q "ternak-fun\|bebekjaya"; then
+        echo "      Me-restart service ternak-fun di PM2..."
+        pm2 restart ternak-fun || pm2 restart bebekjaya
+        pm2 save
     else
-        echo "      Mendaftarkan service bebekjaya ke PM2..."
-        pm2 start server/server.js --name "bebekjaya"
+        echo "      Mendaftarkan service ternak-fun ke PM2..."
+        pm2 start server/server.js --name "ternak-fun"
         pm2 save
     fi
 else

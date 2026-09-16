@@ -160,20 +160,6 @@ if ($pm2Exists) {
     pm2 save
     Write-Host "      Semua service PM2 tersimpan aman!" -ForegroundColor Green
 } else {
-        $pm2List = pm2 jlist | ConvertFrom-Json
-        $appRunning = $pm2List | Where-Object { $_.name -eq "ternak-fun" -or $_.name -eq "bebekjaya" }
-
-        if ($appRunning) {
-            Write-Host "      Me-restart service $($appRunning.name) di PM2..." -ForegroundColor Green
-            pm2 restart $appRunning.name
-            pm2 save
-        } else {
-            Write-Host "      Mendaftarkan service ternak-fun ke PM2..." -ForegroundColor Green
-            pm2 start server/server.js --name "ternak-fun"
-            pm2 save
-        }
-    }
-} else {
     Write-Host "      [PERINGATAN] PM2 tidak dapat dijalankan. Memulai server via Node..." -ForegroundColor Yellow
     Start-Process -FilePath "node" -ArgumentList "server/server.js" -WindowStyle Hidden
 }

@@ -27,6 +27,8 @@ if (-not (Test-Path $BACKUP_DIR)) {
 
 $DB_FILE = Join-Path $PROJECT_DIR "server\data\farm_database.json"
 $TEMP_DB_BACKUP = Join-Path $BACKUP_DIR "live_db_before_deploy.json"
+$ENV_FILE = Join-Path $PROJECT_DIR ".env"
+$TEMP_ENV_BACKUP = Join-Path $BACKUP_DIR "live_env_before_deploy.tmp"
 
 if (Test-Path $DB_FILE) {
     Copy-Item $DB_FILE (Join-Path $BACKUP_DIR "farm_db_backup_$TIMESTAMP.json") -Force
@@ -34,6 +36,10 @@ if (Test-Path $DB_FILE) {
     Write-Host "[2/6] Database riil berhasil dibackup ke backups/farm_db_backup_$TIMESTAMP.json" -ForegroundColor Green
 } else {
     Write-Host "[2/6] Database belum ada, akan diinisialisasi baru." -ForegroundColor Yellow
+}
+
+if (Test-Path $ENV_FILE) {
+    Copy-Item $ENV_FILE $TEMP_ENV_BACKUP -Force
 }
 
 # 3. Ambil kode terbaru dari GitHub
@@ -48,16 +54,22 @@ try {
     Write-Host "      Peringatan saat git pull: $_" -ForegroundColor Yellow
 }
 
-# 4. Kembalikan file database riil VPS agar data transaksi tidak hilang
+# 4. Kembalikan file database dan .env riil VPS agar data transaksi dan konfigurasi tidak hilang
 if (Test-Path $TEMP_DB_BACKUP) {
     Copy-Item $TEMP_DB_BACKUP $DB_FILE -Force
     Remove-Item $TEMP_DB_BACKUP -Force
     Write-Host "[4/6] Database riil VPS berhasil dipertahankan (data aman)." -ForegroundColor Green
 }
 
+if (Test-Path $TEMP_ENV_BACKUP) {
+    Copy-Item $TEMP_ENV_BACKUP $ENV_FILE -Force
+    Remove-Item $TEMP_ENV_BACKUP -Force
+    Write-Host "      Konfigurasi produksi .env VPS berhasil dipertahankan." -ForegroundColor Green
+}
+
 # 5. Install dependensi & Build Frontend
 Write-Host "[5/6] Memeriksa dependensi & build web application..." -ForegroundColor Cyan
-npm install --omit=dev --no-audit --no-fund
+npm install --no-audit --no-fund
 npm run build
 Write-Host "      Build selesai!" -ForegroundColor Green
 

@@ -41,6 +41,8 @@ self.addEventListener('activate', (event) => {
 self.addEventListener('fetch', (event) => {
   // Only cache GET requests
   if (event.request.method !== 'GET') return;
+  // Bypass caching for dynamic API requests
+  if (event.request.url.includes('/api/')) return;
 
   event.respondWith(
     fetch(event.request)

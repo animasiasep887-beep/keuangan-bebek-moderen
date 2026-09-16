@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title BebekJaya PRO - Setup PM2 Background Service
 echo =========================================================
 echo    🦆 BEBEKJAYA PRO - SETUP PM2 BACKGROUND SERVICE

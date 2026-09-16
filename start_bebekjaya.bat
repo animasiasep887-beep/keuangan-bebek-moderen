@@ -1,4 +1,5 @@
 @echo off
+cd /d "%~dp0"
 title BebekJaya PRO - Server + Bot Telegram + Web App
 echo =========================================================
 echo    🦆 BEBEKJAYA PRO - SISTEM PETERNAKAN BEBEK TERPADU

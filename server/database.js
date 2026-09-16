@@ -81,7 +81,7 @@ class Database {
           role: 'OWNER',
           plan: 'PREMIUM',
           createdAt: new Date().toISOString(),
-          passwordHash: 'admin123',
+          passwordHash: 'bebeksaya123',
         }
       ],
       userData: {

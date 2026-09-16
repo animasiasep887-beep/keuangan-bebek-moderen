@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CreditCard,
   X,
@@ -26,13 +26,23 @@ export const PelunasanHpModal: React.FC<PelunasanHpModalProps> = ({
 }) => {
   const { showToast } = useToast();
 
-  if (!isOpen || !targetItem) return null;
-
-  const isPiutang = targetItem.jenis === 'PIUTANG';
-  const [nominalBayar, setNominalBayar] = useState<number>(targetItem.sisaNominal);
+  const [nominalBayar, setNominalBayar] = useState<number>(targetItem?.sisaNominal || 0);
   const [tanggal, setTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
   const [akunKasId, setAkunKasId] = useState<string>('101'); // 101: Kas Tunai, 102: Bank
   const [catatan, setCatatan] = useState<string>('');
+
+  useEffect(() => {
+    if (targetItem) {
+      setNominalBayar(targetItem.sisaNominal);
+      setTanggal(new Date().toISOString().split('T')[0]);
+      setAkunKasId('101');
+      setCatatan('');
+    }
+  }, [targetItem]);
+
+  if (!isOpen || !targetItem) return null;
+
+  const isPiutang = targetItem.jenis === 'PIUTANG';
 
   const handleSendReminderWA = () => {
     if (!targetItem) return;

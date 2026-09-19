@@ -23,6 +23,7 @@ interface BottomNavProps {
   onOpenKasir: () => void;
   onOpenKalkulator: () => void;
   onOpenProyeksi: () => void;
+  onOpenInstallApp?: () => void;
   onLogout: () => void;
   currentUser: User | null;
   activeCommodity?: KomoditasTernak;
@@ -35,6 +36,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onOpenKasir,
   onOpenKalkulator,
   onOpenProyeksi,
+  onOpenInstallApp,
   onLogout,
   currentUser,
   activeCommodity,
@@ -188,11 +190,44 @@ export const BottomNav: React.FC<BottomNavProps> = ({
                         title={item.nama}
                       >
                         <span className="text-base">{item.icon}</span>
-                        <span className="text-[9px] mt-0.5 truncate w-full text-center">{item.nama.split(' ')[0]}</span>
+                        <span className="text-[9px] mt-0.5 truncate w-full text-center">
+                          {key === 'LELE' ? 'Lele' : key === 'AYAM_PEDAGING' ? 'Broiler' : item.nama.split(' ')[0]}
+                        </span>
                       </button>
                     );
                   })}
                 </div>
+              </div>
+            )}
+
+            {/* Install App / Download ke HP Banner */}
+            {onOpenInstallApp && (
+              <div
+                onClick={() => {
+                  setIsMenuDrawerOpen(false);
+                  onOpenInstallApp();
+                }}
+                className="p-3.5 rounded-2xl bg-gradient-to-r from-amber-500/20 via-slate-900 to-amber-600/15 border border-amber-500/40 hover:border-amber-400 cursor-pointer transition-all active:scale-[0.98] shadow-lg shadow-amber-500/10 flex items-center justify-between gap-3 group"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-amber-500 text-slate-950 font-black flex items-center justify-center text-xl shadow-md shrink-0 group-hover:scale-105 transition-transform">
+                    📲
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-1.5">
+                      <h4 className="text-xs font-black text-white group-hover:text-amber-300 transition-colors">
+                        Pasang Aplikasi ke HP
+                      </h4>
+                      <span className="text-[9px] bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 px-1.5 py-0.2 rounded-full font-bold">
+                        Android & iPhone
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-slate-400 mt-0.5">
+                      Akses cepat fullscreen & notifikasi panen otomatis
+                    </p>
+                  </div>
+                </div>
+                <span className="text-xs font-bold text-amber-400 shrink-0">Buka →</span>
               </div>
             )}
 

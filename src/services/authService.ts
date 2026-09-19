@@ -7,6 +7,7 @@ const DEFAULT_USERS: (User & { passwordHash: string })[] = [
   {
     id: 'usr-default-01',
     name: 'H. Pratama (Owner)',
+    username: 'admin',
     email: 'admin@bebekjaya.com',
     phone: '085600172785',
     farmName: 'Peternakan Bebek Jaya Utama',
@@ -19,6 +20,7 @@ const DEFAULT_USERS: (User & { passwordHash: string })[] = [
   {
     id: 'usr-demo-02',
     name: 'Budi Santoso',
+    username: 'budi',
     email: 'budi@peternak.id',
     phone: '081398765432',
     farmName: 'Bebek Barokah Farm',
@@ -194,17 +196,18 @@ export const AuthService = {
     return { success: true, user: safeUser };
   },
 
-  // Reset / Recover Password
+  // Reset / Recover Password Instantly
   resetPassword: async (params: {
-    email: string;
-    verification: string;
+    identifier?: string;
+    email?: string;
+    verification?: string;
     newPassword: string;
   }): Promise<{ success: boolean; message: string }> => {
-    const cleanEmail = params.email.trim().toLowerCase();
-    const cleanVerif = params.verification.trim().toLowerCase();
+    const rawTarget = (params.identifier || params.email || '').trim().toLowerCase();
+    const cleanDigits = rawTarget.replace(/[^0-9]/g, '');
 
-    if (!cleanEmail || !cleanVerif || !params.newPassword) {
-      return { success: false, message: 'Harap lengkapi semua kolom formulir pemulihan.' };
+    if (!rawTarget || !params.newPassword) {
+      return { success: false, message: 'Harap masukkan Username/No. HP/Email dan Kata Sandi baru.' };
     }
 
     if (params.newPassword.length < 5) {
@@ -217,8 +220,9 @@ export const AuthService = {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          email: cleanEmail,
-          verification: cleanVerif,
+          identifier: rawTarget,
+          email: rawTarget,
+          verification: params.verification || '',
           newPassword: params.newPassword,
         }),
       });
@@ -226,60 +230,81 @@ export const AuthService = {
       if (data.success) {
         // Update local users store
         const users = AuthService.getUsers();
-        const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
+        const user = users.find((u) => {
+          const uEmail = (u.email || '').toLowerCase().trim();
+          const uUser = (u.username || '').toLowerCase().trim();
+          const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
+          const uName = (u.name || '').toLowerCase().trim();
+          return (
+            uEmail === rawTarget ||
+            uUser === rawTarget ||
+            (cleanDigits.length >= 6 && uPhone && (uPhone === cleanDigits || uPhone.endsWith(cleanDigits) || cleanDigits.endsWith(uPhone))) ||
+            uName === rawTarget
+          );
+        });
         if (user) {
           user.passwordHash = params.newPassword;
           AuthService.saveUsers(users);
         }
-        return { success: true, message: data.message || 'Kata sandi berhasil diperbarui!' };
+        return { success: true, message: data.message || 'Kata sandi berhasil diperbarui! Silakan masuk kembali.' };
       } else {
-        return { success: false, message: data.message || 'Verifikasi pemulihan kata sandi gagal.' };
+        return { success: false, message: data.message || 'Akun tidak ditemukan.' };
       }
     } catch {
       // Offline / Local fallback
       const users = AuthService.getUsers();
-      const user = users.find((u) => u.email.toLowerCase() === cleanEmail);
+      const user = users.find((u) => {
+        const uEmail = (u.email || '').toLowerCase().trim();
+        const uUser = (u.username || '').toLowerCase().trim();
+        const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
+        const uName = (u.name || '').toLowerCase().trim();
+        return (
+          uEmail === rawTarget ||
+          uUser === rawTarget ||
+          (cleanDigits.length >= 6 && uPhone && (uPhone === cleanDigits || uPhone.endsWith(cleanDigits) || cleanDigits.endsWith(uPhone))) ||
+          uName === rawTarget
+        );
+      });
+
       if (!user) {
-        return { success: false, message: 'Akun dengan email tersebut tidak ditemukan.' };
-      }
-
-      const phoneDigits = (user.phone || '').replace(/[^0-9]/g, '');
-      const inputDigits = cleanVerif.replace(/[^0-9]/g, '');
-      const phoneMatch = inputDigits.length >= 6 && phoneDigits.includes(inputDigits);
-      const farmMatch = user.farmName && user.farmName.toLowerCase().trim() === cleanVerif;
-
-      if (!phoneMatch && !farmMatch && cleanVerif !== 'bebekadmin') {
-        return {
-          success: false,
-          message: 'Nomor WhatsApp atau Nama Peternakan tidak sesuai dengan data terdaftar.',
-        };
+        return { success: false, message: 'Akun dengan Username, No. WhatsApp, atau Email tersebut tidak ditemukan.' };
       }
 
       user.passwordHash = params.newPassword;
       AuthService.saveUsers(users);
-      return { success: true, message: 'Kata sandi berhasil diperbarui! Silakan masuk kembali.' };
+      return {
+        success: true,
+        message: `Kata sandi akun ${user.name || user.username || user.email} berhasil diperbarui! Silakan masuk kembali.`,
+      };
     }
   },
 
-
-  // Login with email/phone and password
+  // Login with Username, No. WhatsApp, or Email + password
   login: async (
     identifier: string,
     password: string
   ): Promise<{ success: boolean; user?: User; message?: string }> => {
     const cleanId = identifier.trim().toLowerCase();
+    const cleanDigits = cleanId.replace(/[^0-9]/g, '');
     const users = AuthService.getUsers();
 
-    const found = users.find(
-      (u) =>
-        u.email.toLowerCase() === cleanId ||
-        (u.phone && u.phone.replace(/[^0-9]/g, '') === cleanId.replace(/[^0-9]/g, ''))
-    );
+    const found = users.find((u) => {
+      const uEmail = (u.email || '').toLowerCase().trim();
+      const uUser = (u.username || '').toLowerCase().trim();
+      const uPhone = (u.phone || '').replace(/[^0-9]/g, '');
+      const uName = (u.name || '').toLowerCase().trim();
+
+      if (uEmail === cleanId) return true;
+      if (uUser && uUser === cleanId) return true;
+      if (cleanDigits.length >= 6 && uPhone && (uPhone === cleanDigits || uPhone.endsWith(cleanDigits) || cleanDigits.endsWith(uPhone))) return true;
+      if (uName === cleanId) return true;
+      return false;
+    });
 
     if (!found) {
       return {
         success: false,
-        message: 'Akun tidak ditemukan. Silakan registrasi akun peternak baru terlebih dahulu.',
+        message: 'Akun tidak ditemukan. Periksa kembali Username/No. WhatsApp/Email Anda atau daftar akun baru.',
       };
     }
 
@@ -290,6 +315,7 @@ export const AuthService = {
     const safeUser: User = {
       id: found.id,
       name: found.name,
+      username: found.username || found.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
       email: found.email,
       phone: found.phone,
       farmName: found.farmName,
@@ -307,7 +333,7 @@ export const AuthService = {
       await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: found.email, password }),
+        body: JSON.stringify({ identifier: cleanId, email: found.email, password }),
       });
     } catch {}
 
@@ -317,6 +343,7 @@ export const AuthService = {
   // Register new farmer account
   register: async (params: {
     name: string;
+    username?: string;
     email: string;
     phone?: string;
     password: string;
@@ -324,24 +351,39 @@ export const AuthService = {
     plan?: 'PREMIUM' | 'ENTERPRISE' | 'STARTER';
   }): Promise<{ success: boolean; user?: User; message?: string }> => {
     const { name, email, phone, password, farmName, plan = 'PREMIUM' } = params;
+    const cleanUsername = (params.username || name.toLowerCase().replace(/[^a-z0-9]/g, '')).trim().toLowerCase();
+    const cleanEmail = email.toLowerCase().trim();
 
-    if (!name.trim() || !email.trim() || !password.trim() || !farmName.trim()) {
-      return { success: false, message: 'Harap lengkapi semua kolom formulir pendaftaran.' };
+    if (!name.trim() || !cleanEmail || !password.trim() || !farmName.trim()) {
+      return { success: false, message: 'Harap lengkapi semua kolom formulir pendaftaran wajib.' };
     }
 
     const users = AuthService.getUsers();
-    const cleanEmail = email.toLowerCase().trim();
-    const existing = users.find((u) => u.email.toLowerCase() === cleanEmail);
-    if (existing) {
+
+    // Check existing email
+    const existingEmail = users.find((u) => (u.email || '').toLowerCase().trim() === cleanEmail);
+    if (existingEmail) {
       return {
         success: false,
         message: 'Email ini sudah terdaftar. Silakan masuk langsung dengan akun Anda.',
       };
     }
 
+    // Check existing username
+    if (cleanUsername) {
+      const existingUser = users.find((u) => (u.username || '').toLowerCase().trim() === cleanUsername);
+      if (existingUser) {
+        return {
+          success: false,
+          message: 'Username ini sudah digunakan peternak lain. Silakan pilih username lain.',
+        };
+      }
+    }
+
     const newUserFull: User & { passwordHash: string } = {
       id: `usr-${Date.now()}`,
       name: name.trim(),
+      username: cleanUsername,
       email: cleanEmail,
       phone: phone?.trim(),
       farmName: farmName.trim(),
@@ -349,7 +391,7 @@ export const AuthService = {
       plan: plan,
       createdAt: new Date().toISOString(),
       passwordHash: password,
-      avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(name)}`,
+      avatarUrl: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(cleanUsername || name)}`,
     };
 
     users.push(newUserFull);
@@ -358,6 +400,7 @@ export const AuthService = {
     const safeUser: User = {
       id: newUserFull.id,
       name: newUserFull.name,
+      username: newUserFull.username,
       email: newUserFull.email,
       phone: newUserFull.phone,
       farmName: newUserFull.farmName,

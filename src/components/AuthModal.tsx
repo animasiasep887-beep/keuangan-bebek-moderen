@@ -4,7 +4,6 @@ import {
   UserCheck,
   UserPlus,
   LogIn,
-  Shield,
   Sparkles,
   Lock,
   Mail,
@@ -32,19 +31,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
   const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
 
   // Form states
-  const [loginEmail, setLoginEmail] = useState('');
+  const [loginIdentifier, setLoginIdentifier] = useState('');
   const [loginPassword, setLoginPassword] = useState('');
 
+  const [regUsername, setRegUsername] = useState('');
   const [regName, setRegName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regPassword, setRegPassword] = useState('');
   const [regFarmName, setRegFarmName] = useState('');
-  const [regPlan, setRegPlan] = useState<'PREMIUM' | 'ENTERPRISE' | 'STARTER'>('PREMIUM');
+  const [regPlan] = useState<'PREMIUM' | 'ENTERPRISE' | 'STARTER'>('PREMIUM');
 
-  // Forgot password states
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotVerification, setForgotVerification] = useState('');
+  // Forgot password states (Direct identifier)
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [forgotNewPassword, setForgotNewPassword] = useState('');
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
 
@@ -83,7 +82,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     setLoading(true);
 
     try {
-      const res = await AuthService.login(loginEmail, loginPassword);
+      const res = await AuthService.login(loginIdentifier, loginPassword);
       if (res.success && res.user) {
         setSuccessMessage(`Selamat datang kembali, ${res.user.name}!`);
         setTimeout(() => {
@@ -91,7 +90,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
           onClose();
         }, 600);
       } else {
-        setErrorMessage(res.message || 'Login gagal. Periksa kembali email dan kata sandi Anda.');
+        setErrorMessage(res.message || 'Login gagal. Periksa kembali Username/No. HP/Email dan kata sandi Anda.');
       }
     } catch {
       setErrorMessage('Terjadi kesalahan koneksi saat login.');
@@ -108,10 +107,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     try {
       const res = await AuthService.register({
         name: regName,
+        username: regUsername,
         email: regEmail,
         phone: regPhone,
         password: regPassword,
-        farmName: regFarmName,
+        farmName: regFarmName || `Peternakan ${regName.trim()}`,
         plan: regPlan,
       });
 
@@ -136,8 +136,8 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     setErrorMessage(null);
     setSuccessMessage(null);
 
-    if (!forgotEmail.trim() || !forgotVerification.trim() || !forgotNewPassword.trim()) {
-      setErrorMessage('Harap lengkapi email, verifikasi, dan kata sandi baru.');
+    if (!forgotIdentifier.trim() || !forgotNewPassword.trim()) {
+      setErrorMessage('Harap masukkan Username/No. WhatsApp/Email dan kata sandi baru.');
       return;
     }
 
@@ -154,20 +154,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     setLoading(true);
     try {
       const res = await AuthService.resetPassword({
-        email: forgotEmail,
-        verification: forgotVerification,
+        identifier: forgotIdentifier,
         newPassword: forgotNewPassword,
       });
 
       if (res.success) {
         setSuccessMessage(res.message);
-        setLoginEmail(forgotEmail);
+        setLoginIdentifier(forgotIdentifier);
         setTimeout(() => {
           setTab('LOGIN');
           setSuccessMessage('Silakan masuk dengan kata sandi baru Anda.');
         }, 1500);
       } else {
-        setErrorMessage(res.message || 'Verifikasi gagal. Data tidak sesuai.');
+        setErrorMessage(res.message || 'Akun tidak ditemukan. Periksa kembali Username/No. HP/Email Anda.');
       }
     } catch {
       setErrorMessage('Terjadi kesalahan sistem saat mereset kata sandi.');
@@ -374,14 +373,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
               <form onSubmit={handleLoginSubmit} className="space-y-4">
                 <div>
                   <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <Mail className="w-3.5 h-3.5 text-amber-400" /> Email atau No. WhatsApp
+                    <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Username, No. WhatsApp, atau Email
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="Masukkan email atau no. WhatsApp"
-                    value={loginEmail}
-                    onChange={(e) => setLoginEmail(e.target.value)}
+                    placeholder="Contoh: asep88 / 085600172785 / nama@email.com"
+                    value={loginIdentifier}
+                    onChange={(e) => setLoginIdentifier(e.target.value)}
                     className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
                   />
                 </div>
@@ -426,12 +425,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Nama Lengkap Pemilik / Pengelola
+                  <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Username Akun (Login Cepat) *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="contoh: H. Pratama Putra"
+                  placeholder="contoh: asep88 (tanpa spasi)"
+                  value={regUsername}
+                  onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
+                  <UserIcon className="w-3.5 h-3.5 text-slate-400" /> Nama Lengkap Pemilik / Pengelola *
+                </label>
+                <input
+                  type="text"
+                  required
+                  placeholder="contoh: Asep Pratama / H. Joko"
                   value={regName}
                   onChange={(e) => setRegName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
@@ -444,68 +457,54 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 </label>
                 <input
                   type="text"
-                  required
-                  placeholder="contoh: Peternakan Bebek Jaya Makmur"
+                  placeholder="contoh: Peternakan Modern Asep"
                   value={regFarmName}
                   onChange={(e) => setRegFarmName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
                 />
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Phone className="w-3.5 h-3.5 text-amber-400" /> No. WhatsApp (Untuk Pemulihan Akun)
-                </label>
-                <input
-                  type="tel"
-                  placeholder="contoh: 081234567890"
-                  value={regPhone}
-                  onChange={(e) => setRegPhone(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
-                />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <Phone className="w-3.5 h-3.5 text-amber-400" /> No. WhatsApp Aktif
+                  </label>
+                  <input
+                    type="tel"
+                    placeholder="contoh: 081234567890"
+                    value={regPhone}
+                    onChange={(e) => setRegPhone(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
+                    <Mail className="w-3.5 h-3.5 text-amber-400" /> Email Akun *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="contoh: asep@gmail.com"
+                    value={regEmail}
+                    onChange={(e) => setRegEmail(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                  />
+                </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-amber-400" /> Email Akun
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="contoh: pratama@bebekjaya.id"
-                  value={regEmail}
-                  onChange={(e) => setRegEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi Akun
+                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi Akun *
                 </label>
                 <input
                   type="password"
                   required
-                  placeholder="Buat kata sandi aman"
+                  placeholder="Minimal 5 karakter"
                   value={regPassword}
                   onChange={(e) => setRegPassword(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
                 />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Shield className="w-3.5 h-3.5 text-amber-400" /> Pilihan Paket Akun
-                </label>
-                <select
-                  value={regPlan}
-                  onChange={(e) => setRegPlan(e.target.value as any)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3 py-2 text-sm text-amber-300 outline-none font-bold"
-                >
-                  <option value="PREMIUM">👑 PREMIUM (Fitur Lengkap POS + AI Bot + Telegram)</option>
-                  <option value="ENTERPRISE">🏢 ENTERPRISE (Multi Kandang & Laporan Akuntansi)</option>
-                  <option value="STARTER">🌱 STARTER (Gratis Uji Coba)</option>
-                </select>
               </div>
 
               <div className="pt-2">
@@ -514,7 +513,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                   disabled={loading}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50"
                 >
-                  {loading ? 'Mendaftarkan Akun...' : 'Daftar Akun & Mulai BebekJaya PRO'}
+                  {loading ? 'Mendaftarkan Akun...' : 'Daftar Akun & Mulai Sekarang'}
                 </button>
               </div>
             </form>
@@ -523,40 +522,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
           {tab === 'FORGOT' && (
             <form onSubmit={handleForgotSubmit} className="space-y-3.5">
               <div className="bg-amber-500/10 border border-amber-500/20 rounded-xl p-3 text-xs text-amber-200 leading-relaxed">
-                🛡️ Masukkan <strong>Email terdaftar</strong> dan <strong>No. WhatsApp atau Nama Peternakan</strong> Anda untuk mereset kata sandi baru.
+                🛡️ Masukkan <strong>Username, No. WhatsApp, atau Email terdaftar</strong> Anda, lalu langsung tentukan kata sandi baru.
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Mail className="w-3.5 h-3.5 text-amber-400" /> Email Akun
-                </label>
-                <input
-                  type="email"
-                  required
-                  placeholder="contoh: pratama@bebekjaya.id"
-                  value={forgotEmail}
-                  onChange={(e) => setForgotEmail(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <KeyRound className="w-3.5 h-3.5 text-amber-400" /> Verifikasi Kepemilikan
+                  <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Username, No. WhatsApp, atau Email *
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="No. WhatsApp ATAU Nama Peternakan"
-                  value={forgotVerification}
-                  onChange={(e) => setForgotVerification(e.target.value)}
+                  placeholder="contoh: asep88 / 081234567890 / email@gmail.com"
+                  value={forgotIdentifier}
+                  onChange={(e) => setForgotIdentifier(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
                 />
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi Baru
+                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi Baru *
                 </label>
                 <input
                   type="password"
@@ -570,7 +555,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Ulangi Kata Sandi Baru
+                  <Lock className="w-3.5 h-3.5 text-amber-400" /> Ulangi Kata Sandi Baru *
                 </label>
                 <input
                   type="password"
@@ -588,7 +573,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                   disabled={loading}
                   className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50"
                 >
-                  {loading ? 'Memverifikasi...' : 'Simpan Sandi Baru & Buka Akun'}
+                  {loading ? 'Memperbarui Sandi...' : 'Simpan Sandi Baru & Masuk'}
                 </button>
               </div>
 

@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   CheckCircle2,
   TestTube2,
+  Smartphone,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import type { FarmMetricsSummary, User, KomoditasTernak } from '../types';
@@ -29,6 +30,7 @@ interface HeaderProps {
   onOpenKasir?: () => void;
   onOpenNotifikasi?: () => void;
   onOpenAuth?: () => void;
+  onOpenInstallApp?: () => void;
   onLogout?: () => void;
   currentUser?: User | null;
   activeCommodity?: KomoditasTernak;
@@ -42,6 +44,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleMode,
   onOpenNotifikasi,
   onOpenAuth,
+  onOpenInstallApp,
   onLogout,
   currentUser,
   activeCommodity = 'BEBEK_PETELUR',
@@ -130,6 +133,19 @@ export const Header: React.FC<HeaderProps> = ({
               <span className={`w-1.5 h-1.5 rounded-full ${isReal ? 'bg-emerald-400 animate-pulse' : 'bg-amber-400'}`} />
               <span className="text-slate-300">{isReal ? 'VPS' : 'Demo'}</span>
             </div>
+
+            {/* Mobile / PWA App Install Button */}
+            {onOpenInstallApp && (
+              <button
+                type="button"
+                onClick={onOpenInstallApp}
+                className="hidden sm:flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold transition-all active:scale-95 shadow-sm"
+                title="Pasang Aplikasi ke Handphone (Android & iPhone)"
+              >
+                <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
+                <span className="hidden md:inline">Pasang App</span>
+              </button>
+            )}
 
             {/* Notification Bell */}
             {onOpenNotifikasi && (

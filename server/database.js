@@ -211,14 +211,45 @@ class Database {
     return this.getAllData(mode, targetUserId);
   }
 
+  findUserByIdentifier(identifier) {
+    if (!this.data.users) this.data.users = [];
+    const clean = (identifier || '').trim().toLowerCase();
+    if (!clean) return null;
+    const cleanDigits = clean.replace(/[^0-9]/g, '');
+
+    return this.data.users.find(u => {
+      const email = (u.email || '').toLowerCase().trim();
+      const username = (u.username || '').toLowerCase().trim();
+      const phoneDigits = (u.phone || '').replace(/[^0-9]/g, '');
+      const name = (u.name || '').toLowerCase().trim();
+
+      if (email === clean) return true;
+      if (username && username === clean) return true;
+      if (cleanDigits.length >= 6 && phoneDigits && (phoneDigits === cleanDigits || phoneDigits.endsWith(cleanDigits) || cleanDigits.endsWith(phoneDigits))) return true;
+      if (name === clean) return true;
+      return false;
+    });
+  }
+
   registerUser(newUser) {
     if (!this.data.users) this.data.users = [];
-    const existing = this.data.users.find(u => u.email.toLowerCase() === newUser.email.toLowerCase());
-    if (existing) return { success: false, message: 'Email sudah terdaftar.' };
+    const cleanEmail = (newUser.email || '').toLowerCase().trim();
+    const cleanUsername = (newUser.username || '').toLowerCase().trim();
+
+    if (cleanEmail) {
+      const existingEmail = this.data.users.find(u => (u.email || '').toLowerCase().trim() === cleanEmail);
+      if (existingEmail) return { success: false, message: 'Alamat email ini sudah terdaftar. Silakan login langsung.' };
+    }
+
+    if (cleanUsername) {
+      const existingUsername = this.data.users.find(u => (u.username || '').toLowerCase().trim() === cleanUsername);
+      if (existingUsername) return { success: false, message: 'Username ini sudah digunakan peternak lain. Silakan pilih username lain.' };
+    }
 
     this.data.users.push(newUser);
     this.saveToDisk();
-    return { success: true, user: newUser };
+    const { passwordHash, ...safeUser } = newUser;
+    return { success: true, user: safeUser };
   }
 
   registerOrUpdateGoogleUser(googleData) {
@@ -226,11 +257,12 @@ class Database {
     const cleanEmail = (googleData.email || '').toLowerCase().trim();
     if (!cleanEmail) return { success: false, message: 'Email Google tidak valid.' };
 
-    let user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+    let user = this.data.users.find(u => (u.email || '').toLowerCase().trim() === cleanEmail);
     if (!user) {
       user = {
         id: `usr-g-${Date.now()}`,
         name: googleData.name || 'Peternak Google',
+        username: (googleData.name || 'google').toLowerCase().replace(/[^a-z0-9]/g, '') + Math.floor(Math.random() * 89 + 10),
         email: cleanEmail,
         farmName: googleData.farmName || `Peternakan ${googleData.name || 'Modern'}`,
         role: 'OWNER',
@@ -252,45 +284,30 @@ class Database {
     return { success: true, user: safeUser };
   }
 
-  resetPassword({ email, verification, newPassword }) {
+  resetPassword({ identifier, email, verification, newPassword }) {
     if (!this.data.users) this.data.users = [];
-    const cleanEmail = (email || '').toLowerCase().trim();
-    const cleanVerif = (verification || '').toLowerCase().trim();
+    const targetId = identifier || email;
 
-    if (!cleanEmail || !cleanVerif || !newPassword) {
-      return { success: false, message: 'Harap lengkapi semua kolom pemulihan kata sandi.' };
+    if (!targetId || !newPassword) {
+      return { success: false, message: 'Harap masukkan Username/No. HP/Email dan Kata Sandi baru.' };
     }
 
     if (newPassword.length < 5) {
       return { success: false, message: 'Kata sandi baru minimal 5 karakter.' };
     }
 
-    const user = this.data.users.find(u => u.email.toLowerCase() === cleanEmail);
+    const user = this.findUserByIdentifier(targetId);
     if (!user) {
-      return { success: false, message: 'Akun dengan email tersebut tidak ditemukan.' };
-    }
-
-    // Normalisasi verifikasi nomor HP atau Nama Peternakan
-    const userPhoneDigits = (user.phone || '').replace(/[^0-9]/g, '');
-    const inputDigits = cleanVerif.replace(/[^0-9]/g, '');
-    const phoneMatched = inputDigits.length >= 6 && userPhoneDigits.includes(inputDigits);
-
-    const farmNameMatched = user.farmName && user.farmName.toLowerCase().trim() === cleanVerif;
-
-    if (!phoneMatched && !farmNameMatched && cleanVerif !== 'bebekadmin') {
-      return {
-        success: false,
-        message: 'Verifikasi gagal. Nomor WhatsApp atau Nama Peternakan tidak sesuai dengan data terdaftar.'
-      };
+      return { success: false, message: 'Akun dengan Username, Email, atau No. WhatsApp tersebut tidak ditemukan.' };
     }
 
     user.passwordHash = newPassword;
     this.saveToDisk();
 
-    console.log(`[AUTH] Kata sandi akun ${user.email} berhasil direset.`);
+    console.log(`[AUTH] Kata sandi akun ${user.username || user.email} berhasil direset.`);
     return {
       success: true,
-      message: 'Kata sandi berhasil diperbarui! Silakan masuk dengan kata sandi baru Anda.'
+      message: `Kata sandi akun ${user.name || user.username || user.email} berhasil diperbarui! Silakan masuk kembali.`
     };
   }
 

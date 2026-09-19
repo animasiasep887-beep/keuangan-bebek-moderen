@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive, Bell, Pencil, X } from 'lucide-react';
+import { RefreshCw, PlusCircle, CheckCircle2, BookOpen, Trash2, Layers, Download, Database, Bot, ExternalLink, HardDrive, Bell, Pencil, X, Smartphone } from 'lucide-react';
 import type { Kandang, PopulasiBebek, KodeAkun, StatusPopulasi, TipeAkun, SaldoNormal } from '../types';
 import { StorageService } from '../services/storage';
 
@@ -13,6 +13,7 @@ interface PengaturanViewProps {
   onResetZero: () => void;
   onResetDemo: () => void;
   onOpenNotifikasi?: () => void;
+  onOpenInstallApp?: () => void;
 }
 
 export const PengaturanView: React.FC<PengaturanViewProps> = ({
@@ -23,6 +24,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
   onResetZero,
   onResetDemo,
   onOpenNotifikasi,
+  onOpenInstallApp,
 }) => {
   const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<'kandang' | 'populasi' | 'coa' | 'database'>('database');
@@ -476,6 +478,44 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                 >
                   <Bell className="w-3.5 h-3.5" />
                   Atur & Uji Coba Notifikasi Sekarang
+                </button>
+              )}
+            </div>
+
+            {/* Install App to Mobile (Android & iPhone) Card */}
+            <div className="glass-panel p-5 rounded-2xl border border-emerald-500/30 space-y-4 sm:col-span-2 lg:col-span-1">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
+                  <Smartphone className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-white">Pasang Aplikasi ke Handphone</h3>
+                  <p className="text-xs text-slate-400">Download & Install di Android atau iPhone</p>
+                </div>
+              </div>
+
+              <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Dukungan Sistem:</span>
+                  <span className="font-bold text-emerald-400">Android (Chrome) & iOS (Safari)</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Ukuran / Cache:</span>
+                  <span className="font-bold text-amber-400">Ringan (&lt; 2 MB) & Sangat Cepat</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-slate-400">Mode Offline:</span>
+                  <span className="font-bold text-emerald-400">Didukung (Lokal Storage)</span>
+                </div>
+              </div>
+
+              {onOpenInstallApp && (
+                <button
+                  onClick={onOpenInstallApp}
+                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-400 hover:to-emerald-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
+                >
+                  <Smartphone className="w-3.5 h-3.5" />
+                  📲 Buka Petunjuk Download / Install HP
                 </button>
               )}
             </div>

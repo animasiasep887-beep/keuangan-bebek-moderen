@@ -20,6 +20,7 @@ import { PWAInstallPrompt } from './components/PWAInstallPrompt';
 import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModal';
 import { AuthModal } from './components/AuthModal';
 import { ProyeksiBisnisModal } from './components/ProyeksiBisnisModal';
+import { InstallAppModal } from './components/InstallAppModal';
 import { NotificationService } from './services/notificationService';
 import { AuthScreen } from './components/AuthScreen';
 import { BottomNav } from './components/BottomNav';
@@ -55,6 +56,7 @@ export function AppContent() {
   const [isKasirOpen, setIsKasirOpen] = useState<boolean>(false);
   const [isNotifModalOpen, setIsNotifModalOpen] = useState<boolean>(false);
   const [isProyeksiOpen, setIsProyeksiOpen] = useState<boolean>(false);
+  const [isInstallAppModalOpen, setIsInstallAppModalOpen] = useState<boolean>(false);
 
   // Application Data States
   const [metrics, setMetrics] = useState(StorageService.calculateMetrics(activeCommodity));
@@ -180,6 +182,7 @@ export function AppContent() {
         onOpenKasir={() => setIsKasirOpen(true)}
         onOpenNotifikasi={() => setIsNotifModalOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
+        onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
         activeCommodity={activeCommodity}
@@ -198,6 +201,7 @@ export function AppContent() {
             onOpenKalkulator={() => setIsKalkulatorOpen(true)}
             onOpenKasir={() => setIsKasirOpen(true)}
             onOpenProyeksi={() => setIsProyeksiOpen(true)}
+            onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
             activeCommodity={activeCommodity}
           />
         )}
@@ -258,6 +262,7 @@ export function AppContent() {
             onResetZero={handleResetZero}
             onResetDemo={handleResetDemo}
             onOpenNotifikasi={() => setIsNotifModalOpen(true)}
+            onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
           />
         )}
       </main>
@@ -267,6 +272,11 @@ export function AppContent() {
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
         onUserChanged={handleUserChanged}
+      />
+
+      <InstallAppModal
+        isOpen={isInstallAppModalOpen}
+        onClose={() => setIsInstallAppModalOpen(false)}
       />
 
       <KalkulatorPeternakModal
@@ -311,6 +321,7 @@ export function AppContent() {
         onOpenKasir={() => setIsKasirOpen(true)}
         onOpenKalkulator={() => setIsKalkulatorOpen(true)}
         onOpenProyeksi={() => setIsProyeksiOpen(true)}
+        onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
         activeCommodity={activeCommodity}

@@ -37,15 +37,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
   const [loginPassword, setLoginPassword] = useState('');
 
   // Register Form
+  const [regUsername, setRegUsername] = useState('');
   const [regName, setRegName] = useState('');
   const [regFarmName, setRegFarmName] = useState('');
   const [regPhone, setRegPhone] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPassword, setRegPassword] = useState('');
 
-  // Forgot Password Form
-  const [forgotEmail, setForgotEmail] = useState('');
-  const [forgotVerification, setForgotVerification] = useState('');
+  // Forgot Password Form (Direct Reset)
+  const [forgotIdentifier, setForgotIdentifier] = useState('');
   const [forgotNewPassword, setForgotNewPassword] = useState('');
   const [forgotConfirmPassword, setForgotConfirmPassword] = useState('');
 
@@ -68,7 +68,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     setSuccessMsg('');
 
     if (!loginIdentifier.trim() || !loginPassword.trim()) {
-      setErrorMsg('Harap masukkan Email/No. WhatsApp dan Kata Sandi.');
+      setErrorMsg('Harap masukkan Username/No. WhatsApp/Email dan Kata Sandi.');
       return;
     }
 
@@ -81,7 +81,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
           onSuccess(res.user!);
         }, 500);
       } else {
-        setErrorMsg(res.message || 'Gagal masuk. Silakan periksa kembali email atau kata sandi Anda.');
+        setErrorMsg(res.message || 'Gagal masuk. Silakan periksa kembali Username, No. HP, atau Kata Sandi Anda.');
       }
     } catch {
       setErrorMsg('Terjadi kesalahan jaringan saat mencoba masuk.');
@@ -96,13 +96,13 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!regName.trim() || !regFarmName.trim() || !regEmail.trim() || !regPassword.trim()) {
-      setErrorMsg('Harap lengkapi semua data pendaftaran wajib.');
+    if (!regName.trim() || !regEmail.trim() || !regPassword.trim()) {
+      setErrorMsg('Harap lengkapi semua data pendaftaran wajib (Nama, Email, dan Kata Sandi).');
       return;
     }
 
     if (regPassword.length < 5) {
-      setErrorMsg('Kata sandi minimal 5 karakter untuk keamanan peternakan Anda.');
+      setErrorMsg('Kata sandi minimal 5 karakter untuk keamanan akun peternakan Anda.');
       return;
     }
 
@@ -110,7 +110,8 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     try {
       const res = await AuthService.register({
         name: regName,
-        farmName: regFarmName,
+        username: regUsername,
+        farmName: regFarmName || `Peternakan ${regName.trim()}`,
         phone: regPhone,
         email: regEmail,
         password: regPassword,
@@ -118,7 +119,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
       });
 
       if (res.success && res.user) {
-        setSuccessMsg(`Akun peternakan berhasil dibuat! Membuka dashboard...`);
+        setSuccessMsg(`Akun peternakan ${res.user.name} berhasil dibuat! Membuka dashboard...`);
         setTimeout(() => {
           onSuccess(res.user!);
         }, 700);
@@ -132,14 +133,14 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     }
   };
 
-  // Handle Forgot Password
+  // Handle Forgot Password (Direct reset with Username / Phone / Email)
   const handleForgotPassword = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg('');
     setSuccessMsg('');
 
-    if (!forgotEmail.trim() || !forgotVerification.trim() || !forgotNewPassword.trim()) {
-      setErrorMsg('Harap lengkapi email, verifikasi, dan kata sandi baru.');
+    if (!forgotIdentifier.trim() || !forgotNewPassword.trim()) {
+      setErrorMsg('Harap masukkan Username/No. WhatsApp/Email dan kata sandi baru.');
       return;
     }
 
@@ -156,21 +157,20 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
     setIsLoading(true);
     try {
       const res = await AuthService.resetPassword({
-        email: forgotEmail,
-        verification: forgotVerification,
+        identifier: forgotIdentifier,
         newPassword: forgotNewPassword,
       });
 
       if (res.success) {
         setSuccessMsg(res.message);
-        setLoginIdentifier(forgotEmail);
+        setLoginIdentifier(forgotIdentifier);
         setLoginPassword('');
         setTimeout(() => {
           setActiveTab('login');
           setSuccessMsg('Silakan masuk dengan kata sandi baru Anda.');
         }, 1500);
       } else {
-        setErrorMsg(res.message || 'Verifikasi gagal. Data tidak sesuai.');
+        setErrorMsg(res.message || 'Akun tidak ditemukan. Periksa kembali Username/No. HP/Email Anda.');
       }
     } catch {
       setErrorMsg('Terjadi kesalahan sistem saat mereset kata sandi.');
@@ -373,16 +373,16 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
             <form onSubmit={handleLogin} className="space-y-4">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1.5">
-                  Email atau No. WhatsApp
+                  Username, No. WhatsApp, atau Email
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <UserIcon className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
                     value={loginIdentifier}
                     onChange={(e) => setLoginIdentifier(e.target.value)}
-                    placeholder="Masukkan email atau no. WhatsApp"
+                    placeholder="Contoh: asep88 / 085600172785 / nama@email.com"
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
@@ -443,6 +443,24 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
             <form onSubmit={handleRegister} className="space-y-3.5">
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Username Akun (Login Cepat) *
+                </label>
+                <div className="relative">
+                  <UserIcon className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    required
+                    value={regUsername}
+                    onChange={(e) => setRegUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_-]/g, ''))}
+                    placeholder="Contoh: asep88 (tanpa spasi)"
+                    className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-400 mt-0.5">Bisa dipakai untuk login cepat tanpa ketik email panjang.</p>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
                   Nama Pemilik Peternak *
                 </label>
                 <div className="relative">
@@ -452,7 +470,7 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
                     required
                     value={regName}
                     onChange={(e) => setRegName(e.target.value)}
-                    placeholder="Contoh: H. Supardi / Pak Joko"
+                    placeholder="Contoh: Asep Pratama / H. Joko"
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
@@ -460,16 +478,15 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Nama Usaha Peternakan *
+                  Nama Usaha Peternakan
                 </label>
                 <div className="relative">
                   <Building2 className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
-                    required
                     value={regFarmName}
                     onChange={(e) => setRegFarmName(e.target.value)}
-                    placeholder="Contoh: Bebek Makmur Sentosa Farm"
+                    placeholder="Contoh: Peternakan Modern Asep"
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>
@@ -551,42 +568,25 @@ export const AuthScreen: React.FC<AuthScreenProps> = ({ onSuccess, onDemoClick }
               <div className="p-3 rounded-2xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-300 flex items-start gap-2.5">
                 <KeyRound className="w-4 h-4 shrink-0 mt-0.5 text-amber-400" />
                 <div className="leading-relaxed text-[11px]">
-                  <p className="font-bold text-amber-200 mb-0.5">Pemulihan Akun Mandiri</p>
+                  <p className="font-bold text-amber-200 mb-0.5">Pemulihan Kata Sandi Cepat & Langsung</p>
                   <span>
-                    Masukkan Email dan Nomor WhatsApp atau Nama Peternakan yang terdaftar untuk membuat kata sandi baru secara instan.
+                    Masukkan salah satu (Username, No. WhatsApp, atau Email), lalu langsung buat kata sandi baru Anda.
                   </span>
                 </div>
               </div>
 
               <div>
                 <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Email Terdaftar *
+                  Username, No. WhatsApp, atau Email Terdaftar *
                 </label>
                 <div className="relative">
-                  <Mail className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
-                  <input
-                    type="email"
-                    required
-                    value={forgotEmail}
-                    onChange={(e) => setForgotEmail(e.target.value)}
-                    placeholder="Masukkan alamat email akun"
-                    className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
-                  />
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Verifikasi: No. WhatsApp / Nama Peternakan *
-                </label>
-                <div className="relative">
-                  <Phone className="w-4 h-4 text-slate-500 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                  <UserIcon className="w-4 h-4 text-amber-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
                   <input
                     type="text"
                     required
-                    value={forgotVerification}
-                    onChange={(e) => setForgotVerification(e.target.value)}
-                    placeholder="Contoh: 08123456789 atau Nama Peternakan"
+                    value={forgotIdentifier}
+                    onChange={(e) => setForgotIdentifier(e.target.value)}
+                    placeholder="Contoh: asep88 / 085600172785 / email@gmail.com"
                     className="w-full bg-slate-900/80 border border-slate-700/80 rounded-2xl pl-10 pr-4 py-2.5 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-amber-500 transition-colors"
                   />
                 </div>

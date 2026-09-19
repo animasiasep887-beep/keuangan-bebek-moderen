@@ -226,6 +226,7 @@ export const KOMODITAS_LIST: Record<KomoditasTernak, KomoditasConfig> = {
 export interface User {
   id: string;
   name: string;
+  username?: string;
   email: string;
   phone?: string;
   farmName: string;

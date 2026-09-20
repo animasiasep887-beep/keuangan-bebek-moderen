@@ -365,15 +365,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="px-2 py-0.5 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-[10px] font-extrabold uppercase tracking-wider">
-                  Komunitas Peternak Modern
+                  Komunitas Pratama Grup
                 </span>
                 <span className="text-xs font-bold text-amber-400">@bintama_journey</span>
               </div>
               <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
-                Tutorial Pakan Murah & SOP Beternak Bebek Modern
+                Tutorial Pakan Murah & SOP Beternak Modern Pratama Grup
               </h3>
               <p className="text-xs text-slate-300 mt-0.5">
-                Dukung kami dengan follow media sosial resmi untuk update formulasi pakan, pencegahan penyakit, dan fitur baru!
+                Dukung kami dengan follow media sosial resmi untuk update formulasi pakan, SOP kandang modern, dan fitur baru!
               </p>
             </div>
           </div>

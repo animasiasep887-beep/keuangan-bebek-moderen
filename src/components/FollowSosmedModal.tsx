@@ -53,7 +53,7 @@ export const FollowSosmedModal: React.FC<FollowSosmedModalProps> = ({ isOpen, on
   const handleConfirmFollow = () => {
     localStorage.setItem('bebek_has_followed_sosmed', 'true');
     showToast(
-      'Terima kasih banyak telah follow @bintama_journey! Selamat berkarya & beternak modern.',
+      'Terima kasih banyak telah follow @bintama_journey! Selamat berkarya bersama Pratama Grup.',
       'success',
       'Dukungan Diterima'
     );
@@ -83,7 +83,7 @@ export const FollowSosmedModal: React.FC<FollowSosmedModalProps> = ({ isOpen, on
             🦆
           </div>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/15 border border-amber-500/30 text-amber-300 text-xs font-black tracking-wide mb-2">
-            <Sparkles className="w-3.5 h-3.5" /> DUKUNG KOMUNITAS BEBEKJAYA
+            <Sparkles className="w-3.5 h-3.5" /> DUKUNG KOMUNITAS PRATAMA GRUP
           </div>
           <h2 className="text-xl sm:text-2xl font-black text-white tracking-tight">
             Follow Media Sosial Kami
@@ -172,7 +172,7 @@ export const FollowSosmedModal: React.FC<FollowSosmedModalProps> = ({ isOpen, on
         <div className="mt-4 p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start gap-2.5 text-xs text-amber-200">
           <Heart className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
           <p className="leading-relaxed">
-            Dengan follow akun kami, Anda membantu peternakan bebek modern semakin dikenal dan mendorong pengembangan fitur-fitur baru BebekJaya!
+            Dengan follow akun kami, Anda membantu memajukan peternakan modern dan mendorong pengembangan fitur-fitur baru Pratama Grup!
           </p>
         </div>
 

@@ -4,6 +4,7 @@ import type { Kandang, PopulasiBebek, KodeAkun, StatusPopulasi, TipeAkun, SaldoN
 import { StorageService } from '../services/storage';
 
 import { useToast } from './ToastContainer';
+import { PengaturanNotifikasiSection } from './PengaturanNotifikasiSection';
 
 interface PengaturanViewProps {
   kandangList: Kandang[];
@@ -27,7 +28,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
   onOpenInstallApp,
 }) => {
   const { showToast } = useToast();
-  const [activeTab, setActiveTab] = useState<'kandang' | 'populasi' | 'coa' | 'database'>('database');
+  const [activeTab, setActiveTab] = useState<'kandang' | 'populasi' | 'coa' | 'database' | 'notifikasi'>('notifikasi');
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [serverStatus, setServerStatus] = useState<any>(null);
 
@@ -271,37 +272,46 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
         <div className="flex flex-wrap items-center gap-2">
           <div className="flex items-center bg-slate-900 p-1 rounded-xl border border-slate-800">
             <button
+              onClick={() => setActiveTab('notifikasi')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'notifikasi' ? 'bg-amber-500 text-slate-950 shadow-md font-black' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Bell className="w-3.5 h-3.5" />
+              <span>Alarm & Notifikasi</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('database')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 cursor-pointer ${
+                activeTab === 'database' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
+              }`}
+            >
+              <Database className="w-3.5 h-3.5" />
+              Database & Bot
+            </button>
+            <button
               onClick={() => setActiveTab('kandang')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'kandang' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400'
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'kandang' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               Kandang ({kandangList.length})
             </button>
             <button
               onClick={() => setActiveTab('populasi')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'populasi' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400'
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'populasi' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               Populasi ({populasiList.length})
             </button>
             <button
               onClick={() => setActiveTab('coa')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all ${
-                activeTab === 'coa' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400'
+              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                activeTab === 'coa' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400 hover:text-white'
               }`}
             >
               Chart of Accounts ({kodeAkunList.length})
-            </button>
-            <button
-              onClick={() => setActiveTab('database')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-lg transition-all flex items-center gap-1.5 ${
-                activeTab === 'database' ? 'bg-amber-500 text-slate-950 shadow-md' : 'text-slate-400'
-              }`}
-            >
-              <Database className="w-3.5 h-3.5" />
-              Database & Bot
             </button>
           </div>
 
@@ -455,35 +465,44 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                   <Bell className="w-5 h-5" />
                 </div>
                 <div>
-                  <h3 className="text-sm font-bold text-white">Pengingat Panen Otomatis di HP</h3>
-                  <p className="text-xs text-slate-400">Jadwal Notifikasi Pukul 07:00 & 08:00 Pagi</p>
+                  <h3 className="text-sm font-bold text-white">Alarm & Notifikasi Pengingat Panen</h3>
+                  <p className="text-xs text-slate-400">Atur Jam Alarm, Kustomisasi Pesan, & Pilihan Nada Dering</p>
                 </div>
               </div>
 
               <div className="p-4 rounded-xl bg-slate-950/70 border border-slate-800 space-y-2 text-xs">
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Jadwal Pengingat 1:</span>
-                  <span className="font-bold text-amber-400">🌅 Pukul 07:00 Pagi (Waktu Panen)</span>
+                  <span className="text-slate-400">Fitur Kustomisasi:</span>
+                  <span className="font-bold text-amber-400">Jam, Judul & Pesan Bebas Diubah</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Jadwal Pengingat 2:</span>
-                  <span className="font-bold text-rose-400">⏰ Pukul 08:00 Pagi (Follow-up)</span>
+                  <span className="text-slate-400">Sistem Audio:</span>
+                  <span className="font-bold text-emerald-400">Web Audio Synthesizer (5 Nada)</span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-slate-400">Format Aplikasi:</span>
-                  <span className="font-bold text-emerald-400">Progressive Web App (PWA Mobile)</span>
+                  <span className="text-slate-400">Format Notifikasi:</span>
+                  <span className="font-bold text-slate-200">Push Mobile + Banner In-App</span>
                 </div>
               </div>
 
-              {onOpenNotifikasi && (
+              <div className="flex flex-col sm:flex-row gap-2">
                 <button
-                  onClick={onOpenNotifikasi}
-                  className="w-full py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                  onClick={() => setActiveTab('notifikasi')}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs flex items-center justify-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
                 >
                   <Bell className="w-3.5 h-3.5" />
-                  Atur & Uji Coba Notifikasi Sekarang
+                  Buka Pengaturan Alarm
                 </button>
-              )}
+                {onOpenNotifikasi && (
+                  <button
+                    onClick={onOpenNotifikasi}
+                    className="py-2.5 px-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs flex items-center justify-center gap-1.5 border border-slate-700 transition-all cursor-pointer"
+                    title="Buka popup cepat pengingat"
+                  >
+                    Popup
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Install App to Mobile (Android & iPhone) Card */}
@@ -525,6 +544,11 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
             </div>
           </div>
         </div>
+      )}
+
+      {/* TAB NOTIFIKASI & ALARM */}
+      {activeTab === 'notifikasi' && (
+        <PengaturanNotifikasiSection />
       )}
 
       {/* TAB 1: Kandang */}

@@ -13,7 +13,7 @@ import { AsetKewajibanView } from './components/AsetKewajibanView';
 import { LaporanView } from './components/LaporanView';
 import { PengaturanView } from './components/PengaturanView';
 import { AIAssistantView } from './components/AIAssistantView';
-import { ToastProvider } from './components/ToastContainer';
+import { ToastProvider, useToast } from './components/ToastContainer';
 import { KalkulatorPeternakModal } from './components/KalkulatorPeternakModal';
 import { KasirPanenModal } from './components/KasirPanenModal';
 import { PWAInstallPrompt } from './components/PWAInstallPrompt';
@@ -27,6 +27,7 @@ import { AuthScreen } from './components/AuthScreen';
 import { BottomNav } from './components/BottomNav';
 
 export function AppContent() {
+  const { showToast } = useToast();
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [appMode, setAppMode] = useState<AppMode>(StorageService.getMode());
 
@@ -115,8 +116,26 @@ export function AppContent() {
       refreshAllData();
     });
 
-    // Initialize automated 07:00 & 08:00 morning notification reminders
+    // Initialize automated notification reminders
     NotificationService.initScheduler();
+
+    // Auto unlock audio context on first user interaction
+    const handleFirstUserGesture = () => {
+      NotificationService.unlockAudio();
+      window.removeEventListener('click', handleFirstUserGesture);
+      window.removeEventListener('touchstart', handleFirstUserGesture);
+    };
+    window.addEventListener('click', handleFirstUserGesture, { once: true });
+    window.addEventListener('touchstart', handleFirstUserGesture, { once: true });
+
+    // In-app alert listener
+    const handleNotificationAlert = (e: any) => {
+      const detail = e.detail;
+      if (detail && detail.title) {
+        showToast(detail.message || 'Waktunya cek peternakan Anda!', 'info', detail.title);
+      }
+    };
+    window.addEventListener('pratama-notification-alert', handleNotificationAlert);
 
     // Background sync every 4 seconds to receive updates made via Telegram Bot
     const interval = setInterval(async () => {
@@ -126,7 +145,10 @@ export function AppContent() {
       }
     }, 4000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      window.removeEventListener('pratama-notification-alert', handleNotificationAlert);
+    };
   }, []);
 
   const handleToggleMode = (newMode: AppMode) => {

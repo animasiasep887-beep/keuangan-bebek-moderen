@@ -64,49 +64,49 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
   const selectedPop = populasiList.find((p) => p.id === populasiId);
   const liveDuckCount = selectedPop ? selectedPop.jumlahSaatIni : 500;
 
-  // 1. Bebek & Layer Egg States (Realistic default for 500 birds: ~390 eggs = 78% HDP)
-  const [telurUtuh, setTelurUtuh] = useState<number>(375);
-  const [telurRetak, setTelurRetak] = useState<number>(12);
-  const [telurRusak, setTelurRusak] = useState<number>(3);
+  // 1. Bebek & Layer Egg States (Starts from 0 so user enters real data)
+  const [telurUtuh, setTelurUtuh] = useState<number>(0);
+  const [telurRetak, setTelurRetak] = useState<number>(0);
+  const [telurRusak, setTelurRusak] = useState<number>(0);
   const [bebekMati, setBebekMati] = useState<number>(0);
   const [bebekAfkir, setBebekAfkir] = useState<number>(0);
-  const [pakanKg, setPakanKg] = useState<number>(58); // 58 kg for 500 birds = 116g/bird/day (ideal)
+  const [pakanKg, setPakanKg] = useState<number>(0);
   const [pakanId, setPakanId] = useState<string>(pakanList[0]?.id || 'pak-1');
 
-  // 2. Broiler (Ayam Pedaging) States
-  const [umurHari, setUmurHari] = useState<number>(28);
-  const [mortalitasDoc, setMortalitasDoc] = useState<number>(2);
-  const [bobotTimbangGram, setBobotTimbangGram] = useState<number>(1850);
-  const [pakanBroilerKg, setPakanBroilerKg] = useState<number>(65);
+  // 2. Broiler (Ayam Pedaging) States (Starts from 0)
+  const [umurHari, setUmurHari] = useState<number>(0);
+  const [mortalitasDoc, setMortalitasDoc] = useState<number>(0);
+  const [bobotTimbangGram, setBobotTimbangGram] = useState<number>(0);
+  const [pakanBroilerKg, setPakanBroilerKg] = useState<number>(0);
   const [totalBobotPanenKg, setTotalBobotPanenKg] = useState<number>(0);
   const [ekorPanenBroiler, setEkorPanenBroiler] = useState<number>(0);
-  const [suhuKandang, setSuhuKandang] = useState<number>(26);
-  const [kelembabanKandang, setKelembabanKandang] = useState<number>(65);
-  const [jumlahSampelEkor, setJumlahSampelEkor] = useState<number>(50);
+  const [suhuKandang, setSuhuKandang] = useState<number>(0);
+  const [kelembabanKandang, setKelembabanKandang] = useState<number>(0);
+  const [jumlahSampelEkor, setJumlahSampelEkor] = useState<number>(0);
 
-  // 3. Sapi (Perah & Potong) States
+  // 3. Sapi (Perah & Potong) States (Starts from 0)
   const [subSektorSapi, setSubSektorSapi] = useState<'PERAH' | 'POTONG'>('PERAH');
-  const [susuPagiLiter, setSusuPagiLiter] = useState<number>(16);
-  const [susuSoreLiter, setSusuSoreLiter] = useState<number>(12);
-  const [beratJenisSusu, setBeratJenisSusu] = useState<number>(1.028);
-  const [bobotSapiKg, setBobotSapiKg] = useState<number>(465);
-  const [adgSapiKg, setAdgSapiKg] = useState<number>(1.2);
-  const [bcsScore, setBcsScore] = useState<number>(3);
-  const [pakanHijauanKg, setPakanHijauanKg] = useState<number>(40);
-  const [pakanKonsentratKg, setPakanKonsentratKg] = useState<number>(8);
-  const [catatanKesehatan, setCatatanKesehatan] = useState<string>('Laktasi Normal, Sehat');
+  const [susuPagiLiter, setSusuPagiLiter] = useState<number>(0);
+  const [susuSoreLiter, setSusuSoreLiter] = useState<number>(0);
+  const [beratJenisSusu, setBeratJenisSusu] = useState<number>(0);
+  const [bobotSapiKg, setBobotSapiKg] = useState<number>(0);
+  const [adgSapiKg, setAdgSapiKg] = useState<number>(0);
+  const [bcsScore, setBcsScore] = useState<number>(0);
+  const [pakanHijauanKg, setPakanHijauanKg] = useState<number>(0);
+  const [pakanKonsentratKg, setPakanKonsentratKg] = useState<number>(0);
+  const [catatanKesehatan, setCatatanKesehatan] = useState<string>('');
 
-  // 4. Lele (Akuakultur) States
-  const [pakanPeletKg, setPakanPeletKg] = useState<number>(25);
+  // 4. Lele (Akuakultur) States (Starts from 0)
+  const [pakanPeletKg, setPakanPeletKg] = useState<number>(0);
   const [pakanWaktu, setPakanWaktu] = useState<string>('Pagi & Sore');
   const [tipePelet, setTipePelet] = useState<string>('Pelet Apung -2 (Remaja)');
-  const [samplingIsiPerKg, setSamplingIsiPerKg] = useState<number>(8);
-  const [kematianIkan, setKematianIkan] = useState<number>(2);
+  const [samplingIsiPerKg, setSamplingIsiPerKg] = useState<number>(0);
+  const [kematianIkan, setKematianIkan] = useState<number>(0);
   const [panenSortirKg, setPanenSortirKg] = useState<number>(0);
-  const [kondisiAir, setKondisiAir] = useState<string>('Coklat Matang (Bioflok Produktif)');
-  const [phAir, setPhAir] = useState<number>(7.2);
-  const [suhuAir, setSuhuAir] = useState<number>(28);
-  const [treatmentAir, setTreatmentAir] = useState<string>('Rutin Probiotik EM4');
+  const [kondisiAir, setKondisiAir] = useState<string>('');
+  const [phAir, setPhAir] = useState<number>(0);
+  const [suhuAir, setSuhuAir] = useState<number>(0);
+  const [treatmentAir, setTreatmentAir] = useState<string>('');
 
   // Pakan Management States
   const [showPakanForm, setShowPakanForm] = useState<boolean>(false);
@@ -242,6 +242,41 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
     setSuccessMessage(notifMessage);
     showToast(notifMessage, 'success');
     onRefreshData();
+
+    // Reset inputs back to 0 & empty so next entry starts fresh
+    setTelurUtuh(0);
+    setTelurRetak(0);
+    setTelurRusak(0);
+    setBebekMati(0);
+    setBebekAfkir(0);
+    setPakanKg(0);
+    setCatatan('');
+    setUmurHari(0);
+    setMortalitasDoc(0);
+    setBobotTimbangGram(0);
+    setPakanBroilerKg(0);
+    setTotalBobotPanenKg(0);
+    setEkorPanenBroiler(0);
+    setSuhuKandang(0);
+    setKelembabanKandang(0);
+    setJumlahSampelEkor(0);
+    setSusuPagiLiter(0);
+    setSusuSoreLiter(0);
+    setBeratJenisSusu(0);
+    setBobotSapiKg(0);
+    setAdgSapiKg(0);
+    setBcsScore(0);
+    setPakanHijauanKg(0);
+    setPakanKonsentratKg(0);
+    setCatatanKesehatan('');
+    setPakanPeletKg(0);
+    setSamplingIsiPerKg(0);
+    setKematianIkan(0);
+    setPanenSortirKg(0);
+    setKondisiAir('');
+    setPhAir(0);
+    setSuhuAir(0);
+    setTreatmentAir('');
 
     setTimeout(() => {
       setSuccessMessage(null);
@@ -760,8 +795,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={telurUtuh}
+                      value={telurUtuh === 0 ? '' : telurUtuh}
                       onChange={(e) => setTelurUtuh(parseInt(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-amber-500/40 rounded-xl px-3 py-2 text-lg font-black text-amber-300 focus:outline-none focus:border-amber-400 shadow-inner"
                       required
                     />
@@ -805,8 +841,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={telurRetak}
+                      value={telurRetak === 0 ? '' : telurRetak}
                       onChange={(e) => setTelurRetak(parseInt(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-orange-500/40 rounded-xl px-3 py-2 text-lg font-black text-orange-300 focus:outline-none focus:border-orange-400 shadow-inner"
                     />
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -842,8 +879,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={telurRusak}
+                      value={telurRusak === 0 ? '' : telurRusak}
                       onChange={(e) => setTelurRusak(parseInt(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-rose-500/40 rounded-xl px-3 py-2 text-lg font-black text-rose-300 focus:outline-none focus:border-rose-400 shadow-inner"
                     />
                     <div className="flex flex-wrap items-center gap-1.5 pt-1">
@@ -881,8 +919,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={bebekMati}
+                      value={bebekMati === 0 ? '' : bebekMati}
                       onChange={(e) => setBebekMati(parseInt(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-bold"
                     />
                   </div>
@@ -894,8 +933,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                     <input
                       type="number"
                       min="0"
-                      value={bebekAfkir}
+                      value={bebekAfkir === 0 ? '' : bebekAfkir}
                       onChange={(e) => setBebekAfkir(parseInt(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-bold"
                     />
                   </div>
@@ -934,8 +974,9 @@ export const OperasionalView: React.FC<OperasionalViewProps> = ({
                       type="number"
                       min="0"
                       step="0.5"
-                      value={pakanKg}
+                      value={pakanKg === 0 ? '' : pakanKg}
                       onChange={(e) => setPakanKg(parseFloat(e.target.value) || 0)}
+                      placeholder="0"
                       className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-sm text-white font-bold"
                       required
                     />

@@ -37,16 +37,16 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
 
   // Form for New Kandang
   const [namaKandang, setNamaKandang] = useState('');
-  const [kapasitas, setKapasitas] = useState(500);
+  const [kapasitas, setKapasitas] = useState(0);
 
   // Form for New Populasi
   const [showPopulasiForm, setShowPopulasiForm] = useState(false);
   const [popKandangId, setPopKandangId] = useState(kandangList[0]?.id || 'k-1');
   const [kodeBatch, setKodeBatch] = useState('');
   const [tglMasuk, setTglMasuk] = useState(new Date().toISOString().split('T')[0]);
-  const [jumlahAwal, setJumlahAwal] = useState<number>(500);
-  const [hargaBeliPerEkor, setHargaBeliPerEkor] = useState<number>(75000);
-  const [umurMinggu, setUmurMinggu] = useState<number>(20);
+  const [jumlahAwal, setJumlahAwal] = useState<number>(0);
+  const [hargaBeliPerEkor, setHargaBeliPerEkor] = useState<number>(0);
+  const [umurMinggu, setUmurMinggu] = useState<number>(0);
   const [statusPopulasi, setStatusPopulasi] = useState<StatusPopulasi>('PRODUKTIF');
 
   // Form for New COA
@@ -103,6 +103,7 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
     StorageService.saveKandang([...kandangList, newKandang]);
     setSuccessMsg('Kandang Baru Berhasil Ditambahkan!');
     setNamaKandang('');
+    setKapasitas(0);
     onRefreshData();
 
     setTimeout(() => setSuccessMsg(null), 2000);
@@ -130,6 +131,9 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
     onRefreshData();
     setShowPopulasiForm(false);
     setKodeBatch('');
+    setJumlahAwal(0);
+    setHargaBeliPerEkor(0);
+    setUmurMinggu(0);
     setTimeout(() => setSuccessMsg(null), 2000);
   };
 
@@ -548,8 +552,10 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                 <label className="block text-slate-300 font-semibold mb-1">Kapasitas (Ekor)</label>
                 <input
                   type="number"
-                  value={kapasitas}
+                  min="0"
+                  value={kapasitas === 0 ? '' : kapasitas}
                   onChange={(e) => setKapasitas(parseInt(e.target.value) || 0)}
+                  placeholder="0"
                   className="w-full bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-white"
                   required
                 />
@@ -688,8 +694,9 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                   <input
                     type="number"
                     min="1"
-                    value={jumlahAwal}
+                    value={jumlahAwal === 0 ? '' : jumlahAwal}
                     onChange={(e) => setJumlahAwal(parseInt(e.target.value) || 0)}
+                    placeholder="0"
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
                     required
                   />
@@ -699,8 +706,9 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                   <input
                     type="number"
                     min="0"
-                    value={hargaBeliPerEkor}
+                    value={hargaBeliPerEkor === 0 ? '' : hargaBeliPerEkor}
                     onChange={(e) => setHargaBeliPerEkor(parseFloat(e.target.value) || 0)}
+                    placeholder="0"
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
                   />
                 </div>
@@ -708,9 +716,10 @@ export const PengaturanView: React.FC<PengaturanViewProps> = ({
                   <label className="block text-slate-300 font-semibold mb-1">Umur Bebek (Minggu)</label>
                   <input
                     type="number"
-                    min="1"
-                    value={umurMinggu}
-                    onChange={(e) => setUmurMinggu(parseInt(e.target.value) || 1)}
+                    min="0"
+                    value={umurMinggu === 0 ? '' : umurMinggu}
+                    onChange={(e) => setUmurMinggu(parseInt(e.target.value) || 0)}
+                    placeholder="0"
                     className="w-full bg-slate-950 border border-slate-700 rounded-lg px-3 py-2 text-white"
                   />
                 </div>

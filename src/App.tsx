@@ -21,6 +21,7 @@ import { NotifikasiPengaturanModal } from './components/NotifikasiPengaturanModa
 import { AuthModal } from './components/AuthModal';
 import { ProyeksiBisnisModal } from './components/ProyeksiBisnisModal';
 import { InstallAppModal } from './components/InstallAppModal';
+import { FollowSosmedModal } from './components/FollowSosmedModal';
 import { NotificationService } from './services/notificationService';
 import { AuthScreen } from './components/AuthScreen';
 import { BottomNav } from './components/BottomNav';
@@ -57,6 +58,9 @@ export function AppContent() {
   const [isNotifModalOpen, setIsNotifModalOpen] = useState<boolean>(false);
   const [isProyeksiOpen, setIsProyeksiOpen] = useState<boolean>(false);
   const [isInstallAppModalOpen, setIsInstallAppModalOpen] = useState<boolean>(false);
+  const [isFollowSosmedOpen, setIsFollowSosmedOpen] = useState<boolean>(() => {
+    return localStorage.getItem('bebek_has_followed_sosmed') !== 'true';
+  });
 
   // Application Data States
   const [metrics, setMetrics] = useState(StorageService.calculateMetrics(activeCommodity));
@@ -183,6 +187,7 @@ export function AppContent() {
         onOpenNotifikasi={() => setIsNotifModalOpen(true)}
         onOpenAuth={() => setIsAuthModalOpen(true)}
         onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
+        onOpenFollowSosmed={() => setIsFollowSosmedOpen(true)}
         onLogout={handleLogout}
         currentUser={currentUser}
         activeCommodity={activeCommodity}
@@ -202,6 +207,7 @@ export function AppContent() {
             onOpenKasir={() => setIsKasirOpen(true)}
             onOpenProyeksi={() => setIsProyeksiOpen(true)}
             onOpenInstallApp={() => setIsInstallAppModalOpen(true)}
+            onOpenFollowSosmed={() => setIsFollowSosmedOpen(true)}
             activeCommodity={activeCommodity}
           />
         )}
@@ -302,6 +308,11 @@ export function AppContent() {
       <NotifikasiPengaturanModal
         isOpen={isNotifModalOpen}
         onClose={() => setIsNotifModalOpen(false)}
+      />
+
+      <FollowSosmedModal
+        isOpen={isFollowSosmedOpen}
+        onClose={() => setIsFollowSosmedOpen(false)}
       />
 
       {/* PWA Mobile App Install Prompt Banner */}

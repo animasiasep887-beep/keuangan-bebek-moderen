@@ -206,14 +206,12 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
   const productList = COMMODITY_PRODUCTS[activeCommodity] || COMMODITY_PRODUCTS.BEBEK_PETELUR;
 
   const [tanggal, setTanggal] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [namaPembeli, setNamaPembeli] = useState<string>('Pengepul / Pelanggan');
+  const [namaPembeli, setNamaPembeli] = useState<string>('');
   const [noHp, setNoHp] = useState<string>('');
   const [selectedProductId, setSelectedProductId] = useState<string>(productList[0].id);
   const [satuan, setSatuan] = useState<string>(productList[0].defaultSatuan);
-  const [jumlahQty, setJumlahQty] = useState<number>(10);
-  const [hargaPerSatuan, setHargaPerSatuan] = useState<number>(
-    productList[0].satuanOptions[0]?.defaultHarga || 72000
-  );
+  const [jumlahQty, setJumlahQty] = useState<number>(0);
+  const [hargaPerSatuan, setHargaPerSatuan] = useState<number>(0);
   const [metodeBayar, setMetodeBayar] = useState<'TUNAI' | 'TRANSFER' | 'TEMPO'>('TUNAI');
   const [tglJatuhTempo, setTglJatuhTempo] = useState<string>(
     new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
@@ -230,10 +228,8 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     if (list && list.length > 0) {
       setSelectedProductId(list[0].id);
       setSatuan(list[0].defaultSatuan);
-      setHargaPerSatuan(list[0].satuanOptions[0]?.defaultHarga || 50000);
-      if (list[0].defaultSatuan === 'EKOR' && activeCommodity === 'SAPI') {
-        setJumlahQty(1);
-      }
+      setHargaPerSatuan(0);
+      setJumlahQty(0);
     }
   }, [activeCommodity]);
 
@@ -248,24 +244,17 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
     const prod = productList.find((p) => p.id === productId);
     if (prod) {
       setSatuan(prod.defaultSatuan);
-      const opt = prod.satuanOptions.find((o) => o.value === prod.defaultSatuan) || prod.satuanOptions[0];
-      if (opt) setHargaPerSatuan(opt.defaultHarga);
-      if (prod.defaultSatuan === 'EKOR' && activeCommodity === 'SAPI') {
-        setJumlahQty(1);
-      }
+      setHargaPerSatuan(0);
+      setJumlahQty(0);
     }
   };
 
   const handleSatuanChange = (newSatuan: string) => {
     setSatuan(newSatuan);
-    const opt = currentProduct.satuanOptions.find((o) => o.value === newSatuan);
-    if (opt) {
-      setHargaPerSatuan(opt.defaultHarga);
-    }
   };
 
   const handleQuickQty = (qty: number) => {
-    setJumlahQty(qty);
+    setJumlahQty((prev) => (prev || 0) + qty);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -320,6 +309,13 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
         'Penjualan Berhasil'
       );
       setIsNotaOpen(true);
+
+      // Reset form fields back to 0 / empty
+      setJumlahQty(0);
+      setHargaPerSatuan(0);
+      setNamaPembeli('');
+      setNoHp('');
+      setCatatan('');
     } catch (err: any) {
       showToast(`Gagal mencatat penjualan: ${err.message}`, 'error');
     }
@@ -404,20 +400,36 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
               <label className="text-xs text-slate-400 block mb-1">Jumlah / Qty:</label>
               <input
                 type="number"
-                min={1}
-                value={jumlahQty}
-                onChange={(e) => setJumlahQty(Math.max(1, Number(e.target.value)))}
+                min={0}
+                value={jumlahQty === 0 ? '' : jumlahQty}
+                onChange={(e) => setJumlahQty(Math.max(0, parseInt(e.target.value) || 0))}
+                placeholder="0"
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm outline-none focus:border-amber-400"
               />
             </div>
 
             <div>
-              <label className="text-xs text-slate-400 block mb-1">Harga per {satuan} (Rp):</label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="text-xs text-slate-400">Harga per {satuan} (Rp):</label>
+                {currentProduct.satuanOptions.find((o) => o.value === satuan)?.defaultHarga ? (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const opt = currentProduct.satuanOptions.find((o) => o.value === satuan);
+                      if (opt) setHargaPerSatuan(opt.defaultHarga);
+                    }}
+                    className="text-[10px] text-amber-400 hover:text-amber-300 font-semibold cursor-pointer"
+                  >
+                    Acuan: {formatIDR(currentProduct.satuanOptions.find((o) => o.value === satuan)?.defaultHarga || 0)}
+                  </button>
+                ) : null}
+              </div>
               <input
                 type="number"
                 min={0}
-                value={hargaPerSatuan}
-                onChange={(e) => setHargaPerSatuan(Number(e.target.value))}
+                value={hargaPerSatuan === 0 ? '' : hargaPerSatuan}
+                onChange={(e) => setHargaPerSatuan(Math.max(0, parseInt(e.target.value) || 0))}
+                placeholder="0"
                 className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white font-bold text-sm outline-none focus:border-amber-400"
               />
             </div>
@@ -433,11 +445,18 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
                   key={q}
                   type="button"
                   onClick={() => handleQuickQty(q)}
-                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors"
+                  className="px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-300 transition-colors cursor-pointer"
                 >
                   +{q} {satuan}
                 </button>
               ))}
+              <button
+                type="button"
+                onClick={() => setJumlahQty(0)}
+                className="px-2.5 py-1 rounded-lg bg-rose-950/40 hover:bg-rose-900/50 text-xs font-semibold text-rose-300 border border-rose-800/40 transition-colors cursor-pointer"
+              >
+                0
+              </button>
             </div>
           </div>
 
@@ -451,8 +470,9 @@ export const KasirPanenModal: React.FC<KasirPanenModalProps> = ({
                   type="text"
                   value={namaPembeli}
                   onChange={(e) => setNamaPembeli(e.target.value)}
-                  placeholder="Contoh: Toko Berkah / Pengepul"
+                  placeholder="Nama Pembeli / Pengepul"
                   className="w-full bg-transparent text-sm text-white font-semibold outline-none"
+                  required
                 />
               </div>
             </div>

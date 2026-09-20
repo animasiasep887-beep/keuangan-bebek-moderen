@@ -22,6 +22,7 @@ import type { FarmMetricsSummary, User, KomoditasTernak } from '../types';
 import type { AppMode } from '../services/storage';
 import { AuthService } from '../services/authService';
 import { KomoditasSelector } from './KomoditasSelector';
+import { InstagramIcon } from './FollowSosmedModal';
 
 interface HeaderProps {
   activeTab: string;
@@ -34,6 +35,7 @@ interface HeaderProps {
   onOpenNotifikasi?: () => void;
   onOpenAuth?: () => void;
   onOpenInstallApp?: () => void;
+  onOpenFollowSosmed?: () => void;
   onLogout?: () => void;
   currentUser?: User | null;
   activeCommodity?: KomoditasTernak;
@@ -48,6 +50,7 @@ export const Header: React.FC<HeaderProps> = ({
   onOpenNotifikasi,
   onOpenAuth,
   onOpenInstallApp,
+  onOpenFollowSosmed,
   onLogout,
   currentUser,
   activeCommodity = 'BEBEK_PETELUR',
@@ -165,6 +168,20 @@ export const Header: React.FC<HeaderProps> = ({
               >
                 <Smartphone className="w-3.5 h-3.5 text-emerald-400" />
                 <span className="hidden md:inline">Pasang App</span>
+              </button>
+            )}
+
+            {/* Official Social Media Follow Button (@bintama_journey) */}
+            {onOpenFollowSosmed && (
+              <button
+                type="button"
+                onClick={onOpenFollowSosmed}
+                className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-xl bg-gradient-to-r from-pink-500/15 via-purple-500/15 to-amber-500/15 hover:from-pink-500/25 hover:to-amber-500/25 border border-pink-500/30 text-pink-300 text-xs font-bold transition-all active:scale-95 shadow-sm shrink-0 cursor-pointer"
+                title="Follow Instagram & TikTok @bintama_journey"
+              >
+                <InstagramIcon className="w-3.5 h-3.5 text-pink-400 shrink-0" />
+                <span className="hidden md:inline">Follow @bintama_journey</span>
+                <span className="md:hidden">@bintama</span>
               </button>
             )}
 

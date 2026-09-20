@@ -27,6 +27,7 @@ import { KOMODITAS_LIST } from '../types';
 import { formatIDR } from '../utils/exportUtils';
 import { AuthService } from '../services/authService';
 import { GrafikProduksiTelur } from './GrafikProduksiTelur';
+import { InstagramIcon, TikTokIcon } from './FollowSosmedModal';
 
 interface DashboardViewProps {
   metrics: FarmMetricsSummary;
@@ -38,6 +39,7 @@ interface DashboardViewProps {
   onOpenKasir?: () => void;
   onOpenProyeksi?: () => void;
   onOpenInstallApp?: () => void;
+  onOpenFollowSosmed?: () => void;
   activeCommodity?: KomoditasTernak;
 }
 
@@ -349,6 +351,52 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             <span className="px-2.5 py-1 rounded-xl bg-slate-950/80 border border-white/[0.08] font-black text-amber-300">
               {logs.length} Hari
             </span>
+          </div>
+        </div>
+      </div>
+
+      {/* SOCIAL MEDIA OFFICIAL BANNER (@bintama_journey) */}
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl border border-pink-500/30 bg-gradient-to-r from-pink-950/30 via-purple-950/25 to-slate-900/80 p-4 sm:p-5 shadow-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 relative z-10">
+          <div className="flex items-center gap-3.5">
+            <div className="w-11 h-11 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 flex items-center justify-center text-white shadow-lg shadow-pink-500/20 shrink-0">
+              <InstagramIcon className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="px-2 py-0.5 rounded-full bg-pink-500/20 border border-pink-500/30 text-pink-300 text-[10px] font-extrabold uppercase tracking-wider">
+                  Komunitas Peternak Modern
+                </span>
+                <span className="text-xs font-bold text-amber-400">@bintama_journey</span>
+              </div>
+              <h3 className="text-sm sm:text-base font-black text-white mt-0.5">
+                Tutorial Pakan Murah & SOP Beternak Bebek Modern
+              </h3>
+              <p className="text-xs text-slate-300 mt-0.5">
+                Dukung kami dengan follow media sosial resmi untuk update formulasi pakan, pencegahan penyakit, dan fitur baru!
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+            <a
+              href="https://www.instagram.com/bintama_journey"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-black text-xs flex items-center gap-1.5 shadow-md shadow-pink-600/25 active:scale-95 transition-all"
+            >
+              <InstagramIcon className="w-3.5 h-3.5" />
+              <span>Instagram</span>
+            </a>
+            <a
+              href="https://www.tiktok.com/@bintama_journey?is_from_webapp=1&sender_device=pc"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white border border-cyan-400/50 hover:border-cyan-400 font-black text-xs flex items-center gap-1.5 shadow-md shadow-cyan-500/10 active:scale-95 transition-all"
+            >
+              <TikTokIcon className="w-3.5 h-3.5" />
+              <span>TikTok</span>
+            </a>
           </div>
         </div>
       </div>

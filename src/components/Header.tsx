@@ -13,6 +13,9 @@ import {
   CheckCircle2,
   TestTube2,
   Smartphone,
+  Scale,
+  Activity,
+  Award,
 } from 'lucide-react';
 import { BrandLogo } from './BrandLogo';
 import type { FarmMetricsSummary, User, KomoditasTernak } from '../types';
@@ -55,7 +58,25 @@ export const Header: React.FC<HeaderProps> = ({
 
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: Layers },
-    { id: 'operasional', label: 'Operasional & Panen', icon: Egg },
+    {
+      id: 'operasional',
+      label:
+        activeCommodity === 'AYAM_PEDAGING'
+          ? 'Operasional & Timbang'
+          : activeCommodity === 'SAPI'
+          ? 'Operasional Sapi & Susu'
+          : activeCommodity === 'LELE'
+          ? 'Operasional Kolam Lele'
+          : 'Operasional & Panen Telur',
+      icon:
+        activeCommodity === 'AYAM_PEDAGING'
+          ? Scale
+          : activeCommodity === 'SAPI'
+          ? Activity
+          : activeCommodity === 'LELE'
+          ? Award
+          : Egg,
+    },
     { id: 'keuangan', label: 'Keuangan & Kas', icon: Wallet },
     { id: 'aset', label: 'Aset & Kandang', icon: ShieldCheck },
     { id: 'laporan', label: 'Laporan Laba/Rugi', icon: TrendingUp },

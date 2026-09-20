@@ -63,8 +63,12 @@ export interface PencatatanHarian {
   totalBobotPanenKg?: number;
   indeksPerforma?: number; // IP Broiler: (Daya Hidup % x Bobot Rata-rata kg) / (FCR x Umur hari) * 100
   adgGram?: number; // Average Daily Gain
+  suhuKandang?: number; // Suhu ruangan °C
+  kelembabanKandang?: number; // Kelembaban % RH
+  jumlahSampelEkor?: number;
 
   // Sapi (Perah & Potong) fields
+  subSektorSapi?: 'PERAH' | 'POTONG';
   susuPagiLiter?: number;
   susuSoreLiter?: number;
   totalSusuLiter?: number;
@@ -72,6 +76,8 @@ export interface PencatatanHarian {
   adgSapiKg?: number;
   pakanHijauanKg?: number;
   pakanKonsentratKg?: number;
+  beratJenisSusu?: number;
+  lemakSusuPersen?: number;
   catatanKesehatan?: string; // Vaksin / IB / Calving / Laktasi
 
   // Lele (Akuakultur) fields
@@ -82,6 +88,10 @@ export interface PencatatanHarian {
   survivalRate?: number; // SR %
   pakanPeletKg?: number;
   kondisiAir?: string; // Normal / Hijau / Keruh / Kuras
+  phAir?: number; // Nilai pH air kolam
+  suhuAir?: number; // Suhu air kolam °C
+  pakanWaktu?: string; // Jam makan (Pagi/Siang/Sore/Malam)
+  treatmentAir?: string; // Garam / Probiotik / Molase
 
   catatan?: string;
   createdBy: string;

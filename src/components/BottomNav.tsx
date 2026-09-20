@@ -13,6 +13,9 @@ import {
   LogOut,
   X,
   User as UserIcon,
+  Scale,
+  Activity,
+  Award,
 } from 'lucide-react';
 import type { User, KomoditasTernak } from '../types';
 import { KOMODITAS_LIST } from '../types';
@@ -39,10 +42,44 @@ export const BottomNav: React.FC<BottomNavProps> = ({
   onOpenInstallApp,
   onLogout,
   currentUser,
-  activeCommodity,
+  activeCommodity = 'BEBEK_PETELUR',
   onChangeCommodity,
 }) => {
   const [isMenuDrawerOpen, setIsMenuDrawerOpen] = useState(false);
+
+  // Dynamic Tab 2 details based on activeCommodity
+  const getOperasionalTabDetails = () => {
+    switch (activeCommodity) {
+      case 'AYAM_PEDAGING':
+        return { label: 'Timbang', icon: Scale };
+      case 'SAPI':
+        return { label: 'Perahan/Sapi', icon: Activity };
+      case 'LELE':
+        return { label: 'Pakan/Kolam', icon: Award };
+      case 'AYAM_PETELUR':
+      case 'BEBEK_PETELUR':
+      default:
+        return { label: 'Panen Telur', icon: Egg };
+    }
+  };
+
+  const operasionalDetails = getOperasionalTabDetails();
+  const OperasionalIcon = operasionalDetails.icon;
+
+  const getKasirLabel = () => {
+    switch (activeCommodity) {
+      case 'AYAM_PEDAGING':
+        return 'Kasir Ayam';
+      case 'SAPI':
+        return 'Kasir Sapi';
+      case 'LELE':
+        return 'Kasir Lele';
+      case 'AYAM_PETELUR':
+      case 'BEBEK_PETELUR':
+      default:
+        return 'Kasir Telur';
+    }
+  };
 
   return (
     <>
@@ -65,7 +102,7 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             <span className="text-[10px] mt-0.5">Beranda</span>
           </button>
 
-          {/* 2. Panen Harian */}
+          {/* 2. Operasional / Panen / Timbang */}
           <button
             type="button"
             onClick={() => setActiveTab('operasional')}
@@ -76,12 +113,12 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             }`}
           >
             <div className={`p-1 rounded-lg ${activeTab === 'operasional' ? 'bg-amber-500/20' : ''}`}>
-              <Egg className="w-5 h-5" />
+              <OperasionalIcon className="w-5 h-5" />
             </div>
-            <span className="text-[10px] mt-0.5">Panen</span>
+            <span className="text-[10px] mt-0.5 truncate max-w-[58px]">{operasionalDetails.label}</span>
           </button>
 
-          {/* 3. Kasir Telur - Center Prominent Action Button */}
+          {/* 3. Kasir - Center Prominent Action Button */}
           <div className="relative -top-3.5">
             <button
               type="button"
@@ -90,8 +127,8 @@ export const BottomNav: React.FC<BottomNavProps> = ({
             >
               <ShoppingCart className="w-5 h-5 stroke-[2.5]" />
             </button>
-            <span className="block text-[9px] font-black text-amber-400 text-center mt-0.5">
-              Kasir
+            <span className="block text-[9px] font-black text-amber-400 text-center mt-0.5 truncate max-w-[62px]">
+              {getKasirLabel()}
             </span>
           </div>
 

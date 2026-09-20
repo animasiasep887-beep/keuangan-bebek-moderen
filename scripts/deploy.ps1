@@ -147,27 +147,30 @@ if (-not $pm2Exists) {
 }
 
 if ($pm2Exists) {
-    # 1. Pastikan ternak-fun aktif
     if (Test-Path "ecosystem.config.cjs") {
-        Write-Host "      Me-reload aplikasi ternak-fun..." -ForegroundColor Green
+        Write-Host "      Me-reload aplikasi & tunnel via ecosystem.config.cjs..." -ForegroundColor Green
         pm2 startOrReload ecosystem.config.cjs --update-env
     } else {
-        pm2 restart ternak-fun 2>$null
-        if ($LASTEXITCODE -ne 0) {
+        # Fallback jika ecosystem.config.cjs tidak tersedia
+        pm2 describe ternak-fun 2>&1 | Out-Null
+        if ($LASTEXITCODE -eq 0) {
+            Write-Host "      Me-restart service ternak-fun..." -ForegroundColor Green
+            pm2 restart ternak-fun
+        } else {
+            Write-Host "      Mendaftarkan service ternak-fun ke PM2..." -ForegroundColor Green
             pm2 start server/server.js --name "ternak-fun"
         }
-    }
 
-    # 2. Pastikan ternak-tunnel aktif menghubungkan ternak.fun ke port 3001
-    if ((Test-Path $CLOUDFLARED_EXE) -and (Test-Path $TUNNEL_JSON)) {
-        $pm2List = pm2 jlist | ConvertFrom-Json
-        $tunnelRunning = $pm2List | Where-Object { $_.name -eq "ternak-tunnel" }
-        if ($tunnelRunning) {
-            Write-Host "      Me-restart service ternak-tunnel..." -ForegroundColor Green
-            pm2 restart ternak-tunnel
-        } else {
-            Write-Host "      Mendaftarkan service ternak-tunnel ke PM2..." -ForegroundColor Green
-            pm2 start "$CLOUDFLARED_EXE" --name "ternak-tunnel" -- tunnel --credentials-file "$TUNNEL_JSON" run --url http://127.0.0.1:3001 0def092e-cd92-4db7-9eba-9bbfd69c75a8
+        # Pastikan ternak-tunnel aktif jika tidak lewat ecosystem
+        if ((Test-Path $CLOUDFLARED_EXE) -and (Test-Path $TUNNEL_JSON)) {
+            pm2 describe ternak-tunnel 2>&1 | Out-Null
+            if ($LASTEXITCODE -eq 0) {
+                Write-Host "      Me-restart service ternak-tunnel..." -ForegroundColor Green
+                pm2 restart ternak-tunnel
+            } else {
+                Write-Host "      Mendaftarkan service ternak-tunnel ke PM2..." -ForegroundColor Green
+                cmd /c "pm2 start `"$CLOUDFLARED_EXE`" --name ternak-tunnel -- tunnel --credentials-file `"$TUNNEL_JSON`" run --url http://127.0.0.1:3001 0def092e-cd92-4db7-9eba-9bbfd69c75a8"
+            }
         }
     }
 

@@ -13,6 +13,13 @@ echo [1/2] Menyiapkan runner pembaruan sistem...
 set "PROJECT_PATH=%~dp0"
 if "%PROJECT_PATH:~-1%"=="\" set "PROJECT_PATH=%PROJECT_PATH:~0,-1%"
 
+:: Tarik update git terlebih dahulu jika ada agar runner selalu versi terbaru
+where git >nul 2>&1
+if %ERRORLEVEL% EQU 0 (
+    call git fetch origin main >nul 2>&1
+    call git reset --hard origin/main >nul 2>&1
+)
+
 :: Salin script runner ke folder TEMP agar proses update Git
 :: TIDAK PERNAH memutus atau menutup file .bat yang sedang berjalan!
 if exist "%PROJECT_PATH%\scripts\deploy.ps1" (

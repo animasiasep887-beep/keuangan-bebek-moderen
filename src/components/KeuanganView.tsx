@@ -55,7 +55,7 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
   const { showToast } = useToast();
 
   // Navigation & Filter States
-  const [activeTab, setActiveTab] = useState<'semua' | 'pendapatan' | 'pengeluaran' | 'tambah'>('semua');
+  const [activeTab, setActiveTab] = useState<'semua' | 'pendapatan' | 'pengeluaran'>('semua');
   const [timeRange, setTimeRange] = useState<TimeRangeFilter>('semua');
   const [selectedCategory, setSelectedCategory] = useState<string>('ALL');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -63,7 +63,8 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
   const [showCharts, setShowCharts] = useState<boolean>(true);
   const [chartMode, setChartMode] = useState<'trend' | 'distribution'>('trend');
 
-  // Struk / Nota Modal State
+  // Modal States
+  const [isFormModalOpen, setIsFormModalOpen] = useState<boolean>(false);
   const [selectedNota, setSelectedNota] = useState<NotaData | null>(null);
   const [isNotaOpen, setIsNotaOpen] = useState<boolean>(false);
 
@@ -125,7 +126,7 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
     }
   };
 
-  // Quick Preset Handlers
+  // Quick Preset Handlers - Opens Modal with Form Pre-filled!
   const handleApplyPreset = (preset: {
     tipe: 'PENDAPATAN' | 'PENGELUARAN';
     kategori: string;
@@ -140,8 +141,8 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
     }
     setAkunLawanId(preset.akunLawan);
     setDeskripsi(preset.deskripsiDefault);
-    setActiveTab('tambah');
-    showToast(`Mode preset: ${preset.deskripsiDefault} aktif!`, 'info');
+    setIsFormModalOpen(true);
+    showToast(`Formulir dibuka: ${preset.deskripsiDefault}`, 'info');
   };
 
   const handleTipeChange = (tipe: 'PENDAPATAN' | 'PENGELUARAN') => {
@@ -184,7 +185,8 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
     showToast('Transaksi Keuangan Berhasil Dicatat!', 'success');
     onRefreshData();
 
-    setActiveTab('semua');
+    // Close Modal & Reset Form
+    setIsFormModalOpen(false);
     setDeskripsi('');
     setTotalNominal(0);
   };
@@ -272,20 +274,19 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
     // Financial Health Score Calculation (0 - 100)
     let score = 70;
     if (cInc === 0 && cExp === 0) {
-      score = 80; // Netral saat data masih awal
+      score = 80;
     } else if (inc > 0 && exp > 0) {
       const ratio = exp / inc;
-      if (ratio <= 0.6) score = 95; // Prima (Beban <= 60%)
-      else if (ratio <= 0.8) score = 85; // Sehat
-      else if (ratio <= 1.0) score = 70; // Pas-pasan
-      else score = 45; // Defisit
+      if (ratio <= 0.6) score = 95;
+      else if (ratio <= 0.8) score = 85;
+      else if (ratio <= 1.0) score = 70;
+      else score = 45;
     } else if (inc > 0 && exp === 0) {
       score = 100;
     } else if (exp > 0 && inc === 0) {
       score = 40;
     }
 
-    // Sort breakdowns
     const sortedExp = Object.entries(expMap)
       .map(([k, val]) => ({
         kategori: k,
@@ -334,7 +335,7 @@ export const KeuanganView: React.FC<KeuanganViewProps> = ({
 
     return Object.values(map).map((item) => ({
       ...item,
-      labelTanggal: item.tanggal.slice(5), // MM-DD
+      labelTanggal: item.tanggal.slice(5),
     }));
   }, [filteredTrxs]);
 
@@ -469,7 +470,6 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
     <div className="space-y-6 animate-fade-in">
       {/* 1. HEADER UTAMA SPEK DEWA DENGAN GRADASI GLOW */}
       <div className="relative overflow-hidden rounded-3xl border border-slate-800/80 bg-gradient-to-r from-slate-900/90 via-slate-900/70 to-emerald-950/30 p-5 sm:p-6 shadow-2xl backdrop-blur-xl">
-        {/* Glow ambient background circles */}
         <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-emerald-500/10 blur-3xl pointer-events-none" />
         <div className="absolute -left-16 -bottom-16 w-56 h-56 rounded-full bg-amber-500/10 blur-3xl pointer-events-none" />
 
@@ -503,17 +503,22 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
               <button
                 type="button"
                 onClick={onOpenKasir}
-                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-amber-500/20 active:scale-95 transition-all cursor-pointer"
               >
                 <ShoppingBag className="w-4 h-4" />
                 <span>Kasir Jual Telur</span>
               </button>
             )}
 
+            {/* TOMBOL CATAT CEPAT -> MEMBUKA MODAL SECARA LANGSUNG & JELAS */}
             <button
               type="button"
-              onClick={() => setActiveTab('tambah')}
-              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all"
+              onClick={() => {
+                setDeskripsi('');
+                setTotalNominal(0);
+                setIsFormModalOpen(true);
+              }}
+              className="px-4 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm flex items-center gap-2 shadow-lg shadow-emerald-500/25 active:scale-95 transition-all cursor-pointer"
             >
               <PlusCircle className="w-4 h-4" />
               <span>+ Catat Cepat</span>
@@ -522,7 +527,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
             <button
               type="button"
               onClick={handleExportExcel}
-              className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/70 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/70 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               title="Unduh Laporan Excel (.xlsx)"
             >
               <FileSpreadsheet className="w-4 h-4 text-emerald-400" />
@@ -532,7 +537,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
             <button
               type="button"
               onClick={handleCopyWhatsAppSummary}
-              className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/70 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95"
+              className="p-2.5 rounded-xl bg-slate-800/90 hover:bg-slate-700/90 text-slate-200 border border-slate-700/70 text-xs font-bold flex items-center gap-1.5 transition-all active:scale-95 cursor-pointer"
               title="Salin Ringkasan Kas ke WhatsApp"
             >
               <Share2 className="w-4 h-4 text-emerald-400" />
@@ -560,7 +565,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 key={rng.id}
                 type="button"
                 onClick={() => setTimeRange(rng.id)}
-                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                   timeRange === rng.id
                     ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
                     : 'bg-slate-950/60 text-slate-400 hover:text-slate-200 hover:bg-slate-800 border border-slate-800'
@@ -575,7 +580,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
             <button
               type="button"
               onClick={() => setShowCharts(!showCharts)}
-              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all ${
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold flex items-center gap-1.5 border transition-all cursor-pointer ${
                 showCharts
                   ? 'bg-sky-500/15 text-sky-400 border-sky-500/30'
                   : 'bg-slate-900 text-slate-400 border-slate-800'
@@ -674,7 +679,6 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 {healthScore >= 85 ? 'Sangat Sehat' : healthScore >= 65 ? 'Stabil / Baik' : 'Evaluasi Biaya'}
               </span>
             </div>
-            {/* Progress Bar */}
             <div className="mt-2 w-full h-1.5 rounded-full bg-slate-800 overflow-hidden">
               <div
                 className={`h-full rounded-full transition-all duration-500 ${
@@ -695,7 +699,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
       <div className="p-4 rounded-2xl bg-slate-900/60 border border-slate-800/80 backdrop-blur-md">
         <p className="text-xs font-bold text-slate-400 mb-2.5 flex items-center gap-1.5">
           <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-          Jalan Pintas Catat Cepat (1-Klik):
+          Jalan Pintas Catat Cepat (1-Klik Langsung Buka Form):
         </p>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
           <button
@@ -708,7 +712,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Penjualan Telur Grade A ke Pengepul',
               })
             }
-            className="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>🥚</span> + Jual Telur
           </button>
@@ -723,7 +727,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Pembelian Pakan Konsentrat & Jagung',
               })
             }
-            className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/30 text-amber-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>🌾</span> - Beli Pakan
           </button>
@@ -738,7 +742,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Pembelian Vaksin & Vitamin Ternak',
               })
             }
-            className="px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-sky-500/10 hover:bg-sky-500/20 border border-sky-500/30 text-sky-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>💉</span> - Vaksin & Vitamin
           </button>
@@ -753,7 +757,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Upah & Gaji Pekerja Kandang',
               })
             }
-            className="px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-purple-500/10 hover:bg-purple-500/20 border border-purple-500/30 text-purple-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>👷</span> - Upah / Gaji
           </button>
@@ -768,7 +772,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Pembayaran Listrik & Air Kandang',
               })
             }
-            className="px-3 py-2 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-yellow-500/10 hover:bg-yellow-500/20 border border-yellow-500/30 text-yellow-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>💡</span> - Listrik & Air
           </button>
@@ -783,7 +787,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 deskripsiDefault: 'Penjualan Ternak Afkir / Daging',
               })
             }
-            className="px-3 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95"
+            className="px-3 py-2 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 text-xs font-bold flex items-center justify-center gap-1.5 transition-all active:scale-95 cursor-pointer"
           >
             <span>🦆</span> + Jual Afkir
           </button>
@@ -808,7 +812,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
               <button
                 type="button"
                 onClick={() => setChartMode('trend')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   chartMode === 'trend'
                     ? 'bg-emerald-500 text-slate-950 shadow'
                     : 'text-slate-400 hover:text-white'
@@ -819,7 +823,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
               <button
                 type="button"
                 onClick={() => setChartMode('distribution')}
-                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all ${
+                className={`px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
                   chartMode === 'distribution'
                     ? 'bg-emerald-500 text-slate-950 shadow'
                     : 'text-slate-400 hover:text-white'
@@ -910,9 +914,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
               </div>
             )
           ) : (
-            /* Distribution View */
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 pt-2">
-              {/* Kolom Kiri: Beban Pengeluaran */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-rose-400 flex items-center gap-1.5">
@@ -944,7 +946,6 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 )}
               </div>
 
-              {/* Kolom Kanan: Sumber Pendapatan */}
               <div className="p-4 rounded-xl bg-slate-950/60 border border-slate-800 space-y-3">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-bold text-emerald-400 flex items-center gap-1.5">
@@ -980,522 +981,540 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
         </div>
       )}
 
-      {/* 6. VIEW: FORM INPUT TRANSAKSI BARU */}
-      {activeTab === 'tambah' && (
-        <div className="space-y-4 animate-fade-in">
-          <form onSubmit={handleSubmit} className="glass-panel p-6 rounded-3xl border border-slate-800 shadow-2xl space-y-6">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-slate-800 pb-4">
-              <div>
-                <h3 className="text-lg font-black text-white flex items-center gap-2">
-                  <PlusCircle className="w-5 h-5 text-emerald-400" />
-                  Formulir Pembukuan Transaksi Keuangan
-                </h3>
-                <p className="text-xs text-slate-400">
-                  Pencatatan standar ganda (Debit & Kredit) otomatis menghubungkan Kas dan Akun Beban/Pendapatan.
-                </p>
-              </div>
+      {/* 6. DAFTAR TRANSAKSI: TOOLBAR, TAB FILTER, CATEGORY & SEARCH */}
+      <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          {/* Tab Filter: Semua / Pendapatan / Pengeluaran */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+            <button
+              type="button"
+              onClick={() => setActiveTab('semua')}
+              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'semua'
+                  ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                  : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
+              }`}
+            >
+              Semua ({transactions.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pendapatan')}
+              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'pendapatan'
+                  ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
+                  : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
+              }`}
+            >
+              + Pendapatan ({transactions.filter((t) => t.tipeTransaksi === 'PENDAPATAN').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setActiveTab('pengeluaran')}
+              className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'pengeluaran'
+                  ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
+                  : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
+              }`}
+            >
+              - Pengeluaran ({transactions.filter((t) => t.tipeTransaksi === 'PENGELUARAN').length})
+            </button>
+          </div>
 
-              <div className="flex items-center gap-2">
-                <button
-                  type="button"
-                  onClick={() => handleTipeChange('PENDAPATAN')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
-                    tipeTransaksi === 'PENDAPATAN'
-                      ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800'
-                  }`}
-                >
-                  + Pendapatan (Kas Masuk)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => handleTipeChange('PENGELUARAN')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
-                    tipeTransaksi === 'PENGELUARAN'
-                      ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25'
-                      : 'bg-slate-900 text-slate-400 border border-slate-800'
-                  }`}
-                >
-                  - Pengeluaran (Biaya)
-                </button>
-              </div>
+          {/* Category Filter, Search and Layout Toggle */}
+          <div className="flex flex-wrap items-center gap-2">
+            <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
+              <Filter className="w-3.5 h-3.5 text-emerald-400" />
+              <select
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e.target.value)}
+                aria-label="Filter berdasarkan kategori"
+                className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
+              >
+                <option value="ALL" className="bg-slate-900">Semua Kategori</option>
+                <optgroup label="Pendapatan" className="bg-slate-900">
+                  <option value="TELUR_GRADE_A">Telur Grade A</option>
+                  <option value="TELUR_GRADE_B">Telur Grade B</option>
+                  <option value="BEBEK_AFKIR">Bebek Afkir</option>
+                  <option value="PUPUK_KANDANG">Pupuk Kandang</option>
+                  <option value="LAINNYA">Pendapatan Lain</option>
+                </optgroup>
+                <optgroup label="Pengeluaran" className="bg-slate-900">
+                  <option value="PAKAN">Belanja Pakan</option>
+                  <option value="OBAT_VAKSIN">Vaksin & Vitamin</option>
+                  <option value="GAJI">Upah / Gaji</option>
+                  <option value="OPERASIONAL_KANDANG">Operasional Kandang</option>
+                  <option value="LISTRIK_AIR">Listrik & Air</option>
+                </optgroup>
+              </select>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Tanggal Transaksi
-                </label>
-                <input
-                  type="date"
-                  value={tanggal}
-                  onChange={(e) => setTanggal(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white font-medium focus:ring-2 focus:ring-emerald-500"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Nominal Transaksi (Rp)
-                </label>
-                <input
-                  type="number"
-                  min="1"
-                  value={totalNominal || ''}
-                  onChange={(e) => setTotalNominal(parseFloat(e.target.value) || 0)}
-                  placeholder="Contoh: 1500000"
-                  className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-base font-black focus:ring-2 ${
-                    tipeTransaksi === 'PENDAPATAN' ? 'text-emerald-400 focus:ring-emerald-500' : 'text-rose-400 focus:ring-rose-500'
-                  }`}
-                  required
-                />
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Akun Kas / Bank (Debit / Kredit)
-                </label>
-                <select
-                  value={akunKasId}
-                  onChange={(e) => setAkunKasId(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white font-medium"
-                >
-                  {kodeAkunList
-                    .filter((a) => a.tipe === 'ASSET' && (a.kode === '101' || a.kode === '102'))
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>
-                        [{a.kode}] {a.nama}
-                      </option>
-                    ))}
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-bold text-slate-300 mb-1">
-                  Kategori Akun Lawan ({tipeTransaksi === 'PENDAPATAN' ? 'Pendapatan' : 'Beban/Biaya'})
-                </label>
-                <select
-                  value={akunLawanId}
-                  onChange={(e) => {
-                    setAkunLawanId(e.target.value);
-                    const selectedAkun = kodeAkunList.find((a) => a.id === e.target.value);
-                    if (selectedAkun) {
-                      if (tipeTransaksi === 'PENDAPATAN') setKategoriPendapatan(selectedAkun.nama);
-                      else setKategoriPengeluaran(selectedAkun.nama);
-                    }
-                  }}
-                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white font-medium"
-                >
-                  {kodeAkunList
-                    .filter((a) => (tipeTransaksi === 'PENDAPATAN' ? a.tipe === 'REVENUE' : a.tipe === 'EXPENSE'))
-                    .map((a) => (
-                      <option key={a.id} value={a.id}>
-                        [{a.kode}] {a.nama}
-                      </option>
-                    ))}
-                </select>
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-300 mb-1">
-                Deskripsi / Keterangan Transaksi
-              </label>
+            <div className="relative flex-1 sm:w-56">
+              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
               <input
                 type="text"
-                value={deskripsi}
-                onChange={(e) => setDeskripsi(e.target.value)}
-                placeholder="Contoh: Penjualan 20 Tray Telur Grade A ke Pengepul Malang"
-                className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-sm text-white font-medium focus:ring-2 focus:ring-emerald-500"
-                required
+                placeholder="Cari transaksi / no ref..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
               />
             </div>
 
-            <div className="flex justify-end gap-3 pt-3 border-t border-slate-800">
+            {/* View Mode Switcher (Card vs Table) */}
+            <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
               <button
                 type="button"
-                onClick={() => setActiveTab('semua')}
-                className="px-5 py-2.5 rounded-xl bg-slate-800 text-slate-300 font-bold text-xs hover:bg-slate-700 transition-colors"
+                onClick={() => setViewMode('cards')}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'cards'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Tampilan Card (Feed Modern)"
               >
-                Batal
+                <Layers className="w-4 h-4" />
               </button>
               <button
-                type="submit"
-                className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-sm shadow-xl shadow-emerald-500/20 active:scale-95 transition-all"
+                type="button"
+                onClick={() => setViewMode('table')}
+                className={`p-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                  viewMode === 'table'
+                    ? 'bg-emerald-500 text-slate-950'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+                title="Tampilan Tabel Akuntansi"
               >
-                Simpan Transaksi Keuangan
+                <BarChart3 className="w-4 h-4" />
               </button>
             </div>
-          </form>
+          </div>
         </div>
-      )}
 
-      {/* 7. DAFTAR TRANSAKSI: TOOLBAR, TAB FILTER, & SEARCH */}
-      {activeTab !== 'tambah' && (
-        <div className="rounded-3xl border border-slate-800 bg-slate-900/90 p-4 sm:p-6 shadow-2xl backdrop-blur-xl space-y-4">
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            {/* Tab Filter: Semua / Pendapatan / Pengeluaran */}
-            <div className="flex items-center gap-1.5 overflow-x-auto pb-1 md:pb-0 scrollbar-none">
+        {/* 7. LIST DATA TRANSAKSI */}
+        {filteredTrxs.length === 0 ? (
+          /* EMPTY STATE SPEK DEWA */
+          <div className="py-16 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-6 space-y-4">
+            <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-slate-800 to-slate-900 border border-slate-700/60 flex items-center justify-center mx-auto shadow-inner">
+              <Wallet className="w-8 h-8 text-slate-500" />
+            </div>
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-white">Belum Ada Transaksi Tercatat</h4>
+              <p className="text-xs text-slate-400 max-w-md mx-auto">
+                Catatan transaksi pada periode ini masih kosong. Klik tombol di bawah untuk mencatat penjualan telur atau belanja pakan pertama Anda.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center justify-center gap-2.5 pt-2">
               <button
                 type="button"
-                onClick={() => setActiveTab('semua')}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap ${
-                  activeTab === 'semua'
-                    ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
-                    : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
-                }`}
+                onClick={() => {
+                  handleApplyPreset({
+                    tipe: 'PENDAPATAN',
+                    kategori: 'TELUR_GRADE_A',
+                    akunLawan: '401',
+                    deskripsiDefault: 'Penjualan Telur Grade A Pertama',
+                  });
+                }}
+                className="px-4 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-black shadow-lg shadow-emerald-500/20 active:scale-95 transition-all cursor-pointer"
               >
-                Semua ({transactions.length})
+                + Catat Pendapatan Pertama
               </button>
               <button
                 type="button"
-                onClick={() => setActiveTab('pendapatan')}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap ${
-                  activeTab === 'pendapatan'
-                    ? 'bg-emerald-500 text-slate-950 shadow-md shadow-emerald-500/20'
-                    : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
-                }`}
+                onClick={() => {
+                  handleApplyPreset({
+                    tipe: 'PENGELUARAN',
+                    kategori: 'PAKAN',
+                    akunLawan: '501',
+                    deskripsiDefault: 'Belanja Pakan Pertama',
+                  });
+                }}
+                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all active:scale-95 cursor-pointer"
               >
-                + Pendapatan ({transactions.filter((t) => t.tipeTransaksi === 'PENDAPATAN').length})
+                - Catat Belanja Pakan
               </button>
+            </div>
+          </div>
+        ) : viewMode === 'cards' ? (
+          /* MOBILE-FIRST CARD FEED VIEW (SPEK DEWA!) */
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {filteredTrxs.map((trx) => {
+              const isInc = trx.tipeTransaksi === 'PENDAPATAN';
+              const meta = getCategoryMeta(trx);
+              return (
+                <div
+                  key={trx.id}
+                  className="relative overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-950/60 p-4 hover:border-slate-700 transition-all shadow-md group"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-start gap-3 min-w-0">
+                      <div
+                        className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border ${meta.color}`}
+                      >
+                        {meta.icon}
+                      </div>
+                      <div className="min-w-0 space-y-1">
+                        <p className="font-bold text-white text-sm truncate leading-snug">
+                          {trx.deskripsi}
+                        </p>
+                        <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
+                          <span className={`px-2 py-0.5 rounded-full font-bold border text-[10px] ${meta.color}`}>
+                            {meta.label}
+                          </span>
+                          <span className="text-slate-400 font-mono text-[10px] bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
+                            {trx.noRef}
+                          </span>
+                          <span className="text-slate-400 text-[10px]">
+                            {trx.tanggal}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="text-right flex-shrink-0">
+                      <p
+                        className={`text-base sm:text-lg font-black tracking-tight ${
+                          isInc ? 'text-emerald-400' : 'text-rose-400'
+                        }`}
+                      >
+                        {isInc ? '+' : '-'}{formatIDR(trx.totalNominal)}
+                      </p>
+                      <span className="text-[10px] font-bold text-slate-400 uppercase">
+                        {isInc ? 'Kas Masuk' : 'Beban'}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="mt-3 pt-2.5 border-t border-slate-900 flex items-center justify-between">
+                    <div className="flex items-center gap-1 text-[11px] text-slate-400">
+                      <span>Oleh: {trx.createdBy || 'Peternak'}</span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        type="button"
+                        onClick={() => handleOpenStruk(trx)}
+                        className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-700 transition-colors cursor-pointer"
+                        title="Cetak Struk / Nota"
+                      >
+                        <Receipt className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Struk</span>
+                      </button>
+
+                      <button
+                        type="button"
+                        onClick={() => handleStartEditTrx(trx)}
+                        className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors cursor-pointer"
+                        title="Edit Transaksi"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+
+                      {confirmDeleteTrxId === trx.id ? (
+                        <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                          <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                          <button
+                            type="button"
+                            onClick={() => handleConfirmDeleteTrx(trx.id)}
+                            className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors cursor-pointer"
+                          >
+                            Ya
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setConfirmDeleteTrxId(null)}
+                            className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors cursor-pointer"
+                          >
+                            Batal
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          type="button"
+                          onClick={() => setConfirmDeleteTrxId(trx.id)}
+                          className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer"
+                          title="Hapus Transaksi"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          /* DESKTOP TABLE VIEW */
+          <div className="overflow-x-auto rounded-2xl border border-slate-800">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
+                <tr>
+                  <th className="px-4 py-3.5">Tanggal</th>
+                  <th className="px-4 py-3.5">No Ref</th>
+                  <th className="px-4 py-3.5">Deskripsi</th>
+                  <th className="px-4 py-3.5">Kategori Akun</th>
+                  <th className="px-4 py-3.5 text-right">Nominal</th>
+                  <th className="px-4 py-3.5 text-right">Aksi</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800/60 bg-slate-950/40 font-medium">
+                {filteredTrxs.map((trx) => {
+                  const isInc = trx.tipeTransaksi === 'PENDAPATAN';
+                  const meta = getCategoryMeta(trx);
+                  return (
+                    <tr key={trx.id} className="hover:bg-slate-900/50 transition-colors">
+                      <td className="px-4 py-3 font-bold text-white whitespace-nowrap">{trx.tanggal}</td>
+                      <td className="px-4 py-3 font-mono text-[11px] text-slate-400 whitespace-nowrap">
+                        {trx.noRef}
+                      </td>
+                      <td className="px-4 py-3 text-slate-200">
+                        <div className="font-semibold text-white">{trx.deskripsi}</div>
+                      </td>
+                      <td className="px-4 py-3 whitespace-nowrap">
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.color}`}>
+                          {meta.icon} {meta.label}
+                        </span>
+                      </td>
+                      <td
+                        className={`px-4 py-3 text-right font-black whitespace-nowrap ${
+                          isInc ? 'text-emerald-400' : 'text-rose-400'
+                        }`}
+                      >
+                        {isInc ? '+' : '-'}{formatIDR(trx.totalNominal)}
+                      </td>
+                      <td className="px-4 py-3 text-right whitespace-nowrap">
+                        <div className="flex items-center justify-end gap-1.5">
+                          <button
+                            type="button"
+                            onClick={() => handleOpenStruk(trx)}
+                            className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] border border-slate-700 transition-colors flex items-center gap-1 cursor-pointer"
+                            title="Cetak Struk"
+                          >
+                            <Receipt className="w-3 h-3 text-amber-400" />
+                            <span>Struk</span>
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => handleStartEditTrx(trx)}
+                            className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors cursor-pointer"
+                            title="Edit Transaksi"
+                          >
+                            <Pencil className="w-3.5 h-3.5" />
+                          </button>
+
+                          {confirmDeleteTrxId === trx.id ? (
+                            <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
+                              <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
+                              <button
+                                type="button"
+                                onClick={() => handleConfirmDeleteTrx(trx.id)}
+                                className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors cursor-pointer"
+                              >
+                                Ya
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setConfirmDeleteTrxId(null)}
+                                className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors cursor-pointer"
+                              >
+                                Batal
+                              </button>
+                            </div>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => setConfirmDeleteTrxId(trx.id)}
+                              className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors cursor-pointer"
+                              title="Hapus Transaksi"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* 8. MODAL CATAT TRANSAKSI CEPAT (POPUP SPEK DEWA) */}
+      {isFormModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-black/85 backdrop-blur-md animate-fade-in overflow-y-auto">
+          <div className="relative w-full max-w-xl bg-slate-900 border border-slate-700/90 rounded-3xl p-5 sm:p-6 shadow-2xl space-y-5 my-auto max-h-[92vh] overflow-y-auto">
+            {/* Header Modal */}
+            <div className="flex items-center justify-between border-b border-slate-800 pb-3.5 sticky top-0 bg-slate-900 z-10">
+              <div className="flex items-center gap-2.5">
+                <div
+                  className={`p-2 rounded-xl border ${
+                    tipeTransaksi === 'PENDAPATAN'
+                      ? 'bg-emerald-500/15 text-emerald-400 border-emerald-500/30'
+                      : 'bg-rose-500/15 text-rose-400 border-rose-500/30'
+                  }`}
+                >
+                  <Wallet className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black text-white">Catat Transaksi Keuangan</h3>
+                  <p className="text-xs text-slate-400">Pembukuan ganda otomatis menghubungkan Kas & Kategori.</p>
+                </div>
+              </div>
               <button
                 type="button"
-                onClick={() => setActiveTab('pengeluaran')}
-                className={`px-3.5 py-1.5 text-xs font-black rounded-xl transition-all whitespace-nowrap ${
-                  activeTab === 'pengeluaran'
-                    ? 'bg-rose-500 text-white shadow-md shadow-rose-500/20'
-                    : 'text-slate-400 hover:text-slate-200 bg-slate-950 border border-slate-800'
-                }`}
+                onClick={() => setIsFormModalOpen(false)}
+                className="p-2 rounded-xl bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
-                - Pengeluaran ({transactions.filter((t) => t.tipeTransaksi === 'PENGELUARAN').length})
+                <X className="w-5 h-5" />
               </button>
             </div>
 
-            {/* Category Filter, Search and Layout Toggle */}
-            <div className="flex flex-wrap items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-slate-950 border border-slate-800 rounded-xl px-2.5 py-1.5 text-xs text-slate-300">
-                <Filter className="w-3.5 h-3.5 text-emerald-400" />
-                <select
-                  value={selectedCategory}
-                  onChange={(e) => setSelectedCategory(e.target.value)}
-                  aria-label="Filter berdasarkan kategori"
-                  className="bg-transparent text-xs text-slate-200 outline-none cursor-pointer"
-                >
-                  <option value="ALL" className="bg-slate-900">Semua Kategori</option>
-                  <optgroup label="Pendapatan" className="bg-slate-900">
-                    <option value="TELUR_GRADE_A">Telur Grade A</option>
-                    <option value="TELUR_GRADE_B">Telur Grade B</option>
-                    <option value="BEBEK_AFKIR">Bebek Afkir</option>
-                    <option value="PUPUK_KANDANG">Pupuk Kandang</option>
-                    <option value="LAINNYA">Pendapatan Lain</option>
-                  </optgroup>
-                  <optgroup label="Pengeluaran" className="bg-slate-900">
-                    <option value="PAKAN">Belanja Pakan</option>
-                    <option value="OBAT_VAKSIN">Vaksin & Vitamin</option>
-                    <option value="GAJI">Upah / Gaji</option>
-                    <option value="OPERASIONAL_KANDANG">Operasional Kandang</option>
-                    <option value="LISTRIK_AIR">Listrik & Air</option>
-                  </optgroup>
-                </select>
+            {/* Type Switcher */}
+            <div className="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-2xl border border-slate-800">
+              <button
+                type="button"
+                onClick={() => handleTipeChange('PENDAPATAN')}
+                className={`py-2.5 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  tipeTransaksi === 'PENDAPATAN'
+                    ? 'bg-emerald-500 text-slate-950 shadow-lg shadow-emerald-500/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <ArrowUpRight className="w-4 h-4" />
+                + Pendapatan (Kas Masuk)
+              </button>
+              <button
+                type="button"
+                onClick={() => handleTipeChange('PENGELUARAN')}
+                className={`py-2.5 text-xs font-black rounded-xl transition-all flex items-center justify-center gap-2 cursor-pointer ${
+                  tipeTransaksi === 'PENGELUARAN'
+                    ? 'bg-rose-500 text-white shadow-lg shadow-rose-500/25'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <ArrowDownRight className="w-4 h-4" />
+                - Pengeluaran (Beban)
+              </button>
+            </div>
+
+            {/* Form Fields */}
+            <form onSubmit={handleSubmit} className="space-y-4 text-xs">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1">
+                    <Calendar className="w-3.5 h-3.5 text-emerald-400" /> Tanggal
+                  </label>
+                  <input
+                    type="date"
+                    value={tanggal}
+                    onChange={(e) => setTanggal(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Nominal Transaksi (Rp)
+                  </label>
+                  <input
+                    type="number"
+                    min="1"
+                    value={totalNominal || ''}
+                    onChange={(e) => setTotalNominal(parseFloat(e.target.value) || 0)}
+                    placeholder="Contoh: 1500000"
+                    className={`w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2 text-sm sm:text-base font-black focus:ring-2 outline-none ${
+                      tipeTransaksi === 'PENDAPATAN'
+                        ? 'text-emerald-400 focus:ring-emerald-500'
+                        : 'text-rose-400 focus:ring-rose-500'
+                    }`}
+                    required
+                  />
+                </div>
               </div>
 
-              <div className="relative flex-1 sm:w-56">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3.5">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Akun Kas / Bank
+                  </label>
+                  <select
+                    value={akunKasId}
+                    onChange={(e) => setAkunKasId(e.target.value)}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-medium outline-none cursor-pointer"
+                  >
+                    {kodeAkunList
+                      .filter((a) => a.tipe === 'ASSET' && (a.kode === '101' || a.kode === '102'))
+                      .map((a) => (
+                        <option key={a.id} value={a.id} className="bg-slate-900">
+                          [{a.kode}] {a.nama}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 mb-1">
+                    Kategori Akun Lawan ({tipeTransaksi === 'PENDAPATAN' ? 'Pendapatan' : 'Beban/Biaya'})
+                  </label>
+                  <select
+                    value={akunLawanId}
+                    onChange={(e) => {
+                      setAkunLawanId(e.target.value);
+                      const selectedAkun = kodeAkunList.find((a) => a.id === e.target.value);
+                      if (selectedAkun) {
+                        if (tipeTransaksi === 'PENDAPATAN') setKategoriPendapatan(selectedAkun.nama);
+                        else setKategoriPengeluaran(selectedAkun.nama);
+                      }
+                    }}
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2.5 text-xs sm:text-sm text-white font-medium outline-none cursor-pointer"
+                  >
+                    {kodeAkunList
+                      .filter((a) => (tipeTransaksi === 'PENDAPATAN' ? a.tipe === 'REVENUE' : a.tipe === 'EXPENSE'))
+                      .map((a) => (
+                        <option key={a.id} value={a.id} className="bg-slate-900">
+                          [{a.kode}] {a.nama}
+                        </option>
+                      ))}
+                  </select>
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-300 mb-1">
+                  Deskripsi / Keterangan Transaksi
+                </label>
                 <input
                   type="text"
-                  placeholder="Cari transaksi / no ref..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-2 text-xs text-white outline-none focus:border-emerald-500"
+                  value={deskripsi}
+                  onChange={(e) => setDeskripsi(e.target.value)}
+                  placeholder="Contoh: Penjualan 20 Tray Telur Grade A ke Pengepul Malang"
+                  className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3.5 py-2.5 text-xs sm:text-sm text-white font-medium focus:ring-2 focus:ring-emerald-500 outline-none"
+                  required
                 />
               </div>
 
-              {/* View Mode Switcher (Card vs Table) */}
-              <div className="flex items-center bg-slate-950 p-1 rounded-xl border border-slate-800">
+              {/* Action Buttons */}
+              <div className="flex items-center justify-end gap-2.5 pt-3 border-t border-slate-800">
                 <button
                   type="button"
-                  onClick={() => setViewMode('cards')}
-                  className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
-                    viewMode === 'cards'
-                      ? 'bg-emerald-500 text-slate-950'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Tampilan Card (Feed Modern)"
+                  onClick={() => setIsFormModalOpen(false)}
+                  className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs transition-colors cursor-pointer"
                 >
-                  <Layers className="w-4 h-4" />
+                  Batal
                 </button>
                 <button
-                  type="button"
-                  onClick={() => setViewMode('table')}
-                  className={`p-1.5 rounded-lg text-xs font-bold transition-all ${
-                    viewMode === 'table'
-                      ? 'bg-emerald-500 text-slate-950'
-                      : 'text-slate-400 hover:text-white'
-                  }`}
-                  title="Tampilan Tabel Akuntansi"
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-gradient-to-r from-emerald-500 to-teal-500 hover:from-emerald-400 hover:to-teal-400 text-slate-950 font-black text-xs sm:text-sm shadow-xl shadow-emerald-500/25 active:scale-95 transition-all cursor-pointer"
                 >
-                  <BarChart3 className="w-4 h-4" />
+                  Simpan Transaksi Keuangan
                 </button>
               </div>
-            </div>
+            </form>
           </div>
-
-          {/* 8. LIST DATA TRANSAKSI */}
-          {filteredTrxs.length === 0 ? (
-            /* EMPTY STATE SPEK DEWA */
-            <div className="py-16 text-center rounded-2xl border border-dashed border-slate-800 bg-slate-950/40 p-6 space-y-4">
-              <div className="w-16 h-16 rounded-3xl bg-gradient-to-tr from-slate-800 to-slate-900 border border-slate-700/60 flex items-center justify-center mx-auto shadow-inner">
-                <Wallet className="w-8 h-8 text-slate-500" />
-              </div>
-              <div className="space-y-1">
-                <h4 className="text-base font-bold text-white">Belum Ada Transaksi Tercatat</h4>
-                <p className="text-xs text-slate-400 max-w-md mx-auto">
-                  Catatan transaksi pada periode ini masih kosong. Anda dapat mulai mencatat penjualan telur atau pembelian pakan pertama Anda.
-                </p>
-              </div>
-              <div className="flex flex-wrap items-center justify-center gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleApplyPreset({
-                      tipe: 'PENDAPATAN',
-                      kategori: 'TELUR_GRADE_A',
-                      akunLawan: '401',
-                      deskripsiDefault: 'Penjualan Telur Grade A Pertama',
-                    });
-                  }}
-                  className="px-4 py-2 rounded-xl bg-emerald-500 hover:bg-emerald-400 text-slate-950 text-xs font-bold shadow-lg shadow-emerald-500/20 active:scale-95 transition-all"
-                >
-                  + Catat Pendapatan Pertama
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleApplyPreset({
-                      tipe: 'PENGELUARAN',
-                      kategori: 'PAKAN',
-                      akunLawan: '501',
-                      deskripsiDefault: 'Belanja Pakan Pertama',
-                    });
-                  }}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-bold border border-slate-700 transition-all active:scale-95"
-                >
-                  - Catat Belanja Pakan
-                </button>
-              </div>
-            </div>
-          ) : viewMode === 'cards' ? (
-            /* MOBILE-FIRST CARD FEED VIEW (SPEK DEWA!) */
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-              {filteredTrxs.map((trx) => {
-                const isInc = trx.tipeTransaksi === 'PENDAPATAN';
-                const meta = getCategoryMeta(trx);
-                return (
-                  <div
-                    key={trx.id}
-                    className="relative overflow-hidden rounded-2xl border border-slate-800/90 bg-slate-950/60 p-4 hover:border-slate-700 transition-all shadow-md group"
-                  >
-                    <div className="flex items-start justify-between gap-3">
-                      {/* Left: Icon & Description */}
-                      <div className="flex items-start gap-3 min-w-0">
-                        <div
-                          className={`w-11 h-11 rounded-2xl flex items-center justify-center text-lg flex-shrink-0 border ${meta.color}`}
-                        >
-                          {meta.icon}
-                        </div>
-                        <div className="min-w-0 space-y-1">
-                          <p className="font-bold text-white text-sm truncate leading-snug">
-                            {trx.deskripsi}
-                          </p>
-                          <div className="flex flex-wrap items-center gap-1.5 text-[11px]">
-                            <span className={`px-2 py-0.5 rounded-full font-bold border text-[10px] ${meta.color}`}>
-                              {meta.label}
-                            </span>
-                            <span className="text-slate-400 font-mono text-[10px] bg-slate-900 px-2 py-0.5 rounded border border-slate-800">
-                              {trx.noRef}
-                            </span>
-                            <span className="text-slate-400 text-[10px]">
-                              {trx.tanggal}
-                            </span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Right: Nominal */}
-                      <div className="text-right flex-shrink-0">
-                        <p
-                          className={`text-base sm:text-lg font-black tracking-tight ${
-                            isInc ? 'text-emerald-400' : 'text-rose-400'
-                          }`}
-                        >
-                          {isInc ? '+' : '-'}{formatIDR(trx.totalNominal)}
-                        </p>
-                        <span className="text-[10px] font-bold text-slate-400 uppercase">
-                          {isInc ? 'Kas Masuk' : 'Beban'}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Bottom Action Bar */}
-                    <div className="mt-3 pt-2.5 border-t border-slate-900 flex items-center justify-between">
-                      <div className="flex items-center gap-1 text-[11px] text-slate-400">
-                        <span>Oleh: {trx.createdBy || 'Peternak'}</span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5">
-                        <button
-                          type="button"
-                          onClick={() => handleOpenStruk(trx)}
-                          className="px-2.5 py-1 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-200 text-xs font-bold flex items-center gap-1 border border-slate-700 transition-colors"
-                          title="Cetak Struk / Nota"
-                        >
-                          <Receipt className="w-3.5 h-3.5 text-amber-400" />
-                          <span>Struk</span>
-                        </button>
-
-                        <button
-                          type="button"
-                          onClick={() => handleStartEditTrx(trx)}
-                          className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors"
-                          title="Edit Transaksi"
-                        >
-                          <Pencil className="w-3.5 h-3.5" />
-                        </button>
-
-                        {confirmDeleteTrxId === trx.id ? (
-                          <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
-                            <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
-                            <button
-                              type="button"
-                              onClick={() => handleConfirmDeleteTrx(trx.id)}
-                              className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
-                            >
-                              Ya
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setConfirmDeleteTrxId(null)}
-                              className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
-                            >
-                              Batal
-                            </button>
-                          </div>
-                        ) : (
-                          <button
-                            type="button"
-                            onClick={() => setConfirmDeleteTrxId(trx.id)}
-                            className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
-                            title="Hapus Transaksi"
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            /* DESKTOP TABLE VIEW */
-            <div className="overflow-x-auto rounded-2xl border border-slate-800">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px] tracking-wider border-b border-slate-800">
-                  <tr>
-                    <th className="px-4 py-3.5">Tanggal</th>
-                    <th className="px-4 py-3.5">No Ref</th>
-                    <th className="px-4 py-3.5">Deskripsi</th>
-                    <th className="px-4 py-3.5">Kategori Akun</th>
-                    <th className="px-4 py-3.5 text-right">Nominal</th>
-                    <th className="px-4 py-3.5 text-right">Aksi</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800/60 bg-slate-950/40 font-medium">
-                  {filteredTrxs.map((trx) => {
-                    const isInc = trx.tipeTransaksi === 'PENDAPATAN';
-                    const meta = getCategoryMeta(trx);
-                    return (
-                      <tr key={trx.id} className="hover:bg-slate-900/50 transition-colors">
-                        <td className="px-4 py-3 font-bold text-white whitespace-nowrap">{trx.tanggal}</td>
-                        <td className="px-4 py-3 font-mono text-[11px] text-slate-400 whitespace-nowrap">
-                          {trx.noRef}
-                        </td>
-                        <td className="px-4 py-3 text-slate-200">
-                          <div className="font-semibold text-white">{trx.deskripsi}</div>
-                        </td>
-                        <td className="px-4 py-3 whitespace-nowrap">
-                          <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${meta.color}`}>
-                            {meta.icon} {meta.label}
-                          </span>
-                        </td>
-                        <td
-                          className={`px-4 py-3 text-right font-black whitespace-nowrap ${
-                            isInc ? 'text-emerald-400' : 'text-rose-400'
-                          }`}
-                        >
-                          {isInc ? '+' : '-'}{formatIDR(trx.totalNominal)}
-                        </td>
-                        <td className="px-4 py-3 text-right whitespace-nowrap">
-                          <div className="flex items-center justify-end gap-1.5">
-                            <button
-                              type="button"
-                              onClick={() => handleOpenStruk(trx)}
-                              className="px-2 py-1 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold text-[11px] border border-slate-700 transition-colors flex items-center gap-1"
-                              title="Cetak Struk"
-                            >
-                              <Receipt className="w-3 h-3 text-amber-400" />
-                              <span>Struk</span>
-                            </button>
-
-                            <button
-                              type="button"
-                              onClick={() => handleStartEditTrx(trx)}
-                              className="p-1.5 rounded-lg bg-blue-500/10 hover:bg-blue-500/20 text-blue-400 border border-blue-500/20 transition-colors"
-                              title="Edit Transaksi"
-                            >
-                              <Pencil className="w-3.5 h-3.5" />
-                            </button>
-
-                            {confirmDeleteTrxId === trx.id ? (
-                              <div className="flex items-center gap-1 bg-rose-950/80 border border-rose-700/60 p-1 rounded-lg">
-                                <span className="text-[10px] text-rose-300 font-semibold px-1">Hapus?</span>
-                                <button
-                                  type="button"
-                                  onClick={() => handleConfirmDeleteTrx(trx.id)}
-                                  className="px-2 py-0.5 rounded bg-rose-600 hover:bg-rose-500 text-white font-bold text-[10px] transition-colors"
-                                >
-                                  Ya
-                                </button>
-                                <button
-                                  type="button"
-                                  onClick={() => setConfirmDeleteTrxId(null)}
-                                  className="px-1.5 py-0.5 rounded bg-slate-800 text-slate-300 text-[10px] hover:bg-slate-700 transition-colors"
-                                >
-                                  Batal
-                                </button>
-                              </div>
-                            ) : (
-                              <button
-                                type="button"
-                                onClick={() => setConfirmDeleteTrxId(trx.id)}
-                                className="p-1.5 rounded-lg bg-rose-500/10 hover:bg-rose-500/20 text-rose-400 border border-rose-500/20 transition-colors"
-                                title="Hapus Transaksi"
-                              >
-                                <Trash2 className="w-3.5 h-3.5" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-              </table>
-            </div>
-          )}
         </div>
       )}
 
@@ -1523,7 +1542,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
               <button
                 type="button"
                 onClick={() => setEditingTrx(null)}
-                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors"
+                className="p-1.5 rounded-lg bg-slate-800 text-slate-400 hover:text-white transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -1546,7 +1565,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                   <select
                     value={editTrxTipe}
                     onChange={(e) => setEditTrxTipe(e.target.value as any)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs cursor-pointer"
                   >
                     <option value="PENDAPATAN">Pendapatan (+)</option>
                     <option value="PENGELUARAN">Pengeluaran (-)</option>
@@ -1560,7 +1579,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                   <select
                     value={editTrxKategoriPendapatan}
                     onChange={(e) => setEditTrxKategoriPendapatan(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs cursor-pointer"
                   >
                     <option value="TELUR_GRADE_A">Penjualan Telur Grade A (Utuh)</option>
                     <option value="TELUR_GRADE_B">Penjualan Telur Grade B (Retak)</option>
@@ -1575,7 +1594,7 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                   <select
                     value={editTrxKategoriPengeluaran}
                     onChange={(e) => setEditTrxKategoriPengeluaran(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs"
+                    className="w-full bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-white text-xs cursor-pointer"
                   >
                     <option value="PAKAN">Belanja Pakan Konsentrat / Jagung / Dedak</option>
                     <option value="OBAT_VAKSIN">Vaksin, Vitamin & Desinfektan</option>
@@ -1614,13 +1633,13 @@ _Dicatat & diverifikasi otomatis via SIM Peternakan ternak.fun_`;
                 <button
                   type="button"
                   onClick={() => setEditingTrx(null)}
-                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors"
+                  className="px-4 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md transition-all active:scale-95"
+                  className="px-5 py-2 rounded-xl bg-amber-500 hover:bg-amber-400 text-slate-950 font-black shadow-md transition-all active:scale-95 cursor-pointer"
                 >
                   Simpan Perubahan
                 </button>

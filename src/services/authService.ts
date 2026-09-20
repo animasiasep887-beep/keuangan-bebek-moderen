@@ -1,16 +1,30 @@
 import type { User } from '../types';
 
+export interface SavedAccount {
+  id: string;
+  identifier: string; // username, phone, or email
+  name: string;
+  username: string;
+  email: string;
+  phone?: string;
+  farmName: string;
+  avatarUrl?: string;
+  savedPassword?: string;
+  lastLogin: string;
+}
+
 const USERS_STORAGE_KEY = 'quack_app_users_v1';
 const CURRENT_USER_KEY = 'quack_current_session_user';
+const SAVED_ACCOUNTS_KEY = 'pratama_saved_accounts_v2';
 
 const DEFAULT_USERS: (User & { passwordHash: string })[] = [
   {
     id: 'usr-default-01',
     name: 'H. Pratama (Owner)',
     username: 'admin',
-    email: 'admin@bebekjaya.com',
+    email: 'admin@pratamagrup.com',
     phone: '085600172785',
-    farmName: 'Peternakan Bebek Jaya Utama',
+    farmName: 'Peternakan Bebek Pratama Grup',
     role: 'OWNER',
     plan: 'PREMIUM',
     createdAt: new Date().toISOString(),
@@ -23,7 +37,7 @@ const DEFAULT_USERS: (User & { passwordHash: string })[] = [
     username: 'budi',
     email: 'budi@peternak.id',
     phone: '081398765432',
-    farmName: 'Bebek Barokah Farm',
+    farmName: 'Peternakan Bebek Pratama Cabang Budi',
     role: 'PETERNAN_PRO',
     plan: 'PREMIUM',
     createdAt: new Date().toISOString(),
@@ -33,6 +47,78 @@ const DEFAULT_USERS: (User & { passwordHash: string })[] = [
 ];
 
 export const AuthService = {
+  // Get all saved accounts on this device (Google-style smart saved accounts)
+  getSavedAccounts: (): SavedAccount[] => {
+    try {
+      const stored = localStorage.getItem(SAVED_ACCOUNTS_KEY);
+      if (stored) {
+        return JSON.parse(stored);
+      }
+    } catch (e) {
+      console.error('Failed to parse saved accounts:', e);
+    }
+    return [];
+  },
+
+  // Save account to device for 1-click quick login
+  saveAccount: (identifier: string, password: string, user: User) => {
+    try {
+      const list = AuthService.getSavedAccounts();
+      const cleanId = identifier.trim().toLowerCase();
+      const newEntry: SavedAccount = {
+        id: user.id,
+        identifier: cleanId,
+        name: user.name,
+        username: user.username || user.name.toLowerCase().replace(/[^a-z0-9]/g, ''),
+        email: user.email,
+        phone: user.phone,
+        farmName: user.farmName,
+        avatarUrl: user.avatarUrl,
+        savedPassword: password,
+        lastLogin: new Date().toISOString(),
+      };
+
+      // Filter out duplicate
+      const filtered = list.filter(
+        (a) =>
+          a.id !== user.id &&
+          a.email.toLowerCase() !== user.email.toLowerCase() &&
+          a.identifier.toLowerCase() !== cleanId &&
+          (a.username || '').toLowerCase() !== (newEntry.username || '').toLowerCase()
+      );
+
+      filtered.unshift(newEntry);
+      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(filtered.slice(0, 5)));
+    } catch (e) {
+      console.error('Failed to save account on device:', e);
+    }
+  },
+
+  // Remove saved account from device
+  removeSavedAccount: (accountIdOrIdentifier: string) => {
+    try {
+      const list = AuthService.getSavedAccounts();
+      const target = accountIdOrIdentifier.trim().toLowerCase();
+      const filtered = list.filter(
+        (a) =>
+          a.id !== accountIdOrIdentifier &&
+          a.identifier.toLowerCase() !== target &&
+          (a.username || '').toLowerCase() !== target &&
+          (a.email || '').toLowerCase() !== target
+      );
+      localStorage.setItem(SAVED_ACCOUNTS_KEY, JSON.stringify(filtered));
+    } catch (e) {
+      console.error('Failed to remove saved account:', e);
+    }
+  },
+
+  // Clear all saved accounts
+  clearSavedAccounts: () => {
+    try {
+      localStorage.removeItem(SAVED_ACCOUNTS_KEY);
+    } catch {}
+  },
+
   // Get all registered users from storage
   getUsers: (): (User & { passwordHash: string })[] => {
     try {
@@ -282,7 +368,8 @@ export const AuthService = {
   // Login with Username, No. WhatsApp, or Email + password
   login: async (
     identifier: string,
-    password: string
+    password: string,
+    rememberMe: boolean = true
   ): Promise<{ success: boolean; user?: User; message?: string }> => {
     const cleanId = identifier.trim().toLowerCase();
     const cleanDigits = cleanId.replace(/[^0-9]/g, '');
@@ -328,6 +415,11 @@ export const AuthService = {
 
     AuthService.setCurrentUser(safeUser);
 
+    // Save account to device for 1-click quick login if rememberMe is true
+    if (rememberMe && password) {
+      AuthService.saveAccount(cleanId, password, safeUser);
+    }
+
     // Try backend sync if available
     try {
       await fetch('/api/auth/login', {
@@ -349,8 +441,9 @@ export const AuthService = {
     password: string;
     farmName: string;
     plan?: 'PREMIUM' | 'ENTERPRISE' | 'STARTER';
+    rememberMe?: boolean;
   }): Promise<{ success: boolean; user?: User; message?: string }> => {
-    const { name, email, phone, password, farmName, plan = 'PREMIUM' } = params;
+    const { name, email, phone, password, farmName, plan = 'PREMIUM', rememberMe = true } = params;
     const cleanUsername = (params.username || name.toLowerCase().replace(/[^a-z0-9]/g, '')).trim().toLowerCase();
     const cleanEmail = email.toLowerCase().trim();
 
@@ -411,6 +504,11 @@ export const AuthService = {
     };
 
     AuthService.setCurrentUser(safeUser);
+
+    // Auto save account to device for 1-click quick login
+    if (rememberMe) {
+      AuthService.saveAccount(cleanUsername || cleanEmail, password, safeUser);
+    }
 
     try {
       await fetch('/api/auth/register', {

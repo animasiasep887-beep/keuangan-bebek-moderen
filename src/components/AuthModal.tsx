@@ -14,10 +14,12 @@ import {
   Phone,
   KeyRound,
   MessageCircle,
+  ShieldCheck,
+  Trash2,
+  Zap,
 } from 'lucide-react';
-import { AuthService } from '../services/authService';
+import { AuthService, type SavedAccount } from '../services/authService';
 import { BrandLogo } from './BrandLogo';
-import { GoogleConnectModal } from './GoogleConnectModal';
 import type { User } from '../types';
 
 interface AuthModalProps {
@@ -28,7 +30,13 @@ interface AuthModalProps {
 
 export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserChanged }) => {
   const [tab, setTab] = useState<'LOGIN' | 'REGISTER' | 'FORGOT'>('LOGIN');
-  const [isGoogleModalOpen, setIsGoogleModalOpen] = useState(false);
+
+  // Saved accounts (Google-like Quick 1-Click Login)
+  const [savedAccounts, setSavedAccounts] = useState<SavedAccount[]>(() => AuthService.getSavedAccounts());
+  const [showManualForm, setShowManualForm] = useState<boolean>(() => {
+    return AuthService.getSavedAccounts().length === 0;
+  });
+  const [rememberMe, setRememberMe] = useState(true);
 
   // Form states
   const [loginIdentifier, setLoginIdentifier] = useState('');
@@ -53,28 +61,58 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
 
   const currentUser = AuthService.getCurrentUser();
 
-  // Load Google Identity Services dynamically
-  useEffect(() => {
-    if (!isOpen) return;
-    const existingScript = document.getElementById('google-client-script');
-    if (!existingScript) {
-      const script = document.createElement('script');
-      script.id = 'google-client-script';
-      script.src = 'https://accounts.google.com/gsi/client';
-      script.async = true;
-      script.defer = true;
-      document.body.appendChild(script);
-    }
-  }, [isOpen]);
-
   useEffect(() => {
     if (isOpen) {
       setErrorMessage(null);
       setSuccessMessage(null);
+      const accounts = AuthService.getSavedAccounts();
+      setSavedAccounts(accounts);
+      if (accounts.length === 0) {
+        setShowManualForm(true);
+      }
     }
   }, [isOpen, tab]);
 
   if (!isOpen) return null;
+
+  // Quick 1-Click Login for Saved Account (Google-style)
+  const handleQuickLogin = async (acc: SavedAccount) => {
+    setErrorMessage(null);
+    setSuccessMessage(null);
+    setLoading(true);
+
+    try {
+      const pwd = acc.savedPassword || '';
+      const idToLogin = acc.username || acc.email || acc.identifier;
+      const res = await AuthService.login(idToLogin, pwd, true);
+      if (res.success && res.user) {
+        setSuccessMessage(`Selamat datang kembali, ${res.user.name}!`);
+        setSavedAccounts(AuthService.getSavedAccounts());
+        setTimeout(() => {
+          onUserChanged(res.user!);
+          onClose();
+        }, 400);
+      } else {
+        setLoginIdentifier(idToLogin);
+        setShowManualForm(true);
+        setErrorMessage('Kata sandi perlu dimasukkan ulang untuk verifikasi.');
+      }
+    } catch {
+      setErrorMessage('Terjadi kesalahan saat menghubungkan akun.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleRemoveSavedAccount = (e: React.MouseEvent, idOrIdent: string) => {
+    e.stopPropagation();
+    AuthService.removeSavedAccount(idOrIdent);
+    const updated = AuthService.getSavedAccounts();
+    setSavedAccounts(updated);
+    if (updated.length === 0) {
+      setShowManualForm(true);
+    }
+  };
 
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,13 +120,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     setLoading(true);
 
     try {
-      const res = await AuthService.login(loginIdentifier, loginPassword);
+      const res = await AuthService.login(loginIdentifier, loginPassword, rememberMe);
       if (res.success && res.user) {
         setSuccessMessage(`Selamat datang kembali, ${res.user.name}!`);
+        setSavedAccounts(AuthService.getSavedAccounts());
         setTimeout(() => {
           onUserChanged(res.user!);
           onClose();
-        }, 600);
+        }, 500);
       } else {
         setErrorMessage(res.message || 'Login gagal. Periksa kembali Username/No. HP/Email dan kata sandi Anda.');
       }
@@ -113,14 +152,16 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
         password: regPassword,
         farmName: regFarmName || `Peternakan ${regName.trim()}`,
         plan: regPlan,
+        rememberMe: rememberMe,
       });
 
       if (res.success && res.user) {
         setSuccessMessage(`Akun ${res.user.name} berhasil dibuat! Data peternakan disiapkan.`);
+        setSavedAccounts(AuthService.getSavedAccounts());
         setTimeout(() => {
           onUserChanged(res.user!);
           onClose();
-        }, 700);
+        }, 600);
       } else {
         setErrorMessage(res.message || 'Pendaftaran gagal. Silakan coba lagi.');
       }
@@ -175,61 +216,6 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
     }
   };
 
-  const handleGoogleClick = async () => {
-    setErrorMessage(null);
-
-    const envClientId = import.meta.env.VITE_GOOGLE_CLIENT_ID;
-    const hasRealGoogleClientId = Boolean(
-      envClientId &&
-      envClientId !== '517621415951-googleauth.apps.googleusercontent.com' &&
-      envClientId.includes('.apps.googleusercontent.com')
-    );
-
-    // If real Google Client ID exists, invoke GIS
-    // @ts-expect-error - Google GIS dynamic API
-    if (hasRealGoogleClientId && window.google?.accounts?.id) {
-      setLoading(true);
-      try {
-        // @ts-expect-error - Google GIS dynamic API
-        window.google.accounts.id.initialize({
-          client_id: envClientId,
-          callback: async (response: { credential?: string }) => {
-            if (response.credential) {
-              const res = await AuthService.loginWithGoogle({
-                name: '',
-                email: '',
-                credential: response.credential,
-              });
-              setSuccessMessage(`Berhasil terhubung dengan Akun Google: ${res.user.name}`);
-              setTimeout(() => {
-                onUserChanged(res.user);
-                onClose();
-              }, 600);
-            } else {
-              setIsGoogleModalOpen(true);
-            }
-          },
-          auto_select: false,
-          cancel_on_tap_outside: true,
-        });
-
-        // @ts-expect-error - Google GIS prompt
-        window.google.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; isSkippedMoment: () => boolean }) => {
-          if (notification.isNotDisplayed() || notification.isSkippedMoment()) {
-            setIsGoogleModalOpen(true);
-          }
-        });
-      } catch {
-        setIsGoogleModalOpen(true);
-      } finally {
-        setLoading(false);
-      }
-    } else {
-      // Direct Connect modal: avoids Google 401 invalid_client popup error
-      setIsGoogleModalOpen(true);
-    }
-  };
-
   const handleGuestMode = () => {
     const guestUser = AuthService.switchToGuest();
     onUserChanged(guestUser);
@@ -252,10 +238,10 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             <BrandLogo size="md" />
             <div>
               <h2 className="text-xl font-black tracking-tight text-white flex items-center gap-2">
-                Akun & Multi-User <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
+                Akun Peternakan <Sparkles className="w-4 h-4 text-amber-400 fill-amber-400" />
               </h2>
               <p className="text-xs text-slate-300">
-                Kelola akun peternakan terpisah dengan data aman terisolasi di server VPS.
+                Kelola akun peternakan terpisah dengan data aman terisolasi di server Pratama Grup.
               </p>
             </div>
           </div>
@@ -290,7 +276,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             onClick={() => setTab('LOGIN')}
             className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
               tab === 'LOGIN'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
@@ -300,7 +286,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             onClick={() => setTab('REGISTER')}
             className={`flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
               tab === 'REGISTER'
-                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20'
+                ? 'bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black'
                 : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/40'
             }`}
           >
@@ -309,7 +295,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
           {tab === 'FORGOT' && (
             <button
               onClick={() => setTab('FORGOT')}
-              className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20"
+              className="flex-1 py-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 bg-amber-500 text-slate-950 shadow-md shadow-amber-500/20 font-black"
             >
               <KeyRound className="w-4 h-4" /> Pulihkan Akun
             </button>
@@ -336,88 +322,196 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
         <div className="p-4 sm:p-6 pt-2 flex-1 overflow-y-auto">
           {tab === 'LOGIN' && (
             <div className="space-y-4">
-              {/* 1-Click Google Sign In */}
-              <button
-                type="button"
-                onClick={handleGoogleClick}
-                disabled={loading}
-                className="w-full py-2.5 px-4 bg-slate-950 hover:bg-slate-800/80 border border-slate-700 hover:border-slate-500 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2.5 transition-all shadow-sm active:scale-[0.99] disabled:opacity-50"
-              >
-                <svg className="w-4 h-4" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                  />
-                </svg>
-                <span>Masuk Cepat dengan Akun Google</span>
-              </button>
+              {/* OPSI 1: AKUN TERSIMPAN DI PERANGKAT (FITUR CEPAT MIRIP GOOGLE) */}
+              {savedAccounts.length > 0 && !showManualForm ? (
+                <div className="space-y-3 animate-fade-in">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[11px] font-black uppercase tracking-wider text-amber-400 flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5" />
+                      Pilih Akun Tersimpan (1-Klik)
+                    </span>
+                    <span className="text-[10px] text-slate-400 bg-slate-950 px-2 py-0.5 rounded-full border border-slate-800">
+                      Tersimpan di Perangkat
+                    </span>
+                  </div>
 
-              <div className="flex items-center gap-3 text-xs text-slate-500">
-                <div className="flex-1 h-[1px] bg-slate-800" />
-                <span>atau dengan kata sandi</span>
-                <div className="flex-1 h-[1px] bg-slate-800" />
-              </div>
+                  <div className="space-y-2.5">
+                    {savedAccounts.map((acc) => (
+                      <div
+                        key={acc.id}
+                        onClick={() => handleQuickLogin(acc)}
+                        className="p-3.5 rounded-2xl bg-gradient-to-r from-slate-950 to-slate-900 hover:from-amber-950/30 hover:to-slate-800 border border-slate-800 hover:border-amber-500/60 transition-all cursor-pointer group shadow-md flex items-center justify-between gap-3 relative overflow-hidden active:scale-[0.99]"
+                      >
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-11 h-11 rounded-2xl bg-amber-500/20 border border-amber-500/40 p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
+                            {acc.avatarUrl ? (
+                              <img
+                                src={acc.avatarUrl}
+                                alt={acc.name}
+                                className="w-full h-full object-cover rounded-xl"
+                              />
+                            ) : (
+                              <span className="text-amber-400 font-black text-base">
+                                {acc.name.charAt(0)}
+                              </span>
+                            )}
+                          </div>
 
-              <form onSubmit={handleLoginSubmit} className="space-y-4">
-                <div>
-                  <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
-                    <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Username, No. WhatsApp, atau Email
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="Contoh: asep88 / 085600172785 / nama@email.com"
-                    value={loginIdentifier}
-                    onChange={(e) => setLoginIdentifier(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
-                  />
-                </div>
+                          <div className="min-w-0">
+                            <p className="text-xs sm:text-sm font-black text-white group-hover:text-amber-300 transition-colors truncate flex items-center gap-1.5">
+                              <span>{acc.name}</span>
+                              <span className="text-[9px] px-1.5 py-0.2 rounded bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-bold">
+                                Tersimpan
+                              </span>
+                            </p>
+                            <p className="text-[11px] text-amber-400/90 truncate font-semibold">
+                              {acc.farmName || 'Peternakan Pratama Grup'}
+                            </p>
+                            <p className="text-[10px] text-slate-400 truncate">
+                              @{acc.username || acc.email}
+                            </p>
+                          </div>
+                        </div>
 
-                <div>
-                  <div className="flex items-center justify-between mb-1">
-                    <label className="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
-                      <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi
-                    </label>
+                        <div className="flex items-center gap-1.5 shrink-0">
+                          <button
+                            type="button"
+                            onClick={(e) => handleRemoveSavedAccount(e, acc.id)}
+                            className="p-2 rounded-xl text-slate-500 hover:text-rose-400 hover:bg-rose-950/50 transition-colors cursor-pointer"
+                            title="Hapus akun tersimpan dari perangkat"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                          <div className="px-3 py-1.5 rounded-xl bg-amber-500 group-hover:bg-amber-400 text-slate-950 font-black text-xs flex items-center gap-1 shadow-md transition-all">
+                            <span>Masuk</span>
+                            <LogIn className="w-3.5 h-3.5" />
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="pt-2">
                     <button
                       type="button"
-                      onClick={() => setTab('FORGOT')}
-                      className="text-amber-400 hover:text-amber-300 text-xs hover:underline font-semibold"
+                      onClick={() => {
+                        setShowManualForm(true);
+                        setLoginIdentifier('');
+                        setLoginPassword('');
+                      }}
+                      className="w-full py-2.5 px-4 rounded-xl bg-slate-950 hover:bg-slate-800 text-slate-300 hover:text-white font-bold text-xs flex items-center justify-center gap-2 border border-slate-800 transition-all cursor-pointer shadow-sm"
                     >
-                      Lupa sandi?
+                      <span>+ Masuk dengan Akun Lain / Ketik Manual</span>
                     </button>
                   </div>
-                  <input
-                    type="password"
-                    required
-                    placeholder="••••••••"
-                    value={loginPassword}
-                    onChange={(e) => setLoginPassword(e.target.value)}
-                    className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
-                  />
                 </div>
+              ) : (
+                /* OPSI 2: FORM LOGIN MANUAL */
+                <form onSubmit={handleLoginSubmit} className="space-y-4 animate-fade-in">
+                  {savedAccounts.length > 0 && (
+                    <div className="flex items-center justify-between pb-1 border-b border-slate-800">
+                      <button
+                        type="button"
+                        onClick={() => setShowManualForm(false)}
+                        className="text-[11px] font-bold text-amber-400 hover:text-amber-300 hover:underline flex items-center gap-1 cursor-pointer"
+                      >
+                        ← Kembali ke Akun Tersimpan ({savedAccounts.length})
+                      </button>
+                      <span className="text-[10px] text-slate-400">Ketik Manual</span>
+                    </div>
+                  )}
 
-                <div className="pt-2">
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50"
-                  >
-                    {loading ? 'Memproses Login...' : 'Masuk ke Akun Peternakan'}
-                  </button>
-                </div>
-              </form>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-300 mb-1 flex items-center gap-1.5">
+                      <UserIcon className="w-3.5 h-3.5 text-amber-400" /> Username, No. WhatsApp, atau Email
+                    </label>
+                    <input
+                      type="text"
+                      name="username"
+                      autoComplete="username"
+                      required
+                      placeholder="Contoh: asep88 / 085600172785 / nama@email.com"
+                      value={loginIdentifier}
+                      onChange={(e) => setLoginIdentifier(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                    />
+
+                    {/* Quick Suggestion Chips */}
+                    {savedAccounts.length > 0 && (
+                      <div className="flex flex-wrap items-center gap-1.5 mt-2">
+                        <span className="text-[10px] text-slate-400 font-semibold flex items-center gap-0.5">
+                          <Zap className="w-3 h-3 text-amber-400" /> Saran Akun:
+                        </span>
+                        {savedAccounts.map((acc) => (
+                          <button
+                            key={acc.id}
+                            type="button"
+                            onClick={() => {
+                              setLoginIdentifier(acc.username || acc.email || acc.identifier);
+                              if (acc.savedPassword) {
+                                setLoginPassword(acc.savedPassword);
+                              }
+                            }}
+                            className="text-[10px] px-2.5 py-1 rounded-lg bg-slate-800 hover:bg-amber-500/20 text-slate-300 hover:text-amber-300 border border-slate-700 font-bold transition-all cursor-pointer"
+                          >
+                            👤 {acc.username || acc.name.split(' ')[0]}
+                          </button>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="block text-xs font-bold text-slate-300 flex items-center gap-1.5">
+                        <Lock className="w-3.5 h-3.5 text-amber-400" /> Kata Sandi
+                      </label>
+                      <button
+                        type="button"
+                        onClick={() => setTab('FORGOT')}
+                        className="text-amber-400 hover:text-amber-300 text-xs hover:underline font-semibold"
+                      >
+                        Lupa sandi?
+                      </button>
+                    </div>
+                    <input
+                      type="password"
+                      name="password"
+                      autoComplete="current-password"
+                      required
+                      placeholder="••••••••"
+                      value={loginPassword}
+                      onChange={(e) => setLoginPassword(e.target.value)}
+                      className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
+                    />
+                  </div>
+
+                  {/* Checkbox Ingat Saya */}
+                  <div className="pt-0.5">
+                    <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                      <input
+                        type="checkbox"
+                        checked={rememberMe}
+                        onChange={(e) => setRememberMe(e.target.checked)}
+                        className="w-4 h-4 rounded text-amber-500 bg-slate-950 border-slate-700 accent-amber-500 cursor-pointer"
+                      />
+                      <span className="text-xs text-slate-300 font-semibold">
+                        Simpan akun & sandi di perangkat ini (Masuk Cepat 1-Klik)
+                      </span>
+                    </label>
+                  </div>
+
+                  <div className="pt-2">
+                    <button
+                      type="submit"
+                      disabled={loading}
+                      className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
+                    >
+                      {loading ? 'Memproses Login...' : 'Masuk ke Akun Peternakan'}
+                    </button>
+                  </div>
+                </form>
+              )}
             </div>
           )}
 
@@ -457,7 +551,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 </label>
                 <input
                   type="text"
-                  placeholder="contoh: Peternakan Modern Asep"
+                  placeholder="contoh: Peternakan Pratama Asep"
                   value={regFarmName}
                   onChange={(e) => setRegFarmName(e.target.value)}
                   className="w-full bg-slate-950 border border-slate-700 focus:border-amber-400 rounded-xl px-3.5 py-2.5 text-sm text-white placeholder-slate-500 outline-none transition-all"
@@ -507,11 +601,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 />
               </div>
 
+              {/* Checkbox Ingat Saya di Pendaftaran */}
+              <div className="pt-0.5">
+                <label className="flex items-center gap-2.5 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    checked={rememberMe}
+                    onChange={(e) => setRememberMe(e.target.checked)}
+                    className="w-4 h-4 rounded text-amber-500 bg-slate-950 border-slate-700 accent-amber-500 cursor-pointer"
+                  />
+                  <span className="text-xs text-slate-300 font-semibold">
+                    Simpan akun & sandi di perangkat ini (Masuk Cepat 1-Klik)
+                  </span>
+                </label>
+              </div>
+
               <div className="pt-2">
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50"
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? 'Mendaftarkan Akun...' : 'Daftar Akun & Mulai Sekarang'}
                 </button>
@@ -571,7 +680,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50"
+                  className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-400 hover:from-amber-400 hover:to-amber-300 text-slate-950 font-black rounded-xl text-sm transition-all shadow-lg shadow-amber-500/20 active:scale-[0.99] disabled:opacity-50 cursor-pointer"
                 >
                   {loading ? 'Memperbarui Sandi...' : 'Simpan Sandi Baru & Masuk'}
                 </button>
@@ -587,7 +696,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
                 </button>
 
                 <a
-                  href="https://wa.me/6281234567890?text=Halo%20Admin%20BebekJaya,%20saya%20butuh%20bantuan%20pemulihan%20akun%20peternakan"
+                  href="https://wa.me/6285600172785?text=Halo%20Admin%20Pratama%20Grup,%20saya%20butuh%20bantuan%20pemulihan%20akun%20peternakan"
                   target="_blank"
                   rel="noreferrer"
                   className="text-emerald-400 hover:text-emerald-300 flex items-center gap-1 font-semibold"
@@ -608,24 +717,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, onUserCha
             Atau Uji Coba Tanpa Login (Mode Demo)
           </button>
 
-          <span className="text-[10px] text-slate-500">BebekJaya PRO SaaS v2.5</span>
+          <span className="text-[10px] text-slate-500">Pratama Grup SIM Peternakan v2.5</span>
         </div>
       </div>
-
-      {/* Direct Google Connect Modal */}
-      <GoogleConnectModal
-        isOpen={isGoogleModalOpen}
-        onClose={() => setIsGoogleModalOpen(false)}
-        onSuccess={(user) => {
-          setIsGoogleModalOpen(false);
-          setSuccessMessage(`Berhasil terhubung dengan Google: ${user.name}`);
-          setTimeout(() => {
-            onUserChanged(user);
-            onClose();
-          }, 400);
-        }}
-        initialEmail="animasiasep887@gmail.com"
-      />
     </div>
   );
 };
